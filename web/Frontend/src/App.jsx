@@ -1,8 +1,11 @@
 import './App.css'
+import { BrowserRouter } from "react-router-dom"
+import GuestLayout from "@/layouts/GuestLayout"
 
 export default function App() {
-
   return (
-    <h1></h1>
+    <BrowserRouter>
+      <GuestLayout/>
+    </BrowserRouter>
   )
 }
