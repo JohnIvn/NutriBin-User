@@ -7,6 +7,10 @@ import TOS from "@/pages/TOS"
 import Socials from "@/pages/Socials"
 import Studies from "@/pages/Studies"
 import Guide from "@/pages/Guide"
+import AccountSettings from "@/pages/AccountSettings"
+import Cameras from "@/pages/Cameras"
+import Modules from "@/pages/Modules"
+import Fertilizer from "@/pages/Fertilizer"
 import { Routes, Route, Navigate } from "react-router-dom"
 
 export default function MainPageRouter () {
@@ -52,6 +56,22 @@ export default function MainPageRouter () {
             <Route
                 path='/guide'
                 element={<Guide/>}
+            />
+            <Route
+                path='/accounts'
+                element={<AccountSettings/>}
+            />
+            <Route
+                path='/cameras'
+                element={<Cameras/>}
+            />
+            <Route
+                path='/fertilizer'
+                element={<Fertilizer/>}
+            />
+            <Route
+                path='/modules'
+                element={<Modules/>}
             />
         </Routes>
     )
