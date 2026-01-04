@@ -33,7 +33,7 @@ export function Login() {
 
   return (
     <section className="flex w-full h-full justify-between">
-      <div className="hidden md:flex justify-center items-center bg-[url('/LoginImg.png')] bg-cover bg-center relative w-1/3 min-h-full">
+      <div className="hidden md:flex justify-center items-center bg-[url('/Login.png')] bg-cover bg-center relative w-1/3 min-h-full">
         <img
           src="/Logo.svg"
           alt="Logo"
@@ -43,7 +43,7 @@ export function Login() {
 
       <div className="flex flex-col justify-center items-center w-full md:w-2/3 min-h-screen">
         <Form {...form}>
-          <h1 className="w-auto text-start text-4xl font-medium m-4">
+          <h1 className="w-auto text-start text-4xl font-bold m-4">
             Sign In
           </h1>
           <form
@@ -125,7 +125,7 @@ export function Login() {
               className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
             >
               <svg
-                class="mr-2 h-5 w-5"
+                classname="mr-2 h-5 w-5"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >
