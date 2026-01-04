@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 
-export default function Footer() {
+export default function MainFooter() {
   return (
     <header className='flex w-full justify-between items-center h-20 bg-orange-500 text-white'>
       <nav className="flex w-auto px-2">
