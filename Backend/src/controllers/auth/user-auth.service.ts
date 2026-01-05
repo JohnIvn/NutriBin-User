@@ -16,8 +16,8 @@ function normalizeEmail(email: string): string {
 
 type UserPublicRow = {
   customer_id: string;
-  f_name: string;
-  l_name: string;
+  first_name: string;
+  last_name: string;
   contact_number: string | null;
   address: string | null;
   email: string;
@@ -65,9 +65,9 @@ export class UserAuthService {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const created = await client.query<UserPublicRow>(
-      `INSERT INTO user_customer (f_name, l_name, contact_number, address, email, password)
+      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING customer_id, f_name, l_name, contact_number, address, email, date_created, last_updated, status`,
+       RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
       [fName, lName, contactNumber, address, email, passwordHash],
     );
 
@@ -93,7 +93,7 @@ export class UserAuthService {
     const client = this.databaseService.getClient();
 
     const result = await client.query<UserDbRow>(
-      `SELECT customer_id, f_name, l_name, contact_number, address, email, password, date_created, last_updated, status
+      `SELECT customer_id, first_name, last_name, contact_number, address, email, password, date_created, last_updated, status
        FROM user_customer
        WHERE email = $1
        LIMIT 1`,
@@ -116,8 +116,8 @@ export class UserAuthService {
 
     const safeUser: UserPublicRow = {
       customer_id: user.customer_id,
-      f_name: user.f_name,
-      l_name: user.l_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       contact_number: user.contact_number,
       address: user.address,
       email: user.email,
