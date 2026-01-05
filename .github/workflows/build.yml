@@ -17,11 +17,11 @@ jobs:
       matrix:
         include:
           - label: Backend
-            workdir: web/Backend
+            workdir: Backend
             lint: true
             test: true
           - label: Frontend
-            workdir: web/Frontend
+            workdir: Frontend
             lint: true
             test: false
     defaults:
