@@ -8,7 +8,6 @@ import Socials from "@/pages/Socials"
 import Studies from "@/pages/Studies"
 import Guide from "@/pages/Guide"
 import Fertilizer from "@/pages/Fertilizer"
-import Modules from "@/pages/Modules"
 import { Routes, Route, Navigate } from "react-router-dom"
 
 export default function GuestPageRouter () {
@@ -55,18 +54,10 @@ export default function GuestPageRouter () {
                 path='/guide'
                 element={<Guide/>}
             />
-      <Route
-        path="/fertilizer"
-        element={
-            <Fertilizer />
-        }
-      />
-      <Route
-        path="/modules"
-        element={
-            <Modules />
-        }
-      />
+            <Route
+                path='/fertilizer'
+                element={<Fertilizer/>}
+            />
         </Routes>
     )
 } 
