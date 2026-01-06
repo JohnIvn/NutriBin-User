@@ -4,7 +4,7 @@ import GuestLayout from "@/layouts/GuestLayout"
 import MainLayout from './layouts/MainLayout'
 
 export default function App() {
-  const isAuthenticated = false //scaffold for auth
+  const isAuthenticated = true //scaffold for auth
 
   return (
     <BrowserRouter>
