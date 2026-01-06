@@ -5,45 +5,76 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components/ui/Form";
+} from "@/components/ui/form";
 
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { userAccount } from "@/schema/userAccount";
-import { Label } from "@/components/ui/Label";
-import { Checkbox } from "@/components/ui/Checkbox";
-import { Link } from "react-router-dom";
+import { adminLogin } from "@/schema/adminAccount";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import Requests from "@/utils/Requests";
+import axios from "axios";
+import { useUser } from "@/contexts/UserContext";
 
 export function Login() {
+  const [showPass, setShowPass] = useState(false);
+  const [loginMessage, setLoginMessage] = useState(null);
+  const [loginError, setLoginError] = useState(null);
+  const { login } = useUser();
+  const navigate = useNavigate();
+
   const form = useForm({
-    resolver: zodResolver(userAccount),
+    resolver: zodResolver(adminLogin),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
 
-  function onSubmit(values) {
-    //TODO
-    console.log(values);
+  async function onSubmit(values) {
+    try {
+      setLoginError(null);
+      setLoginMessage(null);
+      const formData = values;
+
+      const response = await axios.post(
+        "http://localhost:3000/staff/signin",
+        formData
+      );
+      if (!response.data.ok) {
+        setLoginError(response.data.error || "Login failed");
+        return;
+      }
+      setLoginMessage("Login successful!");
+      login(response.data.staff);
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    } catch (error) {
+      setLoginError(error.message || "An error occurred");
+      console.error(error.message || error);
+    }
   }
 
   return (
-    <section className="flex w-full h-full justify-between">
-      <div className="hidden md:flex justify-center items-center bg-[url('/Login.png')] bg-cover bg-center relative w-1/3 min-h-full">
+    <section className="flex w-full h-auto my-auto mx-0 justify-between">
+      <div className="hidden md:flex justify-center items-center bg-center relative max-h-full m-auto">
+        <img src="/Login.png" alt="Logo" className="h-full w-lg -right-64" />
         <img
           src="/Logo.svg"
           alt="Logo"
-          className="absolute h-156 w-lg -right-64"
+          className="absolute h-128 w-lg -right-64 hidden lg:flex"
         />
       </div>
 
-      <div className="flex flex-col justify-center items-center w-full md:w-2/3 min-h-screen">
+      <div className="flex flex-col justify-center items-center w-full lg:w-2/3 h-full my-auto ">
         <Form {...form}>
-          <h1 className="w-auto text-start text-4xl font-bold m-4">
+          <h1 className="w-auto text-start text-4xl font-medium m-4">
             Sign In
           </h1>
           <form
@@ -52,13 +83,13 @@ export function Login() {
           >
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Username"
+                      placeholder="example123@gmail.com"
                       className={"border border-secondary-foreground"}
                       {...field}
                     />
@@ -76,9 +107,9 @@ export function Login() {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
-                      type="password"
+                      type={showPass ? "text" : "password"}
                       placeholder="Password"
-                      className={"border-1 border-secondary-foreground"}
+                      className={"border border-secondary-foreground"}
                       {...field}
                     />
                   </FormControl>
@@ -90,6 +121,7 @@ export function Login() {
               <div className="flex h-full justify-center items-center w-auto gap-2">
                 <Checkbox
                   id="showPassword"
+                  onCheckedChange={(checked) => setShowPass(checked)}
                   className="border-secondary-foreground data-[state=checked]:bg-secondary data-[state=checked :text-secondary-foreground  data-[state=checked :border-secondary border-secondary"
                 />
 
@@ -114,6 +146,17 @@ export function Login() {
               Login
             </Button>
 
+            {loginError && (
+              <div className="w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                {loginError}
+              </div>
+            )}
+            {loginMessage && (
+              <div className="w-80 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+                {loginMessage}
+              </div>
+            )}
+
             <div className="flex justify-between items-center">
               <hr className="w-1/3 border border-secondary" />
               <h1 className="font-medium">Or</h1>
@@ -125,7 +168,7 @@ export function Login() {
               className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
             >
               <svg
-                classname="mr-2 h-5 w-5"
+                className="mr-2 h-5 w-5"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >

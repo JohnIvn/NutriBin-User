@@ -16,7 +16,7 @@ export default function MainFooter() {
             asChild
             className={"bg-transparent hover:bg-amber-700 font-bold"}
           >
-            <Link to={"/faq"}>FAQs</Link>
+            <Link to={"/faqs"}>FAQs</Link>
           </Button>
           <Button
             asChild
