@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { adminLogin } from "@/schema/adminAccount";
+import { userAccount } from "@/schema/userAccount";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,7 +29,7 @@ export function Login() {
   const navigate = useNavigate();
 
   const form = useForm({
-    resolver: zodResolver(adminLogin),
+    resolver: zodResolver(userAccount),
     defaultValues: {
       email: "",
       password: "",
