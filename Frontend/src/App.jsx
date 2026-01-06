@@ -1,14 +1,21 @@
-import './App.css'
-import { BrowserRouter } from "react-router-dom"
-import GuestLayout from "@/layouts/GuestLayout"
-import MainLayout from './layouts/MainLayout'
+import "./App.css";
+import { BrowserRouter } from "react-router-dom";
+import GuestLayout from "@/layouts/GuestLayout";
+import MainLayout from "./layouts/MainLayout";
+import { useUser } from "@/components/contexts/UserContext";
 
 export default function App() {
-  const isAuthenticated = true //scaffold for auth
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return (
+      <div className="flex w-full h-screen justify-center items-center">
+        <h1>Loading...</h1>
+      </div>
+    );
+  }
 
   return (
-    <BrowserRouter>
-      {isAuthenticated ? <MainLayout/> : <GuestLayout/>}
-    </BrowserRouter>
-  )
+    <BrowserRouter>{user ? <MainLayout /> : <GuestLayout />}</BrowserRouter>
+  );
 }
