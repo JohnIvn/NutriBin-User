@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './controllers/app.controller';
-import { UserAuthController } from './controllers/staff/user-auth.controller';
+import { UserAuthController } from './controllers/user/user-auth.controller';
 
 import { AppService } from './service/app.service';
 import { DatabaseService } from './service/database/database.service';

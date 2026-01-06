@@ -31,19 +31,23 @@ export function Login() {
   const form = useForm({
     resolver: zodResolver(userAccount),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
 
   async function onSubmit(values) {
+    console.log("Form submitted with values:", values);
     try {
       setLoginError(null);
       setLoginMessage(null);
-      const formData = values;
+      const formData = {
+        email: values.username,
+        password: values.password,
+      };
 
       const response = await axios.post(
-        "http://localhost:3000/staff/signin",
+        "http://localhost:3000/user/signin",
         formData
       );
       if (!response.data.ok) {
@@ -51,7 +55,7 @@ export function Login() {
         return;
       }
       setLoginMessage("Login successful!");
-      login(response.data.staff);
+      login(response.data.user);
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
@@ -83,7 +87,7 @@ export function Login() {
           >
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>

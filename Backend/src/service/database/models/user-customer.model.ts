@@ -15,6 +15,8 @@ export async function createUserCustomerTable(client: Client) {
       customer_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       first_name text NOT NULL,
       last_name text NOT NULL,
+      birthday text NOT NULL,
+      age integer NOT NULL,
       contact_number text UNIQUE,
       address text,
       email text UNIQUE NOT NULL,

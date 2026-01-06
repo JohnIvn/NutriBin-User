@@ -1,17 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  InternalServerErrorException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 
 import { DatabaseService } from '../database/database.service';
 import type {
   UserSignInDto,
   UserSignUpDto,
-} from '../../controllers/staff/user-auth.dto';
+} from '../../controllers/user/user-auth.dto';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -38,45 +32,113 @@ export class UserAuthService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async signUp(dto: UserSignUpDto) {
-    const fName = dto?.fName?.trim();
-    const lName = dto?.lName?.trim();
+    const firstname = dto?.firstname?.trim();
+    const lastname = dto?.lastname?.trim();
     const emailRaw = dto?.email;
     const password = dto?.password;
+    const birthday = dto?.birthday;
+    const age = dto?.age;
 
-    if (!fName) throw new BadRequestException('fName is required');
-    if (!lName) throw new BadRequestException('lName is required');
-    if (!emailRaw?.trim()) throw new BadRequestException('email is required');
-    if (!password) throw new BadRequestException('password is required');
+    if (!firstname) {
+      return {
+        ok: false,
+        error: 'firstname is required',
+      };
+    }
+    if (!lastname) {
+      return {
+        ok: false,
+        error: 'lastname is required',
+      };
+    }
+    if (!emailRaw?.trim()) {
+      return {
+        ok: false,
+        error: 'email is required',
+      };
+    }
+    if (!password) {
+      return {
+        ok: false,
+        error: 'password is required',
+      };
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailRaw)) {
+      return {
+        ok: false,
+        error: 'Invalid email format',
+      };
+    }
 
     const email = normalizeEmail(emailRaw);
-    const contactNumber = dto?.contactNumber?.trim() || null;
+    const contactNumber = dto?.contact?.trim() || null;
     const address = dto?.address?.trim() || null;
+
+    if (contactNumber) {
+      const phoneRegex = /^[\d\s\-+()]+$/;
+      if (!phoneRegex.test(contactNumber)) {
+        return {
+          ok: false,
+          error: 'Invalid phone number format',
+        };
+      }
+    }
 
     const client = this.databaseService.getClient();
 
-    const existing = await client.query<{ customer_id: string }>(
+    const existingEmail = await client.query<{ customer_id: string }>(
       'SELECT customer_id FROM user_customer WHERE email = $1 LIMIT 1',
       [email],
     );
 
-    if (existing.rowCount && existing.rowCount > 0) {
-      throw new ConflictException(
-        'A user account with this email already exists',
+    if (existingEmail.rowCount && existingEmail.rowCount > 0) {
+      return {
+        ok: false,
+        error: 'A user account with this email already exists',
+      };
+    }
+
+    if (contactNumber) {
+      const existingPhone = await client.query<{ customer_id: string }>(
+        'SELECT customer_id FROM user_customer WHERE contact_number = $1 LIMIT 1',
+        [contactNumber],
       );
+
+      if (existingPhone.rowCount && existingPhone.rowCount > 0) {
+        return {
+          ok: false,
+          error: 'A user account with this phone number already exists',
+        };
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
     const created = await client.query<UserPublicRow>(
-      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO user_customer (first_name, last_name, birthday, age, contact_number, address, email, password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
-      [fName, lName, contactNumber, address, email, passwordHash],
+      [
+        firstname,
+        lastname,
+        birthday,
+        age,
+        contactNumber,
+        address,
+        email,
+        passwordHash,
+      ],
     );
 
     const user = created.rows[0];
     if (!user) {
-      throw new InternalServerErrorException('Failed to create user account');
+      return {
+        ok: false,
+        error: 'Failed to create user account',
+      };
     }
 
     return {
@@ -104,17 +166,20 @@ export class UserAuthService {
     );
 
     if (!result.rowCount) {
-      throw new UnauthorizedException('Invalid email or password');
+      return {
+        ok: false,
+        error: 'Account not found',
+      };
     }
 
     const user = result.rows[0];
-    if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
 
     const matches = await bcrypt.compare(password, user.password);
     if (!matches) {
-      throw new UnauthorizedException('Invalid email or password');
+      return {
+        ok: false,
+        error: 'Wrong password',
+      };
     }
 
     const safeUser: UserPublicRow = {

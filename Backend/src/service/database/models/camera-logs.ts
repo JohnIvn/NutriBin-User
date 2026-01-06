@@ -14,7 +14,7 @@ export async function createCameraLogsTable(client: Client) {
     CREATE TABLE IF NOT EXISTS camera_logs (
       camera_log_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       machine_id uuid,
-      user_id text,
+      customer_id text,
       details text,
       classification classification_type DEFAULT 'N/A',
       date_created timestamptz DEFAULT now()

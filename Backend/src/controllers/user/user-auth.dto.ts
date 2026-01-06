@@ -1,9 +1,11 @@
 export type UserSignUpDto = {
-  fName: string;
-  lName: string;
+  firstname: string;
+  lastname: string;
   email: string;
+  birthday?: string;
+  age?: number;
   password: string;
-  contactNumber?: string;
+  contact?: string;
   address?: string;
 };
 

@@ -4,7 +4,7 @@ export async function createModuleAnalyticsTable(client: Client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS module_analytics (
       module_analytics_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id text,
+      customer_id text,
       esp32 boolean DEFAULT true,
       arduino_q boolean DEFAULT true,
       arduino_r3 boolean DEFAULT true,
