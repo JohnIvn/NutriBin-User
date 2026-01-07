@@ -4,7 +4,7 @@ import type { UserSignInDto, UserSignUpDto } from './user-auth.dto';
 
 @Controller('user')
 export class UserAuthController {
-  constructor(private readonly staffAuthService: UserAuthService) {}
+  constructor(private readonly userAuthService: UserAuthService) {}
 
   @Post('signup')
   async signUp(@Body() body: UserSignUpDto) {
@@ -13,7 +13,7 @@ export class UserAuthController {
       throw new BadRequestException('Request body is required');
     }
 
-    return this.staffAuthService.signUp(body);
+    return this.userAuthService.signUp(body);
   }
 
   @Post('signin')
@@ -22,6 +22,6 @@ export class UserAuthController {
       throw new BadRequestException('Request body is required');
     }
 
-    return this.staffAuthService.signIn(body);
+    return this.userAuthService.signIn(body);
   }
 }
