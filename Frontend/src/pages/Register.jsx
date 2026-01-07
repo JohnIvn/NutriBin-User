@@ -15,7 +15,7 @@ export default function Register() {
         defaultValues: {
             firstName: "",
             lastName: "",
-            contactNumber: "",
+            email: "",
             password: "",
             confirmPassword: "",
         },
@@ -60,7 +60,7 @@ export default function Register() {
                       <FormLabel> First Name </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="First Name"
+                          placeholder="John"
                           className={"border border-secondary-foreground"}
                           {...field}
                         />
@@ -76,7 +76,7 @@ export default function Register() {
                       <FormLabel> Last Name </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Last Name"
+                          placeholder="Doe"
                           className={"border border-secondary-foreground"}
                           {...field}
                         />
@@ -90,10 +90,10 @@ export default function Register() {
                 name="contactNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel> Contact Number </FormLabel>
+                    <FormLabel> Email </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Contact Number"
+                        placeholder="johndoe@example.com"
                         className={"border border-secondary-foreground"}
                         {...field}
                       />

@@ -20,12 +20,13 @@ export default function Cameras() {
   }, [])
   return (
     <section className="flex flex-col w-full justify-between">
-      <div className="px-12 py-2 text-center">
-        <h1 className="text-3xl font-bold text-black py-10">Cameras</h1>
-        <hr className="border-t-2 border-gray-400 w-full" />
+      <div className="px-12 text-left">
+        <h1 className="text-3xl font-bold text-black pt-4 ">Cameras</h1>
+        <h1 className="text-m text-gray-600 py-4">Cameras inside the machine.</h1>
+        <hr className="border-t-2 border-gray-400 w-full pb-4" />
       </div>
-      <div className="flex flex-row px-12 justify-between gap-6 py-10">
-        <div className="flex flex-col w-full md:w-1/2">
+      <div className="flex flex-row px-12 justify-between gap-6 mt-2 pb-20">
+        <div className="flex flex-col w-full md:w-1/2 h-full">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-white">Loading video...</span>
@@ -69,7 +70,7 @@ export default function Cameras() {
             </TableBody>
           </Table>
         </div>
-        <div className="flex flex-col w-full md:w-1/2">
+        <div className="flex flex-col w-full md:w-1/2 h-full">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-white">Loading video...</span>

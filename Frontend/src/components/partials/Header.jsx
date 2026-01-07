@@ -7,12 +7,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/Dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
@@ -49,13 +44,13 @@ export default function Header() {
           {user ? (
             <nav className="flex gap-2">
               <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/dashboard"}>Dashboard</Link>
+                <Link to={"/cameras"}>Cameras</Link>
               </Button>
               <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/admins"}>Admins</Link>
+                <Link to={"/fertilizer"}>Fertilizer</Link>
               </Button>
               <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/machines"}>Repairs</Link>
+                <Link to={"/Modules"}>Modules</Link>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -77,7 +72,7 @@ export default function Header() {
                   <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                      <Link to={"/account"}>Profile</Link>
+                      <Link to={"/accounts"}>Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to={"/settings"}>Settings</Link>

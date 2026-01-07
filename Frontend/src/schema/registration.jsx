@@ -10,10 +10,8 @@ export const registration = z
       .string()
       .min(1, "Last name is required"),
 
-    contactNumber: z
-      .string()
-      .min(10, "Contact number must be at least 10 digits")
-      .regex(/^[0-9]+$/, "Contact number must contain only numbers"),
+    email: z
+      .email("Invalid email address"),
 
     password: z
       .string()

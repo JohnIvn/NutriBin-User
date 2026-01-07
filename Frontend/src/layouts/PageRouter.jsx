@@ -13,6 +13,7 @@ import Modules from "@/pages/Modules";
 import Fertilizer from "@/pages/Fertilizer";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Settings from "@/pages/Settings";
 
 export default function PageRouter() {
   return (
@@ -33,6 +34,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <AccountSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />

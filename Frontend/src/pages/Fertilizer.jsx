@@ -32,8 +32,11 @@ export default function Fertilizer() {
   };
   return (
     <section className="flex flex-col w-full justify-between">
-      <div className="px-12 pt-2">
-        <h1 className="text-3xl font-bold text-black pb-3">Fertilizers</h1>
+      <div className="px-12 pt-4">
+        <h1 className="text-3xl font-bold text-black">Fertilizers</h1>
+        <h1 className="text-m text-gray-600 pb-4">
+          Stats for the fertilization of compostables.
+        </h1>
         <hr className="border-t-2 border-gray-400 w-full pb-4" />
       </div>
       <div className="flex flex-col justify-between gap-4 px-12 py-2">
@@ -79,14 +82,19 @@ export default function Fertilizer() {
             <div className="flex flex-col px-4 py-4 bg-[#FFF5E4] shadow-xl/30 md:h-1/2">
               <h1 className="text-xl font-bold text-black">Humidity</h1>
               <hr className="border-t-2 border-gray-400 w-full" />
-              <HumidityBar percentage={60}/>
+              <HumidityBar percentage={60} />
             </div>
             <div className="flex flex-col px-4 py-4 bg-[#FFF5E4] shadow-xl/30 md:h-1/2">
               <h1 className="text-xl font-bold text-black">Moisture</h1>
               <hr className="border-t-2 border-gray-400 w-full" />
-              <MoistureBar percentage={80}/>
+              <MoistureBar percentage={80} />
             </div>
           </div>
+        </div>
+        <div className="flex flex-col px-10 py-8 bg-[#FFF5E4] shadow-xl/30">
+          <h1 className="text-xl font-bold text-black pb-2">Air Quality</h1>
+          <hr className="border-t-2 border-gray-400 w-full" />
+          
         </div>
       </div>
     </section>
