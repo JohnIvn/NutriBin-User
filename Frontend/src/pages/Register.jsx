@@ -53,7 +53,7 @@ export default function Register() {
         setRegisterError(response.data.error || "Register failed");
         return;
       }
-      setRegisterMessage("Registersuccessful!");
+      setRegisterMessage("Register successful!, Check your email to verify");
     } catch (error) {
       setRegisterError(error.message || "An error occurred");
       console.error(error.message || error);
@@ -181,6 +181,16 @@ export default function Register() {
                 />
                 <Label htmlFor="showPassword">Show Password</Label>
               </div>
+              {registerError && (
+                <div className="my-3 w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                  {registerError}
+                </div>
+              )}
+              {registerMessage && (
+                <div className="my-3 w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                  {registerMessage}
+                </div>
+              )}
               <p>
                 <strong>Your password must have:</strong>
               </p>
@@ -194,7 +204,7 @@ export default function Register() {
               type="submit"
               className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
             >
-              Login
+              Register 
             </Button>
             <div className="flex justify-between items-center">
               <hr className="w-1/3 border border-secondary" />
