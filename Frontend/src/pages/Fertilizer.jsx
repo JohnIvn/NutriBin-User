@@ -8,8 +8,17 @@ import {
 import TempBar from "@/components/ui/TemperatureBar";
 import HumidityBar from "@/components/ui/HumidityBar";
 import MoistureBar from "@/components/ui/MoistureBar";
+import GasFlag from "@/components/ui/GasFlag";
 
 export default function Fertilizer() {
+  const GAS_DATA = [
+    { type: "methane", percentage: 32 },
+    { type: "hydrogen", percentage: 2.2 },
+    { type: "smoke", percentage: 2.2 },
+    { type: "benzene", percentage: 2.2 },
+    { type: "ammonia", percentage: 20 },
+    { type: "nitrogen", percentage: 34 },
+  ];
   const pieChartData = [
     { browser: "nitrogen", visitors: 275, fill: "#4CAF50" },
     { browser: "phosphorus", visitors: 200, fill: "#2196F3" },
@@ -94,7 +103,15 @@ export default function Fertilizer() {
         <div className="flex flex-col px-10 py-8 bg-[#FFF5E4] shadow-xl/30">
           <h1 className="text-xl font-bold text-black pb-2">Air Quality</h1>
           <hr className="border-t-2 border-gray-400 w-full" />
-          
+          <div className="flex flex-row gap-4 pt-4">
+            {GAS_DATA.map((gas) => (
+              <GasFlag
+                key={gas.type}
+                gas={gas.type}
+                percentage={gas.percentage}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
