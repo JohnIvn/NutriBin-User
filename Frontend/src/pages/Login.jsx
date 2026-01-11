@@ -66,7 +66,7 @@ export function Login() {
   }
 
   return (
-    <section className="flex w-full h-auto my-auto mx-0 justify-between">
+    <section className="flex w-full min-h-screen justify-between">
       <div className="hidden md:flex justify-center items-center bg-center relative max-h-full m-auto">
         <img src="/Login.png" alt="Logo" className="h-full w-lg -right-64" />
         <img
@@ -76,25 +76,25 @@ export function Login() {
         />
       </div>
 
-      <div className="flex flex-col justify-center items-center w-full lg:w-2/3 h-full my-auto ">
+      <div className="flex flex-col items-center w-full lg:w-2/3 pt-20 pb-2">
         <Form {...form}>
-          <h1 className="w-auto text-start text-4xl font-medium m-4">
+          <h1 className="w-auto text-start text-5xl font-semibold mb-8">
             Sign In
           </h1>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 w-80"
+            className="space-y-6 w-96 lg:w-md"
           >
             <FormField
               control={form.control}
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-base font-medium">Email</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="example123@gmail.com"
-                      className={"border border-secondary-foreground"}
+                      className="border border-secondary-foreground h-12 text-base px-4"
                       {...field}
                     />
                   </FormControl>
@@ -113,7 +113,7 @@ export function Login() {
                     <Input
                       type={showPass ? "text" : "password"}
                       placeholder="Password"
-                      className={"border border-secondary-foreground"}
+                      className="border border-secondary-foreground h-12 text-base px-4"
                       {...field}
                     />
                   </FormControl>
@@ -129,7 +129,9 @@ export function Login() {
                   className="border-secondary-foreground data-[state=checked]:bg-secondary data-[state=checked :text-secondary-foreground  data-[state=checked :border-secondary border-secondary"
                 />
 
-                <Label htmlFor="showPassword">Show Password</Label>
+                <Label htmlFor="showPassword">
+                  <span className="text-base md:text-base">Show Password</span>
+                </Label>
               </div>
 
               <Button
@@ -145,18 +147,18 @@ export function Login() {
 
             <Button
               type="submit"
-              className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
+              className="bg-secondary hover:bg-secondary-foreground w-full h-12 text-base font-medium"
             >
               Login
             </Button>
 
             {loginError && (
-              <div className="w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+              <div className="w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-base">
                 {loginError}
               </div>
             )}
             {loginMessage && (
-              <div className="w-80 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+              <div className="w-80 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-base">
                 {loginMessage}
               </div>
             )}
@@ -169,7 +171,7 @@ export function Login() {
 
             <Button
               type="button"
-              className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
+              className="bg-secondary hover:bg-secondary-foreground w-full h-12 text-base font-medium"
             >
               <svg
                 className="mr-2 h-5 w-5"

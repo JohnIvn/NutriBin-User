@@ -72,9 +72,6 @@ export default function Header() {
                   <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                      <Link to={"/accounts"}>Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                       <Link to={"/settings"}>Settings</Link>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>

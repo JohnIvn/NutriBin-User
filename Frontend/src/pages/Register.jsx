@@ -6,23 +6,25 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/Form";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { registration } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 
 export default function Register() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [registerMessage, setRegisterMessage] = useState(null)
-  const [registerError, setRegisterError] = useState(null)
+  const [showPassword, setShowPassword] = useState(false);
+  const [registerMessage, setRegisterMessage] = useState(null);
+  const [registerError, setRegisterError] = useState(null);
 
   const form = useForm({
     resolver: zodResolver(registration),
+    mode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -32,191 +34,216 @@ export default function Register() {
     },
   });
 
-
   async function onSubmit(values) {
     try {
-      setRegisterError(null)
-      setRegisterMessage(null)
+      setRegisterError(null);
+      setRegisterMessage(null);
+
       const formData = {
         firstname: values.firstName,
         lastname: values.lastName,
         email: values.email,
         password: values.password,
-      }
+      };
 
       const response = await axios.post(
         "http://localhost:3000/user/signup",
         formData
-      )
+      );
 
       if (!response.data.ok) {
         setRegisterError(response.data.error || "Register failed");
         return;
       }
-      setRegisterMessage("Register successful!, Check your email to verify");
+
+      setRegisterMessage(
+        "Register successful! Please check your email to verify your account."
+      );
     } catch (error) {
       setRegisterError(error.message || "An error occurred");
-      console.error(error.message || error);
+      console.error(error);
     }
   }
 
   return (
-    <section className="flex w-full justify-between">
-      <div className="hidden md:flex justify-center items-center bg-center relative max-h-full m-auto">
-        <img src="/Login.png" alt="Logo" className="h-full w-lg -right-64" />
+    <section className="flex w-full min-h-screen justify-between">
+      <div className="hidden md:flex justify-center items-center relative">
+        <img src="/Login.png" alt="Background" className="h-full w-lg" />
         <img
           src="/Logo.svg"
           alt="Logo"
-          className="absolute h-128 w-lg -right-64 hidden lg:flex"
+          className="absolute h-128 hidden lg:flex -right-40"
         />
       </div>
 
-      <div className="flex flex-col justify-center items-center w-full md:w-2/3 min-h-screen">
+      <div className="flex flex-col items-center w-full md:w-2/3 pt-12 pb-4">
         <Form {...form}>
-          <h1 className="w-auto text-start text-4xl font-bold m-4">
-            Create an account
-          </h1>
-          <h3 className="w-auto text-start text-1xl font-medium m-4">
-            Already have an acount?{" "}
-            <Link to={"/login"} className="text-orange-700">
+          <h1 className="text-5xl font-semibold mb-3">Create an account</h1>
+
+          <p className="text-base mb-8">
+            Already have an account?{" "}
+            <Link to="/login" className="text-orange-700 font-medium">
               Sign in
             </Link>
-          </h3>
+          </p>
+
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 w-80"
+            className="space-y-6 w-96 lg:w-md"
           >
-            <div className="flex flex-row gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel> First Name </FormLabel>
+                    <FormLabel className="text-base font-medium">
+                      First Name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="John"
-                        className={"border border-secondary-foreground"}
+                        className="h-12 text-base px-4 border border-secondary-foreground"
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel> Last Name </FormLabel>
+                    <FormLabel className="text-base font-medium">
+                      Last Name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Doe"
-                        className={"border border-secondary-foreground"}
+                        className="h-12 text-base px-4 border border-secondary-foreground"
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel> Email </FormLabel>
+                  <FormLabel className="text-base font-medium">Email</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="johndoe@example.com"
-                      className={"border border-secondary-foreground"}
+                      className="h-12 text-base px-4 border border-secondary-foreground"
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="flex flex-row gap-5">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel> Password </FormLabel>
+                    <FormLabel className="text-base font-medium">
+                      Password
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder=""
                         type={showPassword ? "text" : "password"}
-                        className={"border border-secondary-foreground"}
+                        className="h-12 text-base px-4 border border-secondary-foreground"
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel> Confirm Password </FormLabel>
+                    <FormLabel className="text-base font-medium">
+                      Confirm Password
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder=""
                         type={showPassword ? "text" : "password"}
-                        className={"border border-secondary-foreground"}
+                        className="h-12 text-base px-4 border border-secondary-foreground"
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <div className="flex flex-col justify-between w-full text-start">
-              <div className="flex h-full justify-center w-auto gap-2">
-                <Checkbox
-                  id="showPassword"
-                  onCheckedChange={(checked) => setShowPassword(!!checked)}
-                  className="border-secondary-foreground data-[state=checked]:bg-secondary data-[state=checked :text-secondary-foreground  data-[state=checked :border-secondary border-secondary"
-                />
-                <Label htmlFor="showPassword">Show Password</Label>
-              </div>
-              {registerError && (
-                <div className="my-3 w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                  {registerError}
-                </div>
-              )}
-              {registerMessage && (
-                <div className="my-3 w-80 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                  {registerMessage}
-                </div>
-              )}
-              <p>
-                <strong>Your password must have:</strong>
-              </p>
-              <ul className="list-disc pl-5">
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="showPassword"
+                onCheckedChange={(checked) => setShowPassword(Boolean(checked))}
+                className="border-secondary-foreground data-[state=checked]:bg-secondary data-[state=checked :text-secondary-foreground  data-[state=checked :border-secondary border-secondary"
+              />
+              <Label htmlFor="showPassword" className="text-base">
+                Show password
+              </Label>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-1">Your password must have:</p>
+              <ul className="list-disc pl-5 space-y-1">
                 <li>At least 8 characters</li>
-                <li>Upper &amp; lowercase characters</li>
-                <li>At least one number and one special character</li>
+                <li>Upper & lowercase letters</li>
+                <li>One number & one special character</li>
               </ul>
             </div>
+
+            {registerError && (
+              <div className="w-full p-3 bg-red-50 border border-red-200 rounded text-red-700 text-base">
+                {registerError}
+              </div>
+            )}
+
+            {registerMessage && (
+              <div className="w-full p-3 bg-green-50 border border-green-200 rounded text-green-700 text-base">
+                {registerMessage}
+              </div>
+            )}
+
             <Button
               type="submit"
-              className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
+              className="w-full h-12 text-base font-medium bg-secondary hover:bg-secondary-foreground"
             >
-              Register 
+              Register
             </Button>
-            <div className="flex justify-between items-center">
-              <hr className="w-1/3 border border-secondary" />
-              <h1 className="font-medium">Or</h1>
-              <hr className="w-1/3 border border-secondary" />
+
+            <div className="flex items-center justify-between">
+              <hr className="w-1/3 border-secondary" />
+              <span className="font-medium">Or</span>
+              <hr className="w-1/3 border-secondary" />
             </div>
+
             <Button
               type="button"
-              className="bg-secondary hover:bg-secondary-foreground w-full cursor-pointer"
+              className="w-full h-12 text-base font-medium bg-secondary hover:bg-secondary-foreground"
             >
               <svg
-                classname="mr-2 h-5 w-5"
+                className="mr-2 h-5 w-5"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >
