@@ -10,6 +10,7 @@ import Guide from "@/pages/Guide";
 import AccountSettings from "@/pages/AccountSettings";
 import Cameras from "@/pages/Cameras";
 import Modules from "@/pages/Modules";
+import Dashboard from "@/pages/Dashboard";
 import Fertilizer from "@/pages/Fertilizer";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -34,6 +35,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <AccountSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
           </ProtectedRoute>
         }
       />

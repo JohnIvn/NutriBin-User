@@ -44,6 +44,9 @@ export default function Header() {
           {user ? (
             <nav className="flex gap-2">
               <Button asChild className={"bg-transparent hover:bg-amber-700"}>
+                <Link to={"/Dashboard"}>Dashboard</Link>
+              </Button>
+              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
                 <Link to={"/cameras"}>Cameras</Link>
               </Button>
               <Button asChild className={"bg-transparent hover:bg-amber-700"}>
