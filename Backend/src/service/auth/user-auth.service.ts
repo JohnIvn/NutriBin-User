@@ -1,7 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 
 import { DatabaseService } from '../database/database.service';
+import { NodemailerService } from '../email/nodemailer.service';
 import type {
   UserSignInDto,
   UserSignUpDto,
@@ -29,7 +37,20 @@ type UserDbRow = UserPublicRow & {
 
 @Injectable()
 export class UserAuthService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  private googleClient: OAuth2Client;
+
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly mailer: NodemailerService,
+  ) {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.warn(
+        '⚠️  GOOGLE_CLIENT_ID not found in environment variables. Google Sign-In will not work.',
+      );
+    }
+    this.googleClient = new OAuth2Client(clientId);
+  }
 
   async signUp(dto: UserSignUpDto) {
     const firstname = dto?.firstname?.trim();
@@ -95,10 +116,9 @@ export class UserAuthService {
     );
 
     if (existingEmail.rowCount && existingEmail.rowCount > 0) {
-      return {
-        ok: false,
-        error: 'A user account with this email already exists',
-      };
+      throw new ConflictException(
+        'An account with this email already exists',
+      );
     }
 
     if (contactNumber) {
@@ -135,10 +155,7 @@ export class UserAuthService {
 
     const user = created.rows[0];
     if (!user) {
-      return {
-        ok: false,
-        error: 'Failed to create user account',
-      };
+      throw new InternalServerErrorException('Failed to create staff account');
     }
 
     return {
