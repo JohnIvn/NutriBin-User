@@ -5,10 +5,11 @@ import { UserAuthController } from './controllers/user/user-auth.controller';
 import { AppService } from './service/app.service';
 import { DatabaseService } from './service/database/database.service';
 import { UserAuthService } from './service/auth/user-auth.service';
+import { NodemailerService } from './service/email/nodemailer.service';
 
 @Module({
   imports: [],
   controllers: [AppController, UserAuthController],
-  providers: [AppService, DatabaseService, UserAuthService],
+  providers: [AppService, DatabaseService, UserAuthService, NodemailerService],
 })
 export class AppModule {}

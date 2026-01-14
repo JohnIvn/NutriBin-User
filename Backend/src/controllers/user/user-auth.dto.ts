@@ -13,3 +13,7 @@ export type UserSignInDto = {
   email: string;
   password: string;
 };
+
+export type GoogleSignInDto = {
+  credential: string;
+};

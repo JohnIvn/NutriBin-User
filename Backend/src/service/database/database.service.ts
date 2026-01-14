@@ -9,6 +9,7 @@ import { createCameraLogsTable } from './models/camera-logs';
 import { createFertilizerAnalyticsTable } from './models/fertilizer-analytics.model';
 import { createMachinesTable } from './models/machines.model';
 import { createModuleAnalyticsTable } from './models/module-analytics.model';
+import { createAuthenticationTable } from './models/authentication';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ export class DatabaseService implements OnModuleInit {
     await createFertilizerAnalyticsTable(this.client);
     await createMachinesTable(this.client);
     await createModuleAnalyticsTable(this.client);
+    await createAuthenticationTable(this.client);
 
     console.log(chalk.bgGreen.black('[SUPABASE] All tables are ready!'));
   }

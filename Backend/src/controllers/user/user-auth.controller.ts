@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
 import { UserAuthService } from '../../service/auth/user-auth.service';
-import type { UserSignInDto, UserSignUpDto } from './user-auth.dto';
+import type { UserSignInDto, UserSignUpDto, GoogleSignInDto } from './user-auth.dto';
 
 @Controller('user')
 export class UserAuthController {
@@ -23,5 +23,23 @@ export class UserAuthController {
     }
 
     return this.userAuthService.signIn(body);
+  }
+
+  @Post('google-signin')
+  async googleSignIn(@Body() body: GoogleSignInDto) {
+    if (!body || !body.credential) {
+      throw new BadRequestException('Google credential is required');
+    }
+
+    return this.userAuthService.googleSignIn(body.credential);
+  }
+
+  @Post('google-signup')
+  async googleSignUp(@Body() body: GoogleSignInDto) {
+    if (!body || !body.credential) {
+      throw new BadRequestException('Google credential is required');
+    }
+
+    return this.userAuthService.googleSignUp(body.credential);
   }
 }
