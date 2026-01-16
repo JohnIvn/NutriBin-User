@@ -10,7 +10,6 @@ async function Requests({
   params,
   data,
   auth,
-  credentials,
 }) {
   try {
     const response = await api.request({
@@ -19,7 +18,6 @@ async function Requests({
       params: params || undefined,
       data: data || undefined,
       auth: auth || undefined,
-      withCredentials: credentials,
     });
 
     return response;

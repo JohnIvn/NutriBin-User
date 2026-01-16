@@ -4,7 +4,7 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
+    FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -59,11 +59,12 @@ function Account() {
     },
   });
 
+  console.log(user.customer_id);
+
   useEffect(() => {
-    const userId = user?.user_id;
+    const userId = user?.customer_id;
     if (userId) {
       fetchProfile();
-      fetchMFASettings();
     } else {
       setLoading(false);
     }
@@ -86,70 +87,22 @@ function Account() {
       });
 
       if (response.data.ok) {
-        const staff = response.data.staff;
+        const user = response.data.user;
         form.reset({
-          firstname: staff.first_name || "",
-          lastname: staff.last_name || "",
-          address: staff.address || "",
-          age: staff.age || 0,
-          number: staff.contact_number || "",
+          firstname: user.first_name || "",
+          lastname: user.last_name || "",
+          address: user.address || "",
+          age: user.age || 0,
+          number: user.contact_number || "",
           gender: "male", // Default since gender is not in the backend
         });
-        setEmailShown(staff.email || user?.email || "");
+        setEmailShown(user.email || user?.email || "");
       }
     } catch (error) {
       toast.error("Failed to load profile data");
       console.error(error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMFASettings = async () => {
-    const userId = user?.user_id;
-    if (!userId) return;
-
-    try {
-      const response = await Requests({
-        url: `/authentication/${userId}/mfa`,
-        method: "GET",
-        credentials: true,
-      });
-
-      if (response.data.ok) {
-        setMfaType(response.data.mfaType || "N/A");
-      }
-    } catch (error) {
-      console.error("Failed to load MFA settings", error);
-    }
-  };
-
-  const handleMFAChange = async (newMfaType) => {
-    const userId = user?.staff_id || user?.admin_id;
-    if (!userId) return;
-
-    try {
-      setMfaLoading(true);
-      const response = await Requests({
-        url: `/authentication/${userId}/mfa`,
-        method: "PATCH",
-        data: { mfaType: newMfaType },
-        credentials: true,
-      });
-
-      if (response.data.ok) {
-        setMfaType(newMfaType);
-        toast.success(
-          `MFA set to ${newMfaType === "N/A" ? "Disabled" : "Email"}`
-        );
-      }
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to update MFA settings"
-      );
-      console.error(error);
-    } finally {
-      setMfaLoading(false);
     }
   };
 
@@ -172,7 +125,7 @@ function Account() {
   };
 
   const handleSubmission = async () => {
-    const userId = user?.staff_id || user?.admin_id;
+    const userId = user?.customer_id;
     try {
       setSaveLoading(true);
       const values = form.getValues();

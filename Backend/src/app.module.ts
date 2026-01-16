@@ -6,10 +6,11 @@ import { AppService } from './service/app.service';
 import { DatabaseService } from './service/database/database.service';
 import { UserAuthService } from './service/auth/user-auth.service';
 import { NodemailerService } from './service/email/nodemailer.service';
+import { SettingsController } from './controllers/settings/settings.controller';
 
 @Module({
   imports: [],
-  controllers: [AppController, UserAuthController],
+  controllers: [AppController, UserAuthController, SettingsController],
   providers: [AppService, DatabaseService, UserAuthService, NodemailerService],
 })
 export class AppModule {}
