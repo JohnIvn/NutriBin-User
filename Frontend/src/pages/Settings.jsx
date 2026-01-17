@@ -38,7 +38,7 @@ function Account() {
   const [resetSent, setResetSent] = useState(false);
   const [emailShown, setEmailShown] = useState("");
   const [resetCode, setResetCode] = useState("");
-  const [codeError, setCodeError] = useState("");
+  const [_codeError, setCodeError] = useState("");
   const [codeFormatValid, setCodeFormatValid] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -618,7 +618,7 @@ function Account() {
                     } else {
                       toast.error(res.data?.message || "Failed");
                     }
-                  } catch (error) {
+                  } catch {
                     toast.error("Error sending code");
                   } finally {
                     setSendingReset(false);
