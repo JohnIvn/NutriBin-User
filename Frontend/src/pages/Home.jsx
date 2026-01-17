@@ -25,7 +25,7 @@ export default function Home() {
             waste into nutrient-
           </h3>
         </div>
-        <Button className="bg-linear-to-r from-[#FFA630] to-[#F17720] hover:bg-secondary-foreground w-80 h-15 cursor-pointer text-xl rounded-xl">
+        <Button className="bg-[#4F6F52] hover:bg-[#739072] font-bold w-80 h-15 cursor-pointer text-xl rounded-xl">
           Join Now
         </Button>
       </div>

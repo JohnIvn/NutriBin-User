@@ -1,108 +1,148 @@
-import { Link, useNavigate } from "react-router-dom";
-
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/Dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
-import { useUser } from "@/contexts/UserContext";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function Header() {
-  const { user, loading, logout } = useUser();
-  const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  // detect scroll to add shadow/glass effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-  };
+  const navLinksLeft = [
+    { name: "Home", href: "/" },
+    { name: "Guide", href: "/guide" },
+  ];
+
+  const navLinksRight = [
+    { name: "Login", href: "/login" },
+    { name: "Register", href: "/register", isButton: true },
+  ];
 
   return (
     <>
-      {loading ? (
-        <header className="flex w-full justify-between items-center h-12 bg-orange-500 text-white px-2">
-          <h1>Loading...</h1>
-        </header>
-      ) : (
-        <header className="flex w-full justify-between items-center h-15 bg-orange-500 text-white px-2">
-          <Link to={"/"} className="text-center h-auto">
-            <img
-              src="/NutriBin_Logo.svg"
-              alt="NutriBin Logo"
-              className="h-8 px-4"
+      <header
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-[#ECE3CE]/90 backdrop-blur-md shadow-sm py-3"
+            : "bg-transparent py-5"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          
+          {/* left links */}
+          <nav className="hidden md:flex items-center gap-8 flex-1 justify-end pr-12">
+            {navLinksLeft.map((link) => (
+              <NavLink key={link.name} href={link.href}>
+                {link.name}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* or logo???? */}
+          <div className="flex-shrink-0 relative z-10">
+            <a href="/" className="group block text-center">
+
+              
+              {/* NutriBin */}
+              <h1 className="text-2xl font-black text-[#3A4D39] tracking-tighter border-2 border-[#3A4D39] px-3 py-1 rounded-lg group-hover:bg-[#3A4D39] group-hover:text-[#ECE3CE] transition-all duration-300">
+                NutriBin
+              </h1>
+            </a>
+          </div>
+
+          {/* right links */}
+          <nav className="hidden md:flex items-center gap-8 flex-1 justify-start pl-12">
+            {navLinksRight.map((link) =>
+              link.isButton ? (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className="px-5 py-2 rounded-full bg-[#3A4D39] text-[#ECE3CE] font-bold text-sm hover:bg-[#4F6F52] hover:scale-105 transition-all duration-300 shadow-md shadow-[#3A4D39]/20"
+                >
+                  {link.name}
+                </a>
+              ) : (
+                <NavLink key={link.name} href={link.href}>
+                  {link.name}
+                </NavLink>
+              )
+            )}
+          </nav>
+
+          {/* mobile menu buttons */}
+          <button
+            className="md:hidden text-[#3A4D39] p-2"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Bars3Icon className="w-8 h-8" />
+          </button>
+        </div>
+      </header>
+
+      {/* mobile drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] md:hidden"
             />
-          </Link>
-          {user ? (
-            <nav className="flex gap-2">
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/Dashboard"}>Dashboard</Link>
-              </Button>
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/cameras"}>Cameras</Link>
-              </Button>
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/fertilizer"}>Fertilizer</Link>
-              </Button>
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/Modules"}>Modules</Link>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    className={
-                      "bg-transparent border-none outline-none cursor-pointer"
-                    }
-                    variant="outline"
+            
+            {/* slide-in menu */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-[80%] max-w-sm bg-[#ECE3CE] shadow-2xl z-[70] p-8 md:hidden flex flex-col"
+            >
+              <div className="flex justify-end mb-8">
+                <button onClick={() => setMobileMenuOpen(false)}>
+                  <XMarkIcon className="w-8 h-8 text-[#3A4D39]" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-6 items-center text-center">
+                {[...navLinksLeft, ...navLinksRight].map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-xl font-bold ${
+                      link.isButton
+                        ? "px-8 py-3 bg-[#3A4D39] text-[#ECE3CE] rounded-full mt-4 w-full shadow-lg"
+                        : "text-[#3A4D39] hover:text-[#4F6F52]"
+                    }`}
                   >
-                    {user.first_name} {user.last_name}
-                    <Avatar className={"m-1"}>
-                      <AvatarFallback>
-                        {getInitials(user.first_name, user.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="start">
-                  <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link to={"/settings"}>Settings</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </nav>
-          ) : (
-            <nav className="flex w-auto px-2 gap-4">
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/home"}>Home</Link>
-              </Button>
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/guide"}>Guide</Link>
-              </Button>
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/login"}>Login</Link>
-              </Button>
-              <Button asChild className={"bg-transparent hover:bg-amber-700"}>
-                <Link to={"/register"}>Register</Link>
-              </Button>
-            </nav>
-          )}
-        </header>
-      )}
+                    {link.name}
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
+
+// helper component for desktop links with hover line animation
+const NavLink = ({ href, children }) => {
+  return (
+    <a href={href} className="relative group text-[#3A4D39] font-bold text-sm uppercase tracking-wider">
+      {children}
+      <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#3A4D39] transition-all duration-300 group-hover:w-full" />
+    </a>
+  );
+};
