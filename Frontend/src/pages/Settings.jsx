@@ -113,7 +113,6 @@ function Account() {
       const response = await Requests({
         url: `/authentication/${userId}/mfa`,
         method: "GET",
-        credentials: true,
       });
 
       if (response.data.ok) {
@@ -134,7 +133,6 @@ function Account() {
         url: `/authentication/${userId}/mfa`,
         method: "PATCH",
         data: { mfaType: newMfaType },
-        credentials: true,
       });
 
       if (response.data.ok) {
@@ -187,7 +185,6 @@ function Account() {
           age: values.age,
           contact: values.number,
         },
-        credentials: true,
       });
 
       if (response.data.ok) {
@@ -212,7 +209,6 @@ function Account() {
       const response = await Requests({
         url: `/settings/${userId}/close`,
         method: "PATCH",
-        credentials: true,
       });
 
       if (response.data?.ok) {
