@@ -77,7 +77,7 @@ export default function Socials() {
       </motion.div>
 
       {/* left side */}
-      <div className="flex flex-col justify-center items-center lg:items-start w-full lg:w-[55%] relative z-10 p-8 lg:pl-20 lg:pr-8 min-h-screen">
+      <div className="flex flex-col justify-center items-center lg:items-start w-full lg:w-[55%] relative z-10 p-8 lg:pl-20 lg:pr-8 min-h-screen pt-32 lg:pt-25">
         {/* header */}
         <motion.div
           className="mb-10 lg:mb-14 w-full max-w-lg text-center lg:text-left"

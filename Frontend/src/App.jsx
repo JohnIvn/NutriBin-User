@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import GuestLayout from "@/layouts/GuestLayout";
 import MainLayout from "./layouts/MainLayout";
 import { useUser } from "@/contexts/UserContext";
+import ScrollToTop from "@/utils/ScrollToTop"; 
 
 export default function App() {
   const { user, loading } = useUser();
@@ -16,6 +17,9 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>{user ? <MainLayout /> : <GuestLayout />}</BrowserRouter>
+    <BrowserRouter>
+      <ScrollToTop />
+      {user ? <MainLayout /> : <GuestLayout />}
+    </BrowserRouter>
   );
 }

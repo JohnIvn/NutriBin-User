@@ -93,7 +93,7 @@ const StudyItem = ({ title, link }) => (
 const Studies = () => {
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans">
-      <div className="w-full max-w-7xl mx-auto px-6 py-16">
+      <div className="w-full max-w-7xl mx-auto px-6 py-16 pt-32">
         
         {/* header */}
         <motion.div 

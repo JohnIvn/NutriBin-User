@@ -75,7 +75,7 @@ const FaqItem = ({ question, answer }) => {
 
 export default function Faqs() {
   return (
-    <div className="w-full min-h-screen bg-[#ECE3CE]/20 font-sans pt-20 pb-16">
+    <div className="w-full min-h-screen bg-[#ECE3CE]/20 font-sans pt-32 pb-16">
       <div className="w-full max-w-4xl mx-auto px-6">
         
         {/* header */}

@@ -18,7 +18,7 @@ export default function About() {
     <div className="min-h-screen pb-12 font-sans text-[#3A4D39] overflow-x-hidden">
       
       {/* header */}
-      <header className="pt-20 pb-32 px-10 text-center text-white relative">
+      <header className="pt-30 pb-32 px-10 text-center text-white relative">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex justify-center mb-6">
             <div className="bg-[#3A4D39]/10 p-4 rounded-full backdrop-blur-sm shadow-inner border border-white/20">
