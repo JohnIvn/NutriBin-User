@@ -13,14 +13,12 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userAccount } from "@/schema/userAccount";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 import { useUser } from "@/contexts/UserContext";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { Sprout, ArrowRight } from "lucide-react";
+import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export function Login() {
   const [showPass, setShowPass] = useState(false);
@@ -169,8 +167,29 @@ export function Login() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="text-[#3A4D39] font-semibold">Password</FormLabel>
+                        <FormLabel className="text-[#3A4D39] font-semibold">Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPass ? "text" : "password"}
+                              placeholder="••••••••"
+                              className="h-12 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] placeholder:text-[#3A4D39]/40 rounded-xl pr-10"
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPass(!showPass)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#4F6F52] hover:text-[#3A4D39] transition-colors cursor-pointer"
+                            >
+                              {showPass ? (
+                                <EyeOff className="w-5 h-5" />
+                              ) : (
+                                <Eye className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <div className="flex justify-start mt-2">
                           <Link 
                             to="/password-reset" 
                             className="text-xs font-bold text-[#4F6F52] hover:underline"
@@ -178,40 +197,20 @@ export function Login() {
                             Forgot password?
                           </Link>
                         </div>
-                        <FormControl>
-                          <Input
-                            type={showPass ? "text" : "password"}
-                            placeholder="••••••••"
-                            className="h-12 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] placeholder:text-[#3A4D39]/40 rounded-xl"
-                            {...field}
-                          />
-                        </FormControl>
                         <FormMessage className="text-red-500 text-xs" />
                       </FormItem>
                     )}
                   />
 
-                  {/* Show Password Toggle */}
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showPassword"
-                      onCheckedChange={(checked) => setShowPass(checked)}
-                      className="border-[#3A4D39]/40 data-[state=checked]:bg-[#3A4D39] data-[state=checked]:text-[#ECE3CE] rounded"
-                    />
-                    <Label htmlFor="showPassword" className="text-sm text-[#4F6F52] cursor-pointer font-medium">
-                      Show Password
-                    </Label>
-                  </div>
-
-                  {/* Submit Button */}
+                  {/* submit gutton */}
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:-translate-y-0.5"
+                    className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
                   >
                     Sign In <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
 
-                  {/* Feedback Messages */}
+                  {/* feedback messages */}
                   {loginError && (
                     <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center font-medium border border-red-100 flex items-center justify-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-600"/> {loginError}
@@ -223,7 +222,7 @@ export function Login() {
                     </div>
                   )}
 
-                  {/* Divider */}
+                  {/* divider */}
                   <div className="relative py-2">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t border-[#3A4D39]/10" />
@@ -233,7 +232,7 @@ export function Login() {
                     </div>
                   </div>
 
-                  {/* Google Button */}
+                  {/* google */}
                   <div className="flex justify-center">
                     <div className="w-full [&_iframe]:mx-auto">
                       <GoogleLogin
@@ -251,7 +250,7 @@ export function Login() {
                 </form>
               </Form>
 
-              {/* Signup Link */}
+              {/* signup link */}
               <div className="text-center text-sm text-[#739072]">
                 Don't have an account?{" "}
                 <Link to="/register" className="font-bold text-[#3A4D39] hover:underline hover:text-[#4F6F52]">

@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -9,7 +8,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { registration } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
@@ -18,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useUser } from "@/contexts/UserContext";
-import { Sprout, ArrowRight } from "lucide-react";
+import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -97,23 +95,23 @@ export default function Register() {
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      {/* Main Container - Matches Login styling with padding adjustments */}
+      {/* main container */}
       <div className="min-h-screen w-full bg-[#ECE3CE]/30 font-sans flex items-center justify-center px-4 pt-32 pb-12">
         
-        {/* Floating Card */}
+        {/* floating card */}
         <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-[600px] border border-[#3A4D39]/5">
           
-          {/* --- Left Column: Brand Visuals --- */}
+          {/* left column */}
           <div className="hidden lg:flex w-1/2 bg-[#3A4D39] relative flex-col justify-between p-12 text-[#ECE3CE]">
-            {/* Pattern */}
+            {/* pattern */}
             <div className="absolute inset-0 opacity-10 pointer-events-none" 
                  style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #ECE3CE 1px, transparent 0)', backgroundSize: '32px 32px' }}>
             </div>
             
-            {/* Orb */}
+            {/* orb */}
             <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#4F6F52] rounded-full blur-[100px] opacity-60"></div>
 
-            {/* Logo */}
+            {/* logo */}
             <div className="relative z-10 flex items-center gap-3">
               <div className="p-2 bg-[#ECE3CE] rounded-lg text-[#3A4D39]">
                 <Sprout className="w-6 h-6" />
@@ -121,7 +119,7 @@ export default function Register() {
               <span className="text-2xl font-bold tracking-tight">NutriBin</span>
             </div>
 
-            {/* Content */}
+            {/* content */}
             <div className="relative z-10 max-w-md space-y-6 my-auto">
               <h1 className="text-5xl font-black leading-tight">
                 Join the <br/>
@@ -132,17 +130,17 @@ export default function Register() {
               </p>
             </div>
 
-            {/* Footer */}
+            {/* footer */}
             <div className="relative z-10 text-xs text-[#ECE3CE]/50 font-medium tracking-wide uppercase">
               Secure Registration Portal
             </div>
           </div>
 
-          {/* --- Right Column: Register Form --- */}
+          {/* right column */}
           <div className="flex-1 flex items-center justify-center p-8 md:p-12 bg-white">
             <div className="w-full max-w-[420px] space-y-6">
               
-              {/* Header */}
+              {/* header */}
               <div className="text-center space-y-2 mb-6">
                 <h2 className="text-3xl font-bold text-[#3A4D39]">Create Account</h2>
                 <div className="text-[#4F6F52] text-sm">
@@ -156,7 +154,7 @@ export default function Register() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   
-                  {/* Name Row */}
+                  {/* name row */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -186,7 +184,7 @@ export default function Register() {
                     />
                   </div>
 
-                  {/* Email */}
+                  {/* email */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -201,7 +199,7 @@ export default function Register() {
                     )}
                   />
 
-                  {/* Password Row */}
+                  {/* password row */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -210,9 +208,24 @@ export default function Register() {
                         <FormItem>
                           <FormLabel className="text-[#3A4D39] font-semibold">Password</FormLabel>
                           <FormControl>
-                            <Input type={showPassword ? "text" : "password"} className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                            <div className="relative">
+                              <Input type={showPassword ? "text" : "password"} className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl pr-10" {...field} />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#4F6F52] hover:text-[#3A4D39] transition-colors cursor-pointer"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="w-5 h-5" />
+                                ) : (
+                                  <Eye className="w-5 h-5" />
+                                )}
+                              </button>
+                            </div>
                           </FormControl>
-                          <FormMessage className="text-xs text-red-500" />
+                          <div className="h-5">
+                            <FormMessage className="text-xs text-red-500" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -223,25 +236,30 @@ export default function Register() {
                         <FormItem>
                           <FormLabel className="text-[#3A4D39] font-semibold">Confirm</FormLabel>
                           <FormControl>
-                            <Input type={showPassword ? "text" : "password"} className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                            <div className="relative">
+                              <Input type={showPassword ? "text" : "password"} className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl pr-10" {...field} />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#4F6F52] hover:text-[#3A4D39] transition-colors cursor-pointer"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="w-5 h-5" />
+                                ) : (
+                                  <Eye className="w-5 h-5" />
+                                )}
+                              </button>
+                            </div>
                           </FormControl>
-                          <FormMessage className="text-xs text-red-500" />
+                          <div className="h-5">
+                            <FormMessage className="text-xs text-red-500" />
+                          </div>
                         </FormItem>
                       )}
                     />
                   </div>
 
-                  {/* Show Password */}
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showPassword"
-                      onCheckedChange={(checked) => setShowPassword(Boolean(checked))}
-                      className="border-[#3A4D39]/40 data-[state=checked]:bg-[#3A4D39] data-[state=checked]:text-[#ECE3CE] rounded"
-                    />
-                    <Label htmlFor="showPassword" className="text-sm text-[#4F6F52] cursor-pointer font-medium">Show passwords</Label>
-                  </div>
-
-                  {/* Password Hints */}
+                  {/* password hints */}
                   <div className="bg-[#ECE3CE]/20 p-3 rounded-lg border border-[#3A4D39]/10">
                     <p className="text-xs font-bold text-[#3A4D39] mb-1">Password Requirements:</p>
                     <ul className="text-[10px] text-[#4F6F52] space-y-0.5 list-disc pl-3">
@@ -251,7 +269,7 @@ export default function Register() {
                     </ul>
                   </div>
 
-                  {/* Feedback */}
+                  {/* feedback */}
                   {registerError && (
                     <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center font-medium border border-red-100 flex items-center justify-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-600"/> {registerError}
@@ -263,12 +281,12 @@ export default function Register() {
                     </div>
                   )}
 
-                  {/* Submit */}
+                  {/* submit */}
                   <Button type="submit" className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:-translate-y-0.5 mt-2">
                     Create Account <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
 
-                  {/* Divider */}
+                  {/* divider */}
                   <div className="relative py-2">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t border-[#3A4D39]/10" />
@@ -278,7 +296,7 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Google */}
+                  {/* google */}
                   <div className="flex justify-center">
                     <div className="w-full [&_iframe]:mx-auto">
                       <GoogleLogin
