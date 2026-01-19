@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/Button";
-import { Checkbox } from "@/components/ui/Checkbox";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -7,9 +7,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/Form";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { registration } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useUser } from "@/contexts/UserContext";
+import { Sprout, ArrowRight } from "lucide-react";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -71,16 +72,16 @@ export default function Register() {
 
   async function handleGoogleSignup(credential) {
     try {
-      setRegisterError(null)
+      setRegisterError(null);
       
       const response = await axios.post(
         "http://localhost:3000/user/google-signup",
         { credential }
-      )
+      );
 
       if (!response.data.ok) {
-        setRegisterError(response.data.error || "Google Signup Failed")
-        return
+        setRegisterError(response.data.error || "Google Signup Failed");
+        return;
       }
 
       localStorage.setItem("token", response.data.token);
@@ -96,195 +97,209 @@ export default function Register() {
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <section className="flex w-full min-h-screen justify-between">
-        <div className="hidden md:flex justify-center items-center relative">
-          <img src="/Login.png" alt="Background" className="h-full w-lg" />
-          <img
-            src="/Logo.svg"
-            alt="Logo"
-            className="absolute h-128 hidden lg:flex -right-40"
-          />
-        </div>
+      {/* Main Container - Matches Login styling with padding adjustments */}
+      <div className="min-h-screen w-full bg-[#ECE3CE]/30 font-sans flex items-center justify-center px-4 pt-32 pb-12">
+        
+        {/* Floating Card */}
+        <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-[600px] border border-[#3A4D39]/5">
+          
+          {/* --- Left Column: Brand Visuals --- */}
+          <div className="hidden lg:flex w-1/2 bg-[#3A4D39] relative flex-col justify-between p-12 text-[#ECE3CE]">
+            {/* Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                 style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #ECE3CE 1px, transparent 0)', backgroundSize: '32px 32px' }}>
+            </div>
+            
+            {/* Orb */}
+            <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#4F6F52] rounded-full blur-[100px] opacity-60"></div>
 
-        <div className="flex flex-col items-center w-full md:w-2/3 pt-12 pb-4">
-          <Form {...form}>
-            <h1 className="text-5xl font-semibold mb-3">Create an account</h1>
-
-            <p className="text-base mb-8">
-              Already have an account?{" "}
-              <Link to="/login" className="text-orange-700 font-medium">
-                Sign in
-              </Link>
-            </p>
-
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6 w-96 lg:w-md"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        First Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="John"
-                          className="h-12 text-base px-4 border border-secondary-foreground"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Last Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Doe"
-                          className="h-12 text-base px-4 border border-secondary-foreground"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* Logo */}
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="p-2 bg-[#ECE3CE] rounded-lg text-[#3A4D39]">
+                <Sprout className="w-6 h-6" />
               </div>
+              <span className="text-2xl font-bold tracking-tight">NutriBin</span>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base font-medium">
-                      Email
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="johndoe@example.com"
-                        className="h-12 text-base px-4 border border-secondary-foreground"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Content */}
+            <div className="relative z-10 max-w-md space-y-6 my-auto">
+              <h1 className="text-5xl font-black leading-tight">
+                Join the <br/>
+                <span className="text-[#739072]">Revolution.</span>
+              </h1>
+              <p className="text-lg text-[#ECE3CE]/80 font-medium leading-relaxed">
+                Create an account to start monitoring your compost, tracking nutrients, and contributing to a greener future.
+              </p>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          className="h-12 text-base px-4 border border-secondary-foreground"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* Footer */}
+            <div className="relative z-10 text-xs text-[#ECE3CE]/50 font-medium tracking-wide uppercase">
+              Secure Registration Portal
+            </div>
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Confirm Password
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          className="h-12 text-base px-4 border border-secondary-foreground"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="showPassword"
-                  onCheckedChange={(checked) =>
-                    setShowPassword(Boolean(checked))
-                  }
-                  className="border-secondary-foreground data-[state=checked]:bg-secondary data-[state=checked :text-secondary-foreground  data-[state=checked :border-secondary border-secondary"
-                />
-                <Label htmlFor="showPassword" className="text-base">
-                  Show password
-                </Label>
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium mb-1">Your password must have:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>At least 8 characters</li>
-                  <li>Upper & lowercase letters</li>
-                  <li>One number & one special character</li>
-                </ul>
-              </div>
-
-              {registerError && (
-                <div className="w-full p-3 bg-red-50 border border-red-200 rounded text-red-700 text-base">
-                  {registerError}
-                </div>
-              )}
-
-              {registerMessage && (
-                <div className="w-full p-3 bg-green-50 border border-green-200 rounded text-green-700 text-base">
-                  {registerMessage}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-medium bg-secondary hover:bg-secondary-foreground"
-              >
-                Register
-              </Button>
-
-              <div className="flex items-center justify-between">
-                <hr className="w-1/3 border-secondary" />
-                <span className="font-medium">Or</span>
-                <hr className="w-1/3 border-secondary" />
-              </div>
-
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={(res) => handleGoogleSignup(res.credential)}
-                  onError={() =>
-                    setRegisterError("Google authentication failed")
-                  }
-                />
-              </div>
+          {/* --- Right Column: Register Form --- */}
+          <div className="flex-1 flex items-center justify-center p-8 md:p-12 bg-white">
+            <div className="w-full max-w-[420px] space-y-6">
               
-            </form>
-          </Form>
+              {/* Header */}
+              <div className="text-center space-y-2 mb-6">
+                <h2 className="text-3xl font-bold text-[#3A4D39]">Create Account</h2>
+                <div className="text-[#4F6F52] text-sm">
+                  Already have an account?{" "}
+                  <Link to="/login" className="font-bold text-[#3A4D39] hover:underline hover:text-[#4F6F52]">
+                    Sign in here
+                  </Link>
+                </div>
+              </div>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  
+                  {/* Name Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#3A4D39] font-semibold">First Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John" className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                          </FormControl>
+                          <FormMessage className="text-xs text-red-500" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#3A4D39] font-semibold">Last Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Doe" className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                          </FormControl>
+                          <FormMessage className="text-xs text-red-500" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[#3A4D39] font-semibold">Email Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="johndoe@example.com" className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                        </FormControl>
+                        <FormMessage className="text-xs text-red-500" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Password Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#3A4D39] font-semibold">Password</FormLabel>
+                          <FormControl>
+                            <Input type={showPassword ? "text" : "password"} className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                          </FormControl>
+                          <FormMessage className="text-xs text-red-500" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#3A4D39] font-semibold">Confirm</FormLabel>
+                          <FormControl>
+                            <Input type={showPassword ? "text" : "password"} className="h-11 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] rounded-xl" {...field} />
+                          </FormControl>
+                          <FormMessage className="text-xs text-red-500" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Show Password */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showPassword"
+                      onCheckedChange={(checked) => setShowPassword(Boolean(checked))}
+                      className="border-[#3A4D39]/40 data-[state=checked]:bg-[#3A4D39] data-[state=checked]:text-[#ECE3CE] rounded"
+                    />
+                    <Label htmlFor="showPassword" className="text-sm text-[#4F6F52] cursor-pointer font-medium">Show passwords</Label>
+                  </div>
+
+                  {/* Password Hints */}
+                  <div className="bg-[#ECE3CE]/20 p-3 rounded-lg border border-[#3A4D39]/10">
+                    <p className="text-xs font-bold text-[#3A4D39] mb-1">Password Requirements:</p>
+                    <ul className="text-[10px] text-[#4F6F52] space-y-0.5 list-disc pl-3">
+                      <li>At least 8 characters long</li>
+                      <li>Includes uppercase & lowercase letters</li>
+                      <li>Contains at least one number & special character</li>
+                    </ul>
+                  </div>
+
+                  {/* Feedback */}
+                  {registerError && (
+                    <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center font-medium border border-red-100 flex items-center justify-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-600"/> {registerError}
+                    </div>
+                  )}
+                  {registerMessage && (
+                    <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm text-center font-medium border border-green-100 flex items-center justify-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-600"/> {registerMessage}
+                    </div>
+                  )}
+
+                  {/* Submit */}
+                  <Button type="submit" className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:-translate-y-0.5 mt-2">
+                    Create Account <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+
+                  {/* Divider */}
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-[#3A4D39]/10" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-[#739072] font-semibold">Or continue with</span>
+                    </div>
+                  </div>
+
+                  {/* Google */}
+                  <div className="flex justify-center">
+                    <div className="w-full [&_iframe]:mx-auto">
+                      <GoogleLogin
+                        width="100%"
+                        logo_alignment="center"
+                        shape="pill"
+                        theme="outline"
+                        size="large"
+                        text="continue_with"
+                        onSuccess={(res) => handleGoogleSignup(res.credential)}
+                        onError={() => setRegisterError("Google authentication failed")}
+                      />
+                    </div>
+                  </div>
+
+                </form>
+              </Form>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
     </GoogleOAuthProvider>
   );
 }

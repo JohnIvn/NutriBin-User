@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useLocation } from "react-router-dom"; // 1. Import useLocation
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const location = useLocation();
+
+  const isHome = location.pathname === "/";
+  const shouldShowSolid = isScrolled || !isHome;
 
   // detect scroll to add shadow/glass effect
   useEffect(() => {
@@ -29,9 +35,9 @@ export default function Header() {
     <>
       <header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          isScrolled
-            ? "bg-[#ECE3CE]/90 backdrop-blur-md shadow-sm py-3"
-            : "bg-transparent py-5"
+          shouldShowSolid
+            ? "bg-[#ECE3CE]/90 backdrop-blur-md shadow-sm py-3" // Solid/Glass style
+            : "bg-transparent py-5" // Transparent style (Only on Home top)
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
@@ -45,11 +51,9 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* or logo???? */}
+          {/* logo */}
           <div className="flex-shrink-0 relative z-10">
             <a href="/" className="group block text-center">
-
-              
               {/* NutriBin */}
               <h1 className="text-2xl font-black text-[#3A4D39] tracking-tighter border-2 border-[#3A4D39] px-3 py-1 rounded-lg group-hover:bg-[#3A4D39] group-hover:text-[#ECE3CE] transition-all duration-300">
                 NutriBin
