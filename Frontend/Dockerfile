@@ -8,7 +8,6 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy project files
 COPY vite.config.js ./
-COPY tailwind.config.js ./
 COPY jsconfig.json ./
 COPY index.html ./
 COPY src ./src
