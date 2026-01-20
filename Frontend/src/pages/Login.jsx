@@ -5,9 +5,9 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components/ui/form";
+} from "@/components/ui/Form";
 
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 import { useForm } from "react-hook-form";

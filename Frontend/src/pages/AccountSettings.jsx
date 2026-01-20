@@ -6,9 +6,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from "@/components/ui/Form";
+import { Input } from "@/components/ui/Input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/Radio-Group";
 import { userAccount } from "@/schema/userAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState, useEffect } from "react";
@@ -24,7 +24,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/Dialog";
 
 function Account() {
   const [editMode, setEditMode] = useState(false);
