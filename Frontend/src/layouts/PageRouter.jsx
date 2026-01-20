@@ -12,6 +12,7 @@ import Cameras from "@/pages/Cameras";
 import Modules from "@/pages/Modules";
 import Dashboard from "@/pages/Dashboard";
 import Fertilizer from "@/pages/Fertilizer";
+import Logs from "@/pages/Logs";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { VerifyMFA } from "@/pages/VerifyMFA";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -77,6 +78,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <Modules />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/logs"
+        element={
+          <ProtectedRoute>
+            <Logs />
           </ProtectedRoute>
         }
       />
