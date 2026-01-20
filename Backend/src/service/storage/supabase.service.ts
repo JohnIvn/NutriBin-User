@@ -83,7 +83,7 @@ class SupabaseService {
       return data;
     } catch (err) {
       // some Supabase clients may return different error shapes
-      const msg = String((err as any)?.message || err);
+      const msg = String(err?.message || err);
       if (msg.toLowerCase().includes('already exists')) return null;
       throw err;
     }

@@ -1,6 +1,10 @@
 import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
 import { UserAuthService } from '../../service/auth/user-auth.service';
-import type { UserSignInDto, UserSignUpDto, GoogleSignInDto } from './user-auth.dto';
+import type {
+  UserSignInDto,
+  UserSignUpDto,
+  GoogleSignInDto,
+} from './user-auth.dto';
 
 @Controller('user')
 export class UserAuthController {

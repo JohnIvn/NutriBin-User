@@ -60,7 +60,7 @@ export class FertilizerAnalyticsController {
 
     try {
       const where: string[] = ['fa.customer_id = $1'];
-      const values: any[] = [customerId];
+      const values: string[] = [customerId];
 
       // optional, but kept for flexibility
       if (machineId) {
@@ -86,7 +86,7 @@ export class FertilizerAnalyticsController {
           fa.date_created
         FROM fertilizer_analytics fa
         WHERE ${where.join(' AND ')}
-        ORDER BY fa.date_created ASC
+        ORDER BY fa.date_created DESC
         `,
         values,
       );

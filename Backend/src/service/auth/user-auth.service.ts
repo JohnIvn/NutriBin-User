@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 
 import { DatabaseService } from '../database/database.service';
@@ -17,6 +18,17 @@ import type {
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+function generateRandomPassword(length = 12): string {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*()-_=+';
+  const buf = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += chars[buf[i] % chars.length];
+  }
+  return out;
 }
 
 type UserPublicRow = {
@@ -134,17 +146,10 @@ export class UserAuthService {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const created = await client.query<UserPublicRow>(
-      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'inactive')
        RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
-      [
-        firstname,
-        lastname,
-        contactNumber,
-        address,
-        email,
-        passwordHash,
-      ],
+      [firstname, lastname, contactNumber, address, email, passwordHash],
     );
 
     const user = created.rows[0];
@@ -444,6 +449,10 @@ export class UserAuthService {
         };
       }
 
+      // Generate a temporary password, hash it, and store the hash in DB
+      const tempPassword = generateRandomPassword(12);
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+
       // Create new user account
       const newUser = await client.query<UserPublicRow>(
         `INSERT INTO user_customer (first_name, last_name, email, password)
@@ -453,13 +462,25 @@ export class UserAuthService {
           firstName,
           lastName,
           email,
-          '', // Empty password for Google sign-in users
+          passwordHash, // Empty password for Google sign-in users
         ],
       );
 
       const user = newUser.rows[0];
       if (!user) {
         throw new InternalServerErrorException('Failed to create user account');
+      }
+
+      // Email the temporary password to the new staff member
+      try {
+        await this.mailer.sendCustomerWelcomeWithPassword(
+          email,
+          firstName || '',
+          tempPassword,
+        );
+      } catch (mailErr) {
+        console.error('Failed to send welcome email with password:', mailErr);
+        // don't block account creation if email sending fails; just log
       }
 
       const safeUser = {

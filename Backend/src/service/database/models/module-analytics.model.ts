@@ -26,8 +26,10 @@ export async function createModuleAnalyticsTable(client: Client) {
       power_supply boolean null default true,
       servo_motor boolean null default true,
       date_created timestamp with time zone null default now(),
+      machine_id uuid null,
       constraint module_analytics_pkey primary key (module_analytics_id),
-      constraint module_analytics_user_id_fkey foreign KEY (customer_id) references user_customer (customer_id) on delete set null
+      constraint module_analytics_customer_id_fkey foreign KEY (customer_id) references user_customer (customer_id) on delete set null,
+      constraint module_analytics_machine_id_fkey foreign KEY (machine_id) references machines (machine_id)
     );
   `);
 }

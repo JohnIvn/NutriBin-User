@@ -18,8 +18,6 @@ type UserPublicRow = {
   customer_id: string;
   first_name: string;
   last_name: string;
-  birthday: string;
-  age: number;
   contact_number: string | null;
   address: string | null;
   email: string;
@@ -33,8 +31,6 @@ function mapUser(row: UserPublicRow) {
     customer_id: row.customer_id,
     first_name: row.first_name,
     last_name: row.last_name,
-    birthday: row.birthday,
-    age: row.age,
     contact_number: row.contact_number,
     address: row.address,
     email: row.email,
@@ -77,8 +73,6 @@ export class SettingsController {
         customer_id: string;
         first_name: string;
         last_name: string;
-        birthday: string | null;
-        age: number | null;
         contact_number: string | null;
         address: string | null;
         email: string;
@@ -86,7 +80,7 @@ export class SettingsController {
         last_updated: string;
         status: string;
       }>(
-        `SELECT customer_id, first_name, last_name, NULL as birthday, NULL as age, contact_number, address, email, date_created, last_updated, status
+        `SELECT customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status
          FROM user_customer
          WHERE customer_id = $1
          LIMIT 1`,
@@ -119,7 +113,6 @@ export class SettingsController {
       firstname?: string;
       lastname?: string;
       address?: string | null;
-      age?: number;
       contact?: string | null;
     },
   ) {
@@ -153,16 +146,6 @@ export class SettingsController {
         values.push(body.contact?.trim() || null);
       }
 
-      // Only update age for user (not admin)
-      if (body.age !== undefined) {
-        const parsedAge = Number(body.age);
-        if (Number.isNaN(parsedAge)) {
-          throw new BadRequestException('age must be a number');
-        }
-        updates.push(`age = $${updates.length + 1}`);
-        values.push(parsedAge);
-      }
-
       if (updates.length === 0) {
         throw new BadRequestException('No fields provided to update');
       }
@@ -174,8 +157,6 @@ export class SettingsController {
         customer_id: string;
         first_name: string;
         last_name: string;
-        birthday: string | null;
-        age: number | null;
         contact_number: string | null;
         address: string | null;
         email: string;
@@ -186,7 +167,7 @@ export class SettingsController {
         `UPDATE user_customer
            SET ${setClause}
            WHERE customer_id = $${updates.length + 1}
-           RETURNING customer_id, first_name, last_name, NULL as birthday, NULL as age, contact_number, address, email, date_created, last_updated, status`,
+           RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
         [...values, customerId],
       );
 
@@ -271,7 +252,7 @@ export class SettingsController {
 
     try {
       // First check admin table
-      let userResult = await client.query<{
+      const userResult = await client.query<{
         customer_id: string;
         first_name: string;
         email: string;
@@ -343,8 +324,8 @@ export class SettingsController {
 
     const client = this.databaseService.getClient();
     try {
-      // Check if user exists 
-      let userResult = await client.query(
+      // Check if user exists
+      const userResult = await client.query(
         'SELECT customer_id FROM user_customer WHERE customer_id = $1 LIMIT 1',
         [customerId],
       );

@@ -11,7 +11,12 @@ import { AuthenticationController } from './controllers/settings/authentication.
 
 @Module({
   imports: [],
-  controllers: [AppController, UserAuthController, SettingsController, AuthenticationController],
+  controllers: [
+    AppController,
+    UserAuthController,
+    SettingsController,
+    AuthenticationController,
+  ],
   providers: [AppService, DatabaseService, UserAuthService, BrevoService],
 })
 export class AppModule {}

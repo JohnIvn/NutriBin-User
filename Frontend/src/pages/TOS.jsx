@@ -158,19 +158,6 @@ export default function Tos() {
               </div>
             </div>
 
-            {/* accept / decline buttons */}
-            <div className="pt-10 border-t border-[#ECE3CE] mt-12">
-              <div className="flex flex-col sm:flex-row justify-center gap-6">
-                <button className="bg-[#3A4D39] hover:bg-[#4F6F52] text-white h-14 px-12 text-lg rounded-full font-bold shadow-lg shadow-[#3A4D39]/20 transition-all duration-300 hover:-translate-y-1 flex items-center justify-center">
-                  <Check className="mr-2 h-6 w-6" /> I Accept the Terms
-                </button>
-                
-                <button className="border-2 border-[#ECE3CE] text-[#739072] hover:text-[#3A4D39] hover:border-[#3A4D39] hover:bg-[#ECE3CE]/20 h-14 px-12 text-lg rounded-full font-bold transition-all duration-300 flex items-center justify-center">
-                  Decline
-                </button>
-              </div>
-            </div>
-
           </div>
         </div>
       </main>

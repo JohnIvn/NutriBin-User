@@ -91,7 +91,6 @@ function Account() {
           lastname: user.last_name || "",
           address: user.address || "",
           number: user.contact_number || "",
-          gender: "male",
         });
         setEmailShown(user?.email);
       }
@@ -360,48 +359,6 @@ function Account() {
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className="text-gray-600">Gender</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          className="flex gap-6"
-                          disabled={!editMode}
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem
-                                value="male"
-                                className="border-gray-300 text-[#4F6F52] focus:ring-[#4F6F52]"
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal text-gray-700 cursor-pointer">
-                              Male
-                            </FormLabel>
-                          </FormItem>
-
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem
-                                value="female"
-                                className="border-gray-300 text-[#4F6F52] focus:ring-[#4F6F52]"
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal text-gray-700 cursor-pointer">
-                              Female
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
 
                 <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
                   <Button

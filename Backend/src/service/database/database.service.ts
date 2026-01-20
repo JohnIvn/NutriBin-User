@@ -46,7 +46,7 @@ export class DatabaseService implements OnModuleInit {
     console.log(chalk.green('[SUPABASE] Connected to the database!'));
 
     console.log(chalk.cyan('[SUPABASE] Creating tables...'));
-    
+
     /*
     await createUserCustomerTable(this.client);
     await createTrashLogsTable(this.client);

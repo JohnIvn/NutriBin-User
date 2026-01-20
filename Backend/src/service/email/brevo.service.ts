@@ -191,6 +191,30 @@ export class BrevoService {
     `;
   }
 
+  async sendCustomerWelcomeWithPassword(
+    to: string,
+    firstName: string,
+    password: string,
+  ) {
+    const subject = 'Your NutriBin account — temporary password';
+    const changeUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings/`;
+    const content = `
+      <h2 style="margin:0 0 12px 0; color: #4F6F52; font-size:20px;">Welcome, ${firstName || 'User'}!</h2>
+      <p style="margin:0 0 10px 0; color:#333; font-size:15px;">Your account has been created via Google sign-in. A temporary password has been generated for your staff account. Use it to sign in and then change it immediately.</p>
+      <div style="text-align:center; margin:18px 0;">
+        <p style="font-size:20px; font-weight:700; color:#4F6F52; letter-spacing:1px; margin:0;">${password}</p>
+      </div>
+      <p style="margin:12px 0 0 0; color:#666; font-size:14px;">For security, please change your password after signing in:</p>
+      <div style="text-align:center; margin:18px 0;">
+        <a href="${changeUrl}" style="display:inline-block; background-color:#4F6F52; color:#ffffff; text-decoration:none; padding:10px 20px; border-radius:8px; font-weight:600;">Change Password</a>
+      </div>
+      <p style="margin:8px 0 0 0; color:#666; font-size:13px;">If you did not request this, contact your administrator immediately.</p>
+    `;
+
+    const html = this.getEmailTemplate(content, 'Welcome to NutriBin');
+    return this.sendHtmlEmail(to, subject, html);
+  }
+
   async sendPasswordResetEmail(to: string, resetToken: string) {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     const subject = 'Password Reset Request - NutriBin';

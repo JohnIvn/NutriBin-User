@@ -17,12 +17,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useUser } from "@/contexts/UserContext";
 import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
+import TOSModal from "@/components/ui/TOSModal";
+
 
 export default function Register() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [registerMessage, setRegisterMessage] = useState(null);
   const [registerError, setRegisterError] = useState(null);
+  const [tosOpen, setTosOpen] = useState(false);
+  const [tosAccepted, setTosAccepted] = useState(false);
   const { login } = useUser();
 
   const form = useForm({
@@ -313,6 +317,25 @@ export default function Register() {
                     </ul>
                   </div>
 
+                  <div className="flex items-start gap-3 text-sm text-[#4F6F52]">
+                    <input
+                      type="checkbox"
+                      checked={tosAccepted}
+                      readOnly
+                      className="mt-1 accent-[#3A4D39]"
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <button
+                        type="button"
+                        onClick={() => setTosOpen(true)}
+                        className="font-bold text-[#3A4D39] underline hover:text-[#4F6F52]"
+                      >
+                        Terms of Service
+                      </button>
+                    </span>
+                  </div>
+
                   {/* feedback */}
                   {registerError && (
                     <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center font-medium border border-red-100 flex items-center justify-center gap-2">
@@ -330,7 +353,8 @@ export default function Register() {
                   {/* submit */}
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:-translate-y-0.5 mt-2"
+                    disabled={!tosAccepted}
+                    className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition-all shadow-lg mt-2"
                   >
                     Create Account <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
@@ -370,6 +394,14 @@ export default function Register() {
           </div>
         </div>
       </div>
+      <TOSModal
+        open={tosOpen}
+        onClose={() => setTosOpen(false)}
+        onAccept={() => {
+          setTosAccepted(true);
+          setTosOpen(false);
+        }}
+      />
     </GoogleOAuthProvider>
   );
 }

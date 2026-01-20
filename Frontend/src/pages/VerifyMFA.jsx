@@ -48,6 +48,7 @@ export function VerifyMFA() {
 
         if (response.data.ok) {
           setVerified(true);
+          setError("Verification Successful")
           toast.success("MFA verification successful!");
           // Log in the user with the returned staff data
           login(response.data.customer);
