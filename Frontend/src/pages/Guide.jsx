@@ -1,34 +1,26 @@
 import React from "react";
 import { 
-  BookOpen, 
   Download, 
-  Printer, 
   Share2, 
-  Search, 
-  HelpCircle,
   FileText 
 } from "lucide-react";
 
+import { useUser } from "@/contexts/UserContext"; 
+
 export default function Guide() {
+  const { user } = useUser();
+
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-5xl mx-auto px-6 pt-8 space-y-8">
+      <section className={`max-w-5xl mx-auto px-6 space-y-8 ${user ? "pt-8" : "pt-32"}`}>
         
         {/* header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-[#3A4D39]/10 pb-8">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-[#3A4D39]/10 rounded-lg text-[#3A4D39]">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h2 className="text-sm font-bold text-[#739072] uppercase tracking-wider">
-                Documentation
-              </h2>
-            </div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-2">
             <h1 className="text-4xl font-black text-[#3A4D39] tracking-tight">
               User Guide
             </h1>
-            <p className="text-[#4F6F52] font-medium mt-2 text-lg max-w-2xl">
+            <p className="text-[#4F6F52] font-medium mt-1 text-lg max-w-2xl">
               Complete instructions on how to operate the NutriBin machine, manage sensors, and troubleshoot common issues.
             </p>
           </div>
@@ -58,7 +50,7 @@ export default function Guide() {
             </div>
           </div>
 
-          {/* image content */}
+          {/* image */}
           <div className="p-8 md:p-12 bg-[#808080]/5 flex justify-center min-h-[600px]">
             <div className="relative shadow-2xl shadow-black/10 rounded-lg overflow-hidden bg-white max-w-full">
                 <img

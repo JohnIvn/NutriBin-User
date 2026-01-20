@@ -98,7 +98,7 @@ export default function Header() {
                 <div className="relative ml-2">
                   <button
                     onClick={() => setUserMenuOpen((v) => !v)}
-                    className="flex items-center gap-3 font-bold text-[#3A4D39] hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-3 font-bold text-[#3A4D39] hover:opacity-80 transition-opacity cursor-pointer"
                   >
                     <span className="hidden lg:block text-sm uppercase tracking-wide">
                       {user.first_name}
@@ -135,7 +135,7 @@ export default function Header() {
                           </Link>
                           <button
                             onClick={handleLogout}
-                            className="w-full text-left px-4 py-2.5 text-sm text-red-700 font-medium hover:bg-red-50 transition-colors"
+                            className="w-full text-left px-4 py-2.5 text-sm text-red-700 font-medium hover:bg-red-50 transition-colors cursor-pointer"
                           >
                             Log out
                           </button>

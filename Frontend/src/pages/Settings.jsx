@@ -23,9 +23,9 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle, 
 } from "@/components/ui/Dialog";
-import { User, Lock, AlertTriangle } from "lucide-react";
+import { User, Lock, AlertTriangle, UserCircle } from "lucide-react";
 
 function Account() {
   const [editMode, setEditMode] = useState(false);
@@ -224,18 +224,36 @@ function Account() {
   };
 
   return (
-    <section className="flex bg-[#ECE3CE]/10 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8">
-      <div className="w-full max-w-7xl space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-[black]">
-          Settings
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your account details and preferences.
-        </p>
+    <section className="flex bg-[#ECE3CE]/20 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8 font-sans">
+      
+      {/* header */}
+      <div className="w-full max-w-7xl pt-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-[#3A4D39]/10 pb-8">
+          
+          <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-1">
+            <h1 className="text-4xl font-black text-[#3A4D39] tracking-tight">
+              Settings
+            </h1>
+            <p className="text-[#4F6F52] font-medium mt-1 text-lg">
+              Manage your account details, preferences, and security.
+            </p>
+          </div>
+
+          <div className="hidden md:flex px-4 py-3 bg-white border border-[#3A4D39]/10 rounded-2xl shadow-sm items-center gap-3">
+            <div className="p-2 bg-[#3A4D39]/5 rounded-lg text-[#3A4D39]">
+              <UserCircle className="w-6 h-6" />
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold text-[#739072] uppercase tracking-wider">Current Profile</p>
+              <p className="text-sm font-bold text-[#3A4D39]">Administrator</p>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <section className="flex flex-col lg:flex-row w-full max-w-7xl gap-8 items-start">
-        {/* === Left Column: Profile Form === */}
+        {/* left column */}
         <Form {...form}>
           <form className="w-full lg:flex-1 space-y-8 bg-white border border-gray-100 shadow-sm rounded-xl p-6 sm:p-8">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
@@ -422,9 +440,9 @@ function Account() {
           </form>
         </Form>
 
-        {/* === Right Column: Sidebar Actions === */}
+        {/* right */}
         <div className="flex flex-col w-full lg:w-96 gap-6">
-          {/* Security Card */}
+          {/* security card */}
           <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <Lock className="w-4 h-4 text-[#4F6F52]" />
@@ -433,7 +451,7 @@ function Account() {
               </h3>
             </div>
             <div className="p-6 space-y-6">
-              {/* Password Reset */}
+              {/* password reset */}
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold text-gray-700">
                   Password
@@ -456,7 +474,7 @@ function Account() {
 
               <hr className="border-gray-100" />
 
-              {/* MFA Section */}
+              {/* MFA section */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Lock className="w-4 h-4 text-[#4F6F52]" />
@@ -465,7 +483,7 @@ function Account() {
                   </h4>
                 </div>
 
-                {/* Disabled MFA */}
+                {/* disabled MFA */}
                 <div
                   role="radio"
                   aria-checked={mfaType === "N/A"}
@@ -491,7 +509,7 @@ function Account() {
                   </div>
                 </div>
 
-                {/* Email MFA */}
+                {/* email MFA */}
                 <div
                   role="radio"
                   aria-checked={mfaType === "email"}
@@ -523,7 +541,7 @@ function Account() {
 
               <hr className="border-gray-100" />
 
-              {/* Close Account */}
+              {/* close account */}
               <div className="pt-2">
                 <Button
                   variant="ghost"
@@ -537,7 +555,7 @@ function Account() {
             </div>
           </div>
 
-          {/* Quick Links Card */}
+          {/* quick links card */}
           <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <User className="w-4 h-4 text-[#4F6F52]" />
@@ -565,9 +583,9 @@ function Account() {
         </div>
       </section>
 
-      {/* === Dialogs === */}
+      {/* dialogs */}
 
-      {/* Password Reset Dialog */}
+      {/* password reset */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
@@ -697,7 +715,7 @@ function Account() {
         </DialogContent>
       </Dialog>
 
-      {/* Close Account Dialog */}
+      {/* close account */}
       <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
