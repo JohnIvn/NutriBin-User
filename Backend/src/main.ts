@@ -9,6 +9,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'https://nutribin-user.up.railway.app',
       'nutribin-user-backend-production.up.railway.app',
+      'https://nutribin.up.railway.app',
     ],
   });
   await app.listen(process.env.PORT ?? 3000);

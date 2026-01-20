@@ -32,7 +32,7 @@ RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
 
 # Expose the port Railway expects (it will set PORT env)
-EXPOSE 8090
+EXPOSE 8080
 
-# Serve the static files on the PORT provided by the environment (default 8090)
-CMD ["sh", "-c", "serve -s dist -l ${PORT:-8090}"]
+# Serve the static files on the PORT provided by the environment (default 8080)
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-8080}"]
