@@ -1,33 +1,53 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
+import { CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 
-export default function ModuleCard({ title, offline = false, icon = faGear }) {
+export default function ModuleCard({ title, icon: Icon, offline = false, subtext = "Hardware Module" }) {
+  const DisplayIcon = Icon || HelpCircle;
+
   return (
-    <div className="group flex justify-start items-center gap-3 h-20 rounded-xl border border-gray-100 hover:border-[#CD5C08] hover:bg-[#CD5C08] transition-all duration-200 shadow-sm overflow-hidden bg-white">
-      <div className="ml-5 shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 group-hover:bg-white/20 group-hover:text-white transition-colors">
-        <FontAwesomeIcon icon={icon} className="text-lg opacity-70" />
-      </div>
+    <div className={`group flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+        offline 
+        ? "bg-red-50/50 border-red-100 hover:border-red-200" 
+        : "bg-white border-[#ECE3CE] hover:border-[#3A4D39] hover:shadow-md hover:shadow-[#3A4D39]/5"
+    }`}>
+      
+      {/* icon and text container */}
+      <div className="flex items-center gap-3 overflow-hidden">
+        <div className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+            offline 
+            ? "bg-red-100 text-red-500" 
+            : "bg-[#ECE3CE]/40 text-[#3A4D39] group-hover:bg-[#3A4D39] group-hover:text-white"
+        }`}>
+          <DisplayIcon className="w-5 h-5" />
+        </div>
 
-      <div className="flex flex-col items-start overflow-hidden text-left">
-        <span className="text-sm font-bold text-gray-700 truncate w-full group-hover:text-white">
-          {title}
-        </span>
-        <div className="flex items-center gap-1.5 mt-1">
-          <span
-            className={`w-2 h-2 rounded-full animate-pulse ${
-              offline ? "bg-red-500" : "bg-green-500"
-            } group-hover:bg-white`}
-          />
-          <span
-            className={`text-[10px] font-medium uppercase tracking-tighter ${
-              offline ? "text-red-600" : "text-gray-400"
-            } group-hover:text-white/80`}
-          >
-            {offline ? "Offline" : "Active"}
+        <div className="flex flex-col min-w-0">
+          <span className={`text-sm font-bold truncate transition-colors ${
+              offline ? "text-red-700" : "text-[#3A4D39]"
+          }`}>
+            {title}
+          </span>
+          <span className="text-[10px] text-gray-400 font-medium truncate">
+            {subtext}
           </span>
         </div>
       </div>
+
+      {/* status badge */}
+      <div className="shrink-0 pl-2">
+        {offline ? (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-md border border-red-100 shadow-sm">
+                <AlertTriangle className="w-3 h-3 text-red-500" />
+                <span className="text-[10px] font-bold uppercase text-red-600 tracking-wide">Offline</span>
+            </div>
+        ) : (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#4F6F52]/5 rounded-md border border-[#4F6F52]/10 group-hover:bg-[#4F6F52] group-hover:border-[#4F6F52] transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4F6F52] animate-pulse group-hover:bg-white" />
+                <span className="text-[10px] font-bold uppercase text-[#4F6F52] tracking-wide group-hover:text-white">Active</span>
+            </div>
+        )}
+      </div>
+
     </div>
   );
 }
