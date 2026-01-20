@@ -6,29 +6,34 @@ WORKDIR /app
 COPY package*.json ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-# Copy only files needed to build
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
+# Copy project files
+COPY vite.config.js ./
+COPY tailwind.config.js ./
+COPY jsconfig.json ./
+COPY index.html ./
 COPY src ./src
+COPY public ./public
 
-# Build the NestJS app to ./dist
-RUN npm run build
+# Build arguments for Railway variables (public backend URL for browser)
+ARG VITE_API_URL=https://nutribin-user-backend-production.up.railway.app
+ARG VITE_GOOGLE_CLIENT_ID
+
+# Build the React/Vite app to ./dist
+RUN VITE_API_URL=${VITE_API_URL} VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID} npm run build
 
 # ---------- Runtime stage ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install production dependencies only
-COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
+# Install a simple HTTP server to serve static files
+RUN npm install -g serve
 
-# Copy built artifacts
+# Copy built artifacts from builder
 COPY --from=builder /app/dist ./dist
 
-# Railway provides PORT; default to 8080
-ENV PORT=8080
-EXPOSE 8080
+# Expose the port Railway expects (it will set PORT env)
+EXPOSE 8090
 
-# Start the application (package.json: start:prod -> node dist/src/main.js)
-CMD ["npm", "run", "start:prod"]
+# Serve the static files on the PORT provided by the environment (default 8090)
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-8090}"]
