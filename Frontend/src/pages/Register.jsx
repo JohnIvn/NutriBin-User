@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/Input";
 import { registration } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
+import { postToBackend } from "@/utils/Requests";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import { useUser } from "@/contexts/UserContext";
 import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
 import TOSModal from "@/components/ui/TOSModal";
 
+// `postToBackend` is provided by `@/utils/Requests`
 
 export default function Register() {
   const navigate = useNavigate();
@@ -53,10 +54,7 @@ export default function Register() {
         password: values.password,
       };
 
-      const response = await axios.post(
-        "http://localhost:3000/user/signup",
-        formData,
-      );
+      const response = await postToBackend("/user/signup", formData);
 
       if (!response.data.ok) {
         setRegisterError(response.data.error || "Register failed");
@@ -76,10 +74,9 @@ export default function Register() {
     try {
       setRegisterError(null);
 
-      const response = await axios.post(
-        "http://localhost:3000/user/google-signup",
-        { credential },
-      );
+      const response = await postToBackend("/user/google-signup", {
+        credential,
+      });
 
       if (!response.data.ok) {
         setRegisterError(response.data.error || "Google Signup Failed");
