@@ -8,7 +8,7 @@ async function bootstrap() {
       'http://localhost:5173',
       'http://localhost:3000',
       'https://nutribin-user.up.railway.app',
-      'nutribin-user-backend-production.up.railway.app',
+      'https://nutribin-user-backend-production.up.railway.app',
       'https://nutribin.up.railway.app',
     ],
   });
