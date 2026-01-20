@@ -12,7 +12,7 @@ import {
 import { randomInt } from 'crypto';
 
 import { DatabaseService } from '../../service/database/database.service';
-import { NodemailerService } from '../../service/email/nodemailer.service';
+import { BrevoService } from 'src/service/email/brevo.service';
 
 type UserPublicRow = {
   customer_id: string;
@@ -48,7 +48,7 @@ function mapUser(row: UserPublicRow) {
 export class SettingsController {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly mailer: NodemailerService,
+    private readonly mailer: BrevoService,
   ) {}
 
   private async ensureResetTable() {
@@ -345,16 +345,9 @@ export class SettingsController {
     try {
       // Check if user exists 
       let userResult = await client.query(
-        'SELECT customer_id as FROM user_customer WHERE customer_id = $1 LIMIT 1',
+        'SELECT customer_id FROM user_customer WHERE customer_id = $1 LIMIT 1',
         [customerId],
       );
-
-      if (!userResult.rowCount) {
-        userResult = await client.query(
-          'SELECT customer_id FROM user_customer WHERE customer_id = $1 LIMIT 1',
-          [customerId],
-        );
-      }
 
       if (!userResult.rowCount) {
         throw new NotFoundException('Account not found');

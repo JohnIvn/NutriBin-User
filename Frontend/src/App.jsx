@@ -4,6 +4,8 @@ import GuestLayout from "@/layouts/GuestLayout";
 import MainLayout from "./layouts/MainLayout";
 import { useUser } from "@/contexts/UserContext";
 import ScrollToTop from "@/utils/ScrollToTop"; 
+import Header from "./components/partials/Header";
+import Footer from "./components/partials/Footer";
 
 export default function App() {
   const { user, loading } = useUser();
@@ -18,8 +20,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <Header />
       <ScrollToTop />
       {user ? <MainLayout /> : <GuestLayout />}
+      <Footer />
     </BrowserRouter>
   );
 }

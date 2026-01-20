@@ -54,14 +54,13 @@ function Account() {
       firstname: "",
       lastname: "",
       address: "",
-      age: 0,
       gender: "male",
       number: "",
     },
   });
 
   useEffect(() => {
-    const userId = user?.customer_id
+    const userId = user?.customer_id;
     if (userId) {
       fetchProfile();
       fetchMFASettings();
@@ -91,7 +90,6 @@ function Account() {
           firstname: user.first_name || "",
           lastname: user.last_name || "",
           address: user.address || "",
-          age: user.age || 0,
           number: user.contact_number || "",
           gender: "male",
         });
@@ -106,7 +104,7 @@ function Account() {
   };
 
   const fetchMFASettings = async () => {
-    const userId = user?.customer_id
+    const userId = user?.customer_id;
     if (!userId) return;
 
     try {
@@ -124,7 +122,7 @@ function Account() {
   };
 
   const handleMFAChange = async (newMfaType) => {
-    const userId = user?.customer_id
+    const userId = user?.customer_id;
     if (!userId) return;
 
     try {
@@ -138,12 +136,12 @@ function Account() {
       if (response.data.ok) {
         setMfaType(newMfaType);
         toast.success(
-          `MFA set to ${newMfaType === "N/A" ? "Disabled" : "Email"}`
+          `MFA set to ${newMfaType === "N/A" ? "Disabled" : "Email"}`,
         );
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Failed to update MFA settings"
+        error.response?.data?.message || "Failed to update MFA settings",
       );
       console.error(error);
     } finally {
@@ -170,7 +168,7 @@ function Account() {
   };
 
   const handleSubmission = async () => {
-    const userId = user?.customer_id
+    const userId = user?.customer_id;
     try {
       setSaveLoading(true);
       const values = form.getValues();
@@ -182,7 +180,6 @@ function Account() {
           firstname: values.firstname,
           lastname: values.lastname,
           address: values.address,
-          age: values.age,
           contact: values.number,
         },
       });
@@ -201,7 +198,7 @@ function Account() {
   };
 
   const handleCloseAccount = async () => {
-    const userId = user?.customer_id
+    const userId = user?.customer_id;
     if (!userId) return;
 
     try {
@@ -327,25 +324,6 @@ function Account() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-600">Age</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="number"
                     render={({ field }) => (
                       <FormItem>
@@ -410,9 +388,8 @@ function Account() {
                 <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
                   <Button
                     type="button"
-                    className={`${
-                      editMode ? "hidden" : "inline-flex"
-                    } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
+                    className={`${editMode ? "hidden" : "inline-flex"
+                      } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
                     onClick={() => setEditMode(true)}
                   >
                     Edit Profile
@@ -420,9 +397,8 @@ function Account() {
                   <Button
                     type="button"
                     disabled={saveLoading}
-                    className={`${
-                      editMode ? "inline-flex" : "hidden"
-                    } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
+                    className={`${editMode ? "inline-flex" : "hidden"
+                      } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
                     onClick={handleSubmission}
                   >
                     {saveLoading ? "Saving..." : "Save Changes"}
@@ -431,9 +407,8 @@ function Account() {
                     type="button"
                     variant="outline"
                     disabled={saveLoading}
-                    className={`${
-                      editMode ? "inline-flex" : "hidden"
-                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red]/100 hover:text-[white] cursor-pointer`}
+                    className={`${editMode ? "inline-flex" : "hidden"
+                      } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red]/100 hover:text-[white] cursor-pointer`}
                     onClick={() => setEditMode(false)}
                   >
                     Cancel
@@ -487,43 +462,57 @@ function Account() {
                   </h4>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="mfa"
-                      value="N/A"
-                      checked={mfaType === "N/A"}
-                      onChange={() => handleMFAChange("N/A")}
-                      disabled={mfaLoading}
-                      className="accent-[#4F6F52]"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Disabled
-                      </div>
+                {/* Disabled MFA */}
+                <div
+                  role="radio"
+                  aria-checked={mfaType === "N/A"}
+                  onClick={() => handleMFAChange("N/A")}
+                  className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition
+                    ${mfaType === "N/A"
+                      ? "border-[#4F6F52] bg-[#ECE3CE]/30"
+                      : "border-gray-200 hover:bg-[#ECE3CE]/20"
+                    }
+                    ${mfaLoading ? "opacity-50 pointer-events-none" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    checked={mfaType === "N/A"}
+                    readOnly
+                    className="accent-[#4F6F52]"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      Disabled
                     </div>
-                  </label>
+                  </div>
+                </div>
 
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="mfa"
-                      value="email"
-                      checked={mfaType === "email"}
-                      onChange={() => handleMFAChange("email")}
-                      disabled={mfaLoading}
-                      className="accent-[#4F6F52]"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Email Verification
-                      </div>
-                      <div className="text-[10px] text-gray-500">
-                        Code sent to email on login
-                      </div>
+                {/* Email MFA */}
+                <div
+                  role="radio"
+                  aria-checked={mfaType === "email"}
+                  onClick={() => handleMFAChange("email")}
+                  className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition
+                    ${mfaType === "email"
+                      ? "border-[#4F6F52] bg-[#ECE3CE]/30"
+                      : "border-gray-200 hover:bg-[#ECE3CE]/20"
+                    }
+                    ${mfaLoading ? "opacity-50 pointer-events-none" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    checked={mfaType === "email"}
+                    readOnly
+                    className="accent-[#4F6F52]"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      Email Verification
                     </div>
-                  </label>
+                    <div className="text-[10px] text-gray-500">
+                      Code sent to email on login
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -599,13 +588,12 @@ function Account() {
                 className="bg-[#4F6F52] hover:bg-[#3A523D] text-white text-xs h-8"
                 disabled={sendingReset}
                 onClick={async () => {
-                  const userId = user?.customer_id
+                  const userId = user?.customer_id;
                   try {
                     setSendingReset(true);
                     const res = await Requests({
                       url: `/settings/${userId}/password-reset`,
                       method: "POST",
-                      credentials: true,
                     });
                     if (res.data?.ok) {
                       setResetSent(true);
@@ -624,8 +612,8 @@ function Account() {
                 {sendingReset
                   ? "Sending..."
                   : resetSent
-                  ? "Resend"
-                  : "Send Code"}
+                    ? "Resend"
+                    : "Send Code"}
               </Button>
             </div>
 
@@ -679,14 +667,13 @@ function Account() {
                 resetSubmitting || !codeFormatValid || !passwordChecks.match
               }
               onClick={async () => {
-                const userId = user?.customer_id
+                const userId = user?.customer_id;
                 try {
                   setResetSubmitting(true);
                   const res = await Requests({
                     url: `/settings/${userId}/password-reset/verify`,
                     method: "POST",
                     data: { code: resetCode, newPassword },
-                    credentials: true,
                   });
                   if (res.data?.ok) {
                     toast.success("Password changed!");

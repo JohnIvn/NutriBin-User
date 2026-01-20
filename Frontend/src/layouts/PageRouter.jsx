@@ -13,6 +13,7 @@ import Modules from "@/pages/Modules";
 import Dashboard from "@/pages/Dashboard";
 import Fertilizer from "@/pages/Fertilizer";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { VerifyMFA } from "@/pages/VerifyMFA";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Settings from "@/pages/Settings";
 
@@ -30,6 +31,7 @@ export default function PageRouter() {
       <Route path="/socials" element={<Socials />} />
       <Route path="/studies" element={<Studies />} />
       <Route path="/guide" element={<Guide />} />
+      <Route path="/verify-mfa" element={<VerifyMFA />} />
       <Route
         path="/accounts"
         element={

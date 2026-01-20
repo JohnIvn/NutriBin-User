@@ -9,7 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
 
 import { DatabaseService } from '../database/database.service';
-import { NodemailerService } from '../email/nodemailer.service';
+import { BrevoService } from '../email/brevo.service';
 import type {
   UserSignInDto,
   UserSignUpDto,
@@ -41,7 +41,7 @@ export class UserAuthService {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly mailer: NodemailerService,
+    private readonly mailer: BrevoService,
   ) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
@@ -57,8 +57,6 @@ export class UserAuthService {
     const lastname = dto?.lastname?.trim();
     const emailRaw = dto?.email;
     const password = dto?.password;
-    const birthday = dto?.birthday;
-    const age = dto?.age;
 
     if (!firstname) {
       return {
@@ -136,14 +134,12 @@ export class UserAuthService {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const created = await client.query<UserPublicRow>(
-      `INSERT INTO user_customer (first_name, last_name, birthday, age, contact_number, address, email, password)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
       [
         firstname,
         lastname,
-        birthday,
-        age,
         contactNumber,
         address,
         email,
@@ -227,16 +223,29 @@ export class UserAuthService {
 
       const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-      // Store the token using UPSERT pattern
       await client.query(
-        `INSERT INTO authentication (admin_id, mfa_token, mfa_token_expiry, user_type, authentication_type, enabled)
-           VALUES ($1, $2, $3, 'admin', 'email', true)
-           ON CONFLICT (admin_id) DO UPDATE SET mfa_token = $2, mfa_token_expiry = $3`,
-        [user.customer_id, mfaToken, tokenExpiry],
+        `
+        INSERT INTO authentication (
+          customer_id,
+          mfa_token,
+          mfa_token_expiry,
+          user_type,
+          authentication_type,
+          enabled
+        )
+        VALUES ($1, $2, $3, 'customer', 'email', true)
+        ON CONFLICT (customer_id) DO UPDATE
+        SET mfa_token = EXCLUDED.mfa_token,
+            mfa_token_expiry = EXCLUDED.mfa_token_expiry,
+            enabled = true,
+            user_type = 'customer',
+            authentication_type = 'email'
+        `,
+        [user.customer_id, mfaToken, tokenExpiry.toISOString()],
       );
 
       // Send verification email
-      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-mfa?token=${mfaToken}&adminId=${user.customer_id}`;
+      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-mfa?token=${mfaToken}&customerId=${user.customer_id}`;
       const emailContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -437,16 +446,14 @@ export class UserAuthService {
 
       // Create new user account
       const newUser = await client.query<UserPublicRow>(
-        `INSERT INTO user_customer (first_name, last_name, email, password, birthday, age)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO user_customer (first_name, last_name, email, password)
+         VALUES ($1, $2, $3, $4)
          RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
         [
           firstName,
           lastName,
           email,
           '', // Empty password for Google sign-in users
-          '1990-01-01', // Default birthday
-          0, // Default age
         ],
       );
 

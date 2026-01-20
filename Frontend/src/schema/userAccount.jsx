@@ -3,14 +3,15 @@ import { z } from "zod";
 const genderEnum = z.enum(["male", "female", "others"]);
 
 export const userAccount = z.object({
-  username: z.string().min(8, "Username must be at least 8 characters"),
+  email: z
+    .string(),
   password: z
     .string()
     .min(8)
     .max(20)
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
-      "Password must contain upper, lower, number, and symbol"
+      "Password must contain upper, lower, number, and symbol",
     ),
 });
 
