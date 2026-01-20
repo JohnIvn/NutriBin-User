@@ -1,4 +1,4 @@
-﻿import { Button } from "@/components/ui/button";
+﻿import { Button } from "@/components/ui/Button";
 import {
   Form,
   FormControl,
@@ -388,8 +388,9 @@ function Account() {
                 <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
                   <Button
                     type="button"
-                    className={`${editMode ? "hidden" : "inline-flex"
-                      } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
+                    className={`${
+                      editMode ? "hidden" : "inline-flex"
+                    } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
                     onClick={() => setEditMode(true)}
                   >
                     Edit Profile
@@ -397,8 +398,9 @@ function Account() {
                   <Button
                     type="button"
                     disabled={saveLoading}
-                    className={`${editMode ? "inline-flex" : "hidden"
-                      } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
+                    className={`${
+                      editMode ? "inline-flex" : "hidden"
+                    } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
                     onClick={handleSubmission}
                   >
                     {saveLoading ? "Saving..." : "Save Changes"}
@@ -407,8 +409,9 @@ function Account() {
                     type="button"
                     variant="outline"
                     disabled={saveLoading}
-                    className={`${editMode ? "inline-flex" : "hidden"
-                      } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red]/100 hover:text-[white] cursor-pointer`}
+                    className={`${
+                      editMode ? "inline-flex" : "hidden"
+                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red]/100 hover:text-[white] cursor-pointer`}
                     onClick={() => setEditMode(false)}
                   >
                     Cancel
@@ -468,9 +471,10 @@ function Account() {
                   aria-checked={mfaType === "N/A"}
                   onClick={() => handleMFAChange("N/A")}
                   className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition
-                    ${mfaType === "N/A"
-                      ? "border-[#4F6F52] bg-[#ECE3CE]/30"
-                      : "border-gray-200 hover:bg-[#ECE3CE]/20"
+                    ${
+                      mfaType === "N/A"
+                        ? "border-[#4F6F52] bg-[#ECE3CE]/30"
+                        : "border-gray-200 hover:bg-[#ECE3CE]/20"
                     }
                     ${mfaLoading ? "opacity-50 pointer-events-none" : ""}`}
                 >
@@ -493,9 +497,10 @@ function Account() {
                   aria-checked={mfaType === "email"}
                   onClick={() => handleMFAChange("email")}
                   className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition
-                    ${mfaType === "email"
-                      ? "border-[#4F6F52] bg-[#ECE3CE]/30"
-                      : "border-gray-200 hover:bg-[#ECE3CE]/20"
+                    ${
+                      mfaType === "email"
+                        ? "border-[#4F6F52] bg-[#ECE3CE]/30"
+                        : "border-gray-200 hover:bg-[#ECE3CE]/20"
                     }
                     ${mfaLoading ? "opacity-50 pointer-events-none" : ""}`}
                 >

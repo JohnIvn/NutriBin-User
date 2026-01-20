@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/form";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ export function Login() {
   });
 
   async function onSubmit(values) {
-    console.log("called")
+    console.log("called");
     try {
       setLoginError(null);
       setLoginMessage(null);
@@ -56,7 +56,8 @@ export function Login() {
 
       if (!response.data.ok) {
         setLoginError(response.data.error || "Login failed");
-        return;y
+        return;
+        y;
       }
 
       if (response.data.requiresMFA) {

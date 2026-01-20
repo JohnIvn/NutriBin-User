@@ -1,10 +1,10 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-    FormLabel,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -72,7 +72,7 @@ function Account() {
   }, [user?.user_id]);
 
   const fetchProfile = async () => {
-    const userId = user?.user_id
+    const userId = user?.user_id;
     if (!userId) {
       setLoading(false);
       return;
@@ -446,13 +446,14 @@ function Account() {
                           toast.success("Verification code sent to your email");
                         } else {
                           toast.error(
-                            res.data?.message || "Failed to send code"
+                            res.data?.message || "Failed to send code",
                           );
                         }
                       } catch (error) {
                         console.error(error);
                         toast.error(
-                          error.response?.data?.message || "Failed to send code"
+                          error.response?.data?.message ||
+                            "Failed to send code",
                         );
                       } finally {
                         setSendingReset(false);
@@ -462,8 +463,8 @@ function Account() {
                     {sendingReset
                       ? "Sending..."
                       : resetSent
-                      ? "Resend Code"
-                      : "Send Code"}
+                        ? "Resend Code"
+                        : "Send Code"}
                   </Button>
                 </div>
 
@@ -610,7 +611,7 @@ function Account() {
                         setConfirmPassword("");
                       } else {
                         toast.error(
-                          res.data?.message || "Failed to change password"
+                          res.data?.message || "Failed to change password",
                         );
                       }
                     } catch (error) {

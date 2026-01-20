@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Requests from "@/utils/Requests";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { useUser } from "@/contexts/UserContext";
 
 export function VerifyMFA() {
