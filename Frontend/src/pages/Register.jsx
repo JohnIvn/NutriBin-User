@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/Input";
 import { registration } from "@/schema/registration";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { postToBackend } from "@/utils/Requests";
+import request from "@/utils/Requests";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -54,7 +54,11 @@ export default function Register() {
         password: values.password,
       };
 
-      const response = await postToBackend("/user/signup", formData);
+      const response = await request({
+        url: "/user/signup",
+        method: "POST",
+        data: formData,
+      });
 
       if (!response.data.ok) {
         setRegisterError(response.data.error || "Register failed");
@@ -74,8 +78,10 @@ export default function Register() {
     try {
       setRegisterError(null);
 
-      const response = await postToBackend("/user/google-signup", {
-        credential,
+      const response = await request({
+        url: "/user/google-signup",
+        method: "POST",
+        data: { credential },
       });
 
       if (!response.data.ok) {

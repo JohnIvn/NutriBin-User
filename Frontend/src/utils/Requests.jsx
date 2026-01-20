@@ -46,32 +46,4 @@ async function Requests({
   }
 }
 
-// Try production first then fall back to localhost for POSTs (helps with CORS/dev)
-const PROD_API = "https://nutribin-user-backend-production.up.railway.app";
-const LOCAL_API = "http://localhost:3000";
-
-export async function postToBackend(path, data, config) {
-  const envUrl = import.meta.env.VITE_API_URL
-    ? String(import.meta.env.VITE_API_URL).replace(/\/$/, "")
-    : null;
-  const bases = [envUrl || PROD_API, LOCAL_API];
-
-  let lastErr = null;
-  for (const base of bases) {
-    const url =
-      `${base.replace(/\/$/, "")} ${path.startsWith("/") ? path : `/${path}`}`.replace(
-        /\s+/,
-        "",
-      );
-    try {
-      return await axios.post(url, data, config);
-    } catch (err) {
-      lastErr = err;
-      if (err && err.response) throw err;
-      // otherwise try next base
-    }
-  }
-  throw lastErr;
-}
-
 export default Requests;

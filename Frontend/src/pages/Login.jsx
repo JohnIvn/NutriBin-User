@@ -15,7 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { userAccount } from "@/schema/userAccount";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
+import request from "@/utils/Requests";
 import { useUser } from "@/contexts/UserContext";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -49,10 +49,11 @@ export function Login() {
         password: values.password,
       };
 
-      const response = await axios.post(
-        "http://localhost:3000/user/signin",
-        formData,
-      );
+      const response = await request({
+        url: "/user/signin",
+        method: "POST",
+        data: formData,
+      });
 
       if (!response.data.ok) {
         setLoginError(response.data.error || "Login failed");
@@ -79,10 +80,11 @@ export function Login() {
       setLoginError(null);
       setMfaMessage(null);
 
-      const response = await axios.post(
-        "http://localhost:3000/user/google-signin",
-        { credential },
-      );
+      const response = await request({
+        url: "/user/google-signin",
+        method: "POST",
+        data: { credential },
+      });
 
       if (!response.data.ok) {
         setLoginError(response.data.error || "Google Signin Failed");
