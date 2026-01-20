@@ -7,6 +7,7 @@ export type UserSignUpDto = {
   password: string;
   contact?: string;
   address?: string;
+  emailVerificationCode?: string;
 };
 
 export type UserSignInDto = {

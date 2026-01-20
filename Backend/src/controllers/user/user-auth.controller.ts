@@ -1,14 +1,74 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, NotFoundException, Post } from '@nestjs/common';
 import { UserAuthService } from '../../service/auth/user-auth.service';
 import type {
   UserSignInDto,
   UserSignUpDto,
   GoogleSignInDto,
 } from './user-auth.dto';
+import { randomInt, randomUUID } from 'crypto';
+import { DatabaseService } from '../../service/database/database.service';
+import { BrevoService } from '../../service/email/brevo.service';
 
 @Controller('user')
 export class UserAuthController {
-  constructor(private readonly userAuthService: UserAuthService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly mailer: BrevoService,
+    private readonly userAuthService: UserAuthService,
+  ) {}
+
+  @Post('email-verification')
+  async sendEmailVerificationForSignup(@Body('newEmail') newEmail: string) {
+    const client = this.databaseService.getClient();
+
+    if (!newEmail?.trim()) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const normalizedEmail = newEmail.trim().toLowerCase();
+    
+    try {
+      // Ensure email is not already used
+      const existingEmail = await client.query(
+        'SELECT customer_id FROM user_customer WHERE email = $1 LIMIT 1',
+        [normalizedEmail],
+      );
+
+      if (existingEmail.rowCount) {
+        throw new ConflictException('Email already exists');
+      }
+
+      const code = String(randomInt(100000, 1000000));
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      // For non-existing users, generate a transient user id so code can be stored
+      const userId = randomUUID();
+
+      await client.query(
+        `INSERT INTO codes (user_id, code, purpose, expires_at, used)
+         VALUES ($1, $2, $3, $4, false)`,
+        [userId, code, 'email_verification', expiresAt],
+      );
+
+      await this.mailer.sendUserVerificationCode(normalizedEmail, code);
+
+      return {
+        ok: true,
+        message: 'Verification code sent to the email address',
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to send verification code',
+      );
+    }
+  }
 
   @Post('signup')
   async signUp(@Body() body: UserSignUpDto) {

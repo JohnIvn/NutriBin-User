@@ -17,6 +17,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { VerifyMFA } from "@/pages/VerifyMFA";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Settings from "@/pages/Settings";
+import ForgotPassword from "@/pages/ForgotPassword";
+import EmailVerification from "@/pages/EmailVerification";
 
 export default function PageRouter() {
   return (
@@ -25,6 +27,8 @@ export default function PageRouter() {
       <Route path="/" element={<Navigate replace to={"/home"} />} />
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/verify" element={<EmailVerification />} />
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<AboutUs />} />
       <Route path="/terms" element={<TOS />} />

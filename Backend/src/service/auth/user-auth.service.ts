@@ -95,6 +95,15 @@ export class UserAuthService {
       };
     }
 
+    if (
+      !dto.emailVerificationCode ||
+      !/^[0-9]{6}$/.test(String(dto.emailVerificationCode).trim())
+    ) {
+      throw new BadRequestException(
+        'Email verification code is required and must be a 6-digit number',
+      );
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailRaw)) {
@@ -143,11 +152,44 @@ export class UserAuthService {
       }
     }
 
+    // Verify email verification code using codes table (same approach as password reset)
+    try {
+      const codeResult = await client.query<{
+        code_id: string;
+        code: string;
+        expires_at: string;
+      }>(
+        `SELECT code_id, code, expires_at FROM codes
+           WHERE code = $1 AND purpose = 'email_verification' AND used = false
+           ORDER BY created_at DESC LIMIT 1`,
+        [String(dto.emailVerificationCode).trim()],
+      );
+
+      if (!codeResult.rowCount) {
+        throw new BadRequestException('Invalid or expired verification code');
+      }
+
+      const record = codeResult.rows[0];
+      const now = new Date();
+      const expiresAt = new Date(record.expires_at);
+      if (expiresAt < now) {
+        throw new BadRequestException('Verification code has expired');
+      }
+
+      // mark code as used
+      await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
+        record.code_id,
+      ]);
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw err;
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
 
     const created = await client.query<UserPublicRow>(
-      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'inactive')
+      `INSERT INTO user_customer (first_name, last_name, contact_number, address, email, password)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
       [firstname, lastname, contactNumber, address, email, passwordHash],
     );

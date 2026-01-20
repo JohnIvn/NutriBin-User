@@ -191,6 +191,20 @@ export class BrevoService {
     `;
   }
 
+  async sendUserVerificationCode(to: string, code: string) {
+    const subject = 'Verify your NutriBin email';
+    const content = `
+      <h2 style="margin: 0 0 12px 0; color: #4F6F52; font-size: 20px;">Email Verification</h2>
+      <p style="margin: 0 0 10px 0; color: #333; font-size: 15px;">Use the verification code below to confirm your email address for your staff profile.</p>
+      <div style="text-align: center; margin: 18px 0;">
+        <p style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #4F6F52; margin: 0;">${code}</p>
+      </div>
+      <p style="margin: 12px 0 0 0; color: #666; font-size: 14px;">This code expires in 10 minutes.</p>
+    `;
+    const html = this.getEmailTemplate(content, 'Email Verification');
+    return this.sendHtmlEmail(to, subject, html);
+  }
+
   async sendCustomerWelcomeWithPassword(
     to: string,
     firstName: string,
@@ -200,7 +214,7 @@ export class BrevoService {
     const changeUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings/`;
     const content = `
       <h2 style="margin:0 0 12px 0; color: #4F6F52; font-size:20px;">Welcome, ${firstName || 'User'}!</h2>
-      <p style="margin:0 0 10px 0; color:#333; font-size:15px;">Your account has been created via Google sign-in. A temporary password has been generated for your staff account. Use it to sign in and then change it immediately.</p>
+      <p style="margin:0 0 10px 0; color:#333; font-size:15px;">Your account has been created via Google sign-in. A temporary password has been generated for your account. Use it to sign in and then change it immediately.</p>
       <div style="text-align:center; margin:18px 0;">
         <p style="font-size:20px; font-weight:700; color:#4F6F52; letter-spacing:1px; margin:0;">${password}</p>
       </div>

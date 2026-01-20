@@ -47,17 +47,12 @@ export default function Register() {
       setRegisterError(null);
       setRegisterMessage(null);
 
-      const formData = {
-        firstname: values.firstName,
-        lastname: values.lastName,
-        email: values.email,
-        password: values.password,
-      };
+      // 1️⃣ Send verification email
 
       const response = await request({
-        url: "/user/signup",
+        url: "/user/email-verifaction",
         method: "POST",
-        data: formData,
+        data: {newEmail: values.email},
       });
 
       if (!response.data.ok) {
@@ -65,12 +60,23 @@ export default function Register() {
         return;
       }
 
-      setRegisterMessage(
-        "Register successful! Please check your email to verify your account.",
+      // 2️⃣ Save TEMP signup payload
+      sessionStorage.setItem(
+        "pendingSignup",
+        JSON.stringify({
+          firstname: values.firstName,
+          lastname: values.lastName,
+          email: values.email,
+          password: values.password,
+        }),
       );
+
+      // 3️⃣ Navigate (state is now OPTIONAL)
+      navigate("/verify");
     } catch (error) {
-      setRegisterError(error.message || "An error occurred");
-      console.error(error);
+      setRegisterError(
+        error.response?.data?.message || "Failed to send verification email",
+      );
     }
   }
 
