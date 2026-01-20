@@ -4,7 +4,7 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
+} from "@/components/ui/Chart";
 import HumidityBar from "@/components/ui/HumidityBar";
 import MoistureBar from "@/components/ui/MoistureBar";
 import GasFlag from "@/components/ui/GasFlag";
