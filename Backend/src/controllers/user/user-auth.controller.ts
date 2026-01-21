@@ -18,7 +18,10 @@ export class UserAuthController {
   ) {}
 
   @Post('email-verification')
-  async sendEmailVerificationForSignup(@Body('newEmail') newEmail: string) {
+  async sendEmailVerificationForSignup(
+    @Body('newEmail') newEmail: string,
+    @Body('type') type: string,
+  ) {
     const client = this.databaseService.getClient();
 
     if (!newEmail?.trim()) {
@@ -26,16 +29,18 @@ export class UserAuthController {
     }
 
     const normalizedEmail = newEmail.trim().toLowerCase();
-    
+
     try {
       // Ensure email is not already used
-      const existingEmail = await client.query(
-        'SELECT customer_id FROM user_customer WHERE email = $1 LIMIT 1',
-        [normalizedEmail],
-      );
+      if (!type || type === '') {
+        const existingEmail = await client.query(
+          'SELECT customer_id FROM user_customer WHERE email = $1 LIMIT 1',
+          [normalizedEmail],
+        );
 
-      if (existingEmail.rowCount) {
-        throw new ConflictException('Email already exists');
+        if (existingEmail.rowCount) {
+          throw new ConflictException('Email already exists');
+        }
       }
 
       const code = String(randomInt(100000, 1000000));
@@ -55,6 +60,7 @@ export class UserAuthController {
       return {
         ok: true,
         message: 'Verification code sent to the email address',
+        code: code.toString(),
       };
     } catch (error) {
       if (
