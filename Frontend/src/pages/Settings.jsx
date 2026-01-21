@@ -61,7 +61,6 @@ export default function Settings() {
       firstname: "",
       lastname: "",
       address: "",
-      age: 0,
       number: "",
     },
   });
@@ -106,7 +105,12 @@ export default function Settings() {
         });
         // Set current avatar if provided by API (try several common field names)
         setCurrentAvatar(
-          user?.avatar ? `${user.avatar}?t=${new Date().getTime()}` : undefined,
+          user.avatar ||
+          user.profile_photo ||
+          user.profile_image ||
+          user.photo ||
+          user?.avatar ||
+          undefined,
         );
         setEmailShown(user?.email || "");
       }
@@ -204,7 +208,6 @@ export default function Settings() {
           firstname: values.firstname,
           lastname: values.lastname,
           address: values.address,
-          age: values.age,
           contact: values.number,
         },
       });
@@ -288,7 +291,8 @@ export default function Settings() {
                     <Avatar className="w-full h-full">
                       <AvatarImage
                         src={previewUrl || currentAvatar || undefined}
-                        alt={previewUrl ? "Preview" : "Avatar"}
+                        className="w-full h-full object-cover"
+                        alt="Avatar"
                       />
                       <AvatarFallback className="bg-[#4F6F52]/10 text-[#4F6F52] font-bold text-xl">
                         {getInitials(
@@ -394,11 +398,11 @@ export default function Settings() {
                               method: "DELETE",
                             });
                             if (res.data?.ok) {
-                              toast.success("Photo removed");
                               setCurrentAvatar("");
-                              setSelectedPhoto(null);
+                              setSelectedPhoto(undefined);
                               setPreviewUrl("");
                               fetchProfile();
+                              toast.success("Photo removed");
                               try {
                                 refreshUser?.();
                               } catch (e) {}
