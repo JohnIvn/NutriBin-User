@@ -44,7 +44,7 @@ export class AuthenticationController {
       if (result.rowCount === 0) {
         await client.query(
           `INSERT INTO authentication (customer_id, authentication_type, enabled, user_type)
-         VALUES ($1, 'customer', false, 'customer')`,
+          VALUES ($1, 'N/A', false, 'customer')`,
           [customerId],
         );
 

@@ -50,7 +50,7 @@ export default function Register() {
       // 1️⃣ Send verification email
 
       const response = await request({
-        url: "/user/email-verifaction",
+        url: "/user/email-verification",
         method: "POST",
         data: {newEmail: values.email},
       });
@@ -111,7 +111,7 @@ export default function Register() {
       {/* main container */}
       <div className="min-h-screen w-full bg-[#ECE3CE]/30 font-sans flex items-center justify-center px-4 pt-32 pb-12">
         {/* floating card */}
-        <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-[600px] border border-[#3A4D39]/5">
+        <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-150 border border-[#3A4D39]/5">
           {/* left column */}
           <div className="hidden lg:flex w-1/2 bg-[#3A4D39] relative flex-col justify-between p-12 text-[#ECE3CE]">
             {/* pattern */}
@@ -157,7 +157,7 @@ export default function Register() {
 
           {/* right column */}
           <div className="flex-1 flex items-center justify-center p-8 md:p-12 bg-white">
-            <div className="w-full max-w-[420px] space-y-6">
+            <div className="w-full max-w-105 space-y-6">
               {/* header */}
               <div className="text-center space-y-2 mb-6">
                 <h2 className="text-3xl font-bold text-[#3A4D39]">

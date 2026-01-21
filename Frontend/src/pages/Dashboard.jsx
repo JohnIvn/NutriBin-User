@@ -92,7 +92,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-[1600px] mx-auto px-6 pt-8 space-y-8">
+      <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
         
         {/* header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -116,7 +116,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* announcements */}
-            <div className="lg:col-span-4 bg-[#3A4D39] text-[#ECE3CE] rounded-3xl p-6 shadow-xl shadow-[#3A4D39]/10 flex flex-col h-full min-h-[300px]">
+            <div className="lg:col-span-4 bg-[#3A4D39] text-[#ECE3CE] rounded-3xl p-6 shadow-xl shadow-[#3A4D39]/10 flex flex-col h-full min-h-75">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-white/10 rounded-lg">
                         <Bell className="w-5 h-5 text-[#ECE3CE]" />
@@ -211,7 +211,7 @@ export default function Dashboard() {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-[#FAF9F6] border-b border-[#ECE3CE]">
-                            <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider w-[180px]">Date Created</th>
+                            <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider w-45">Date Created</th>
                             <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider">Nitrogen</th>
                             <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider">Phosphorus</th>
                             <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider">Potassium</th>

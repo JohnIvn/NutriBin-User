@@ -34,13 +34,13 @@ export default function Footer() {
             >
               {link.name}
               {/* animated underline */}
-              <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#ECE3CE] transition-all duration-300 group-hover:w-full" />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ECE3CE] transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
         </nav>
 
         {/* divider */}
-        <div className="w-full h-[1px] bg-[#ECE3CE]/20 mb-8" />
+        <div className="w-full h-px bg-[#ECE3CE]/20 mb-8" />
 
         {/* copyright */}
         <div className="flex flex-col md:flex-row justify-between items-center w-full text-xs font-medium text-[#ECE3CE]/50 gap-4">

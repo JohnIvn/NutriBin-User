@@ -18,7 +18,7 @@ import {
 export default function Modules() {
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-[1600px] mx-auto px-6 pt-8 space-y-8">
+      <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
         
         {/* header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

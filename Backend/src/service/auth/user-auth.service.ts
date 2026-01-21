@@ -12,6 +12,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { DatabaseService } from '../database/database.service';
 import { BrevoService } from '../email/brevo.service';
 import type {
+  CheckEmailDto,
   UserSignInDto,
   UserSignUpDto,
 } from '../../controllers/user/user-auth.dto';
@@ -62,6 +63,27 @@ export class UserAuthService {
       );
     }
     this.googleClient = new OAuth2Client(clientId);
+  }
+
+  async checkEmail(dto: CheckEmailDto) {
+    const email = dto?.email;
+    const client = this.databaseService.getClient();
+
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const result = await client.query(
+        'SELECT customer_id FROM user_customer WHERE email = $1 LIMIT 1',
+        [normalizedEmail],
+      );
+
+      return {
+        ok: true,
+        available: result.rows.length === 0,
+      };
+    } catch {
+      throw new InternalServerErrorException('Failed to check email');
+    }
   }
 
   async signUp(dto: UserSignUpDto) {
@@ -236,7 +258,7 @@ export class UserAuthService {
     if (!matches) {
       return {
         ok: false,
-        error: 'Wrong password',
+        error: 'Wrong email or password',
       };
     }
 

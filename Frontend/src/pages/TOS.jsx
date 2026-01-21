@@ -48,7 +48,7 @@ export default function Tos() {
             {/* timeline section */}
             <div className="relative">
               {/* timeline vertical line */}
-              <div className="hidden md:block absolute left-[39px] top-4 bottom-4 w-0.5 bg-[#ECE3CE] -z-10" />
+              <div className="hidden md:block absolute left-9.75 top-4 bottom-4 w-0.5 bg-[#ECE3CE] -z-10" />
               
               <div className="space-y-16">
                 
@@ -176,7 +176,7 @@ function TosSection({ number, title, children }) {
     <div className="relative flex flex-col md:flex-row gap-6 md:gap-12 group">
       
       {/* number bubble */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <div className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#3A4D39] group-hover:bg-[#4F6F52] transition-colors duration-300 text-[#ECE3CE] text-2xl md:text-3xl font-black shadow-lg ring-8 ring-white z-10 relative">
           {number}
         </div>

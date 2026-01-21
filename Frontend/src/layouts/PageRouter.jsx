@@ -7,7 +7,6 @@ import TOS from "@/pages/TOS";
 import Socials from "@/pages/Socials";
 import Studies from "@/pages/Studies";
 import Guide from "@/pages/Guide";
-import AccountSettings from "@/pages/AccountSettings";
 import Cameras from "@/pages/Cameras";
 import Modules from "@/pages/Modules";
 import Dashboard from "@/pages/Dashboard";
@@ -37,14 +36,6 @@ export default function PageRouter() {
       <Route path="/studies" element={<Studies />} />
       <Route path="/guide" element={<Guide />} />
       <Route path="/verify-mfa" element={<VerifyMFA />} />
-      <Route
-        path="/accounts"
-        element={
-          <ProtectedRoute>
-            <AccountSettings />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/dashboard"
         element={

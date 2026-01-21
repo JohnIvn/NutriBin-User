@@ -8,10 +8,9 @@ import {
   FormMessage,
 } from "@/components/ui/Form";
 import { Input } from "@/components/ui/Input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/Radio-Group";
 import { userAccount } from "@/schema/userAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useUser } from "@/contexts/UserContext";
 import Requests from "@/utils/Requests";
@@ -23,15 +22,16 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle, 
+  DialogTitle,
 } from "@/components/ui/Dialog";
-import { User, Lock, AlertTriangle, UserCircle } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { User, Lock, AlertTriangle, Camera, Eye, EyeOff } from "lucide-react";
 
-function Account() {
+export default function Settings() {
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
-  const { user, logout } = useUser();
+  const { user, logout, refreshUser } = useUser();
   const navigate = useNavigate();
   const [resetOpen, setResetOpen] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
@@ -47,6 +47,13 @@ function Account() {
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [mfaType, setMfaType] = useState("N/A");
   const [mfaLoading, setMfaLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState(undefined);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const avatarInputRef = useRef(null);
 
   const form = useForm({
     resolver: zodResolver(userAccount),
@@ -54,10 +61,12 @@ function Account() {
       firstname: "",
       lastname: "",
       address: "",
-      gender: "male",
       number: "",
     },
   });
+
+  const getInitials = (first, last) =>
+    `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase();
 
   useEffect(() => {
     const userId = user?.customer_id;
@@ -84,6 +93,8 @@ function Account() {
         method: "GET",
       });
 
+      console.log(response)
+
       if (response.data.ok) {
         const user = response.data.user;
         form.reset({
@@ -92,7 +103,16 @@ function Account() {
           address: user.address || "",
           number: user.contact_number || "",
         });
-        setEmailShown(user?.email);
+        // Set current avatar if provided by API (try several common field names)
+        setCurrentAvatar(
+          user.avatar ||
+          user.profile_photo ||
+          user.profile_image ||
+          user.photo ||
+          user?.avatar ||
+          undefined,
+        );
+        setEmailShown(user?.email || "");
       }
     } catch (error) {
       toast.error("Failed to load profile data");
@@ -158,13 +178,22 @@ function Account() {
   }, [resetCode]);
 
   const passwordChecks = {
-    minLength: newPassword && newPassword.length >= 8,
+    minLength:
+      newPassword && newPassword.length >= 8 && newPassword.length <= 20,
     hasUppercase: newPassword && /[A-Z]/.test(newPassword),
     hasLowercase: newPassword && /[a-z]/.test(newPassword),
     hasNumber: newPassword && /\d/.test(newPassword),
     hasSpecial: newPassword && /[^A-Za-z0-9]/.test(newPassword),
     match: newPassword && confirmPassword && newPassword === confirmPassword,
   };
+
+  const allPasswordRequirementsMet =
+    passwordChecks.minLength &&
+    passwordChecks.hasUppercase &&
+    passwordChecks.hasLowercase &&
+    passwordChecks.hasNumber &&
+    passwordChecks.hasSpecial &&
+    passwordChecks.match;
 
   const handleSubmission = async () => {
     const userId = user?.customer_id;
@@ -223,36 +252,18 @@ function Account() {
   };
 
   return (
-    <section className="flex bg-[#ECE3CE]/20 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8 font-sans">
-      
-      {/* header */}
-      <div className="w-full max-w-7xl pt-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-[#3A4D39]/10 pb-8">
-          
-          <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-1">
-            <h1 className="text-4xl font-black text-[#3A4D39] tracking-tight">
-              Settings
-            </h1>
-            <p className="text-[#4F6F52] font-medium mt-1 text-lg">
-              Manage your account details, preferences, and security.
-            </p>
-          </div>
-
-          <div className="hidden md:flex px-4 py-3 bg-white border border-[#3A4D39]/10 rounded-2xl shadow-sm items-center gap-3">
-            <div className="p-2 bg-[#3A4D39]/5 rounded-lg text-[#3A4D39]">
-              <UserCircle className="w-6 h-6" />
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold text-[#739072] uppercase tracking-wider">Current Profile</p>
-              <p className="text-sm font-bold text-[#3A4D39]">Administrator</p>
-            </div>
-          </div>
-
-        </div>
+    <section className="flex bg-[#ECE3CE]/10 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8">
+      <div className="w-full max-w-7xl space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-[black]">
+          Settings
+        </h1>
+        <p className="text-muted-foreground">
+          Manage your account details and preferences.
+        </p>
       </div>
 
       <section className="flex flex-col lg:flex-row w-full max-w-7xl gap-8 items-start">
-        {/* left column */}
+        {/* === Left Column: Profile Form === */}
         <Form {...form}>
           <form className="w-full lg:flex-1 space-y-8 bg-white border border-gray-100 shadow-sm rounded-xl p-6 sm:p-8">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
@@ -266,6 +277,158 @@ function Account() {
                 <p className="text-xs text-gray-500">
                   Update your personal details here.
                 </p>
+              </div>
+            </div>
+
+            {/* Avatar Upload - redesigned */}
+            <div className="py-6 border-b border-gray-100">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <label
+                    htmlFor="avatar-input"
+                    className="block w-28 h-28 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-pointer hover:opacity-90"
+                  >
+                    <Avatar className="w-full h-full">
+                      <AvatarImage
+                        src={previewUrl || currentAvatar || undefined}
+                        className="w-full h-full object-cover"
+                        alt="Avatar"
+                      />
+                      <AvatarFallback className="bg-[#4F6F52]/10 text-[#4F6F52] font-bold text-xl">
+                        {getInitials(
+                          form.getValues().firstname ||
+                            user?.first_name ||
+                            user?.email?.[0],
+                          form.getValues().lastname || user?.last_name || "",
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute right-0 bottom-0 -mb-1 -mr-1 bg-white rounded-full p-1 shadow">
+                      <Camera className="w-4 h-4 text-gray-600" />
+                    </div>
+                  </label>
+                  <input
+                    id="avatar-input"
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSelectedPhoto(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700 font-medium">
+                    Profile Photo
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload a square image for best results. JPG, PNG up to 5MB.
+                  </p>
+
+                  <div className="flex items-center gap-3 mt-3">
+                    <Button
+                      type="button"
+                      disabled={!selectedPhoto || uploadingPhoto}
+                      className="h-9 px-3 bg-[#4F6F52] text-white"
+                      onClick={async () => {
+                        if (!selectedPhoto) return;
+                        const userId = user?.customer_id;
+                        if (!userId) {
+                          toast.error("No user id");
+                          return;
+                        }
+                        try {
+                          setUploadingPhoto(true);
+                          const fd = new FormData();
+                          fd.append("photo", selectedPhoto);
+
+                          const res = await Requests({
+                            url: `/settings/${userId}/photo`,
+                            method: "POST",
+                            data: fd,
+                          });
+
+                          if (res.data?.ok) {
+                            toast.success("Photo uploaded");
+                            fetchProfile();
+                            try {
+                              refreshUser?.();
+                            } catch (e) {}
+                            setSelectedPhoto(null);
+                            setPreviewUrl("");
+                          } else {
+                            toast.error(res.data?.message || "Upload failed");
+                          }
+                        } catch (err) {
+                          toast.error("Failed to upload photo");
+                          console.error(err);
+                        } finally {
+                          setUploadingPhoto(false);
+                        }
+                      }}
+                    >
+                      {uploadingPhoto ? "Uploading..." : "Upload Photo"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      className="h-9 px-3 bg-[#4F6F52] hover:bg-[#3A523D] text-white"
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
+                      Choose
+                    </Button>
+
+                    {(selectedPhoto || currentAvatar) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 px-3 text-red-600"
+                        onClick={async () => {
+                          const userId = user?.customer_id;
+                          if (!userId) return toast.error("No user id");
+                          try {
+                            const res = await Requests({
+                              url: `/settings/${userId}/photo`,
+                              method: "DELETE",
+                            });
+                            if (res.data?.ok) {
+                              setCurrentAvatar("");
+                              setSelectedPhoto(undefined);
+                              setPreviewUrl("");
+                              fetchProfile();
+                              toast.success("Photo removed");
+                              try {
+                                refreshUser?.();
+                              } catch (e) {}
+                            } else {
+                              toast.error(
+                                res.data?.message || "Failed to remove photo",
+                              );
+                            }
+                          } catch (err) {
+                            toast.error("Failed to remove photo");
+                            console.error(err);
+                          }
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+
+                  {selectedPhoto && (
+                    <div className="mt-2 text-xs text-gray-600">
+                      Selected: {selectedPhoto.name} (
+                      {Math.round(selectedPhoto.size / 1024)} KB)
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -338,7 +501,7 @@ function Account() {
                   )}
                 />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="gap-6">
                   <FormField
                     control={form.control}
                     name="number"
@@ -386,7 +549,7 @@ function Account() {
                     disabled={saveLoading}
                     className={`${
                       editMode ? "inline-flex" : "hidden"
-                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red]/100 hover:text-[white] cursor-pointer`}
+                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red] hover:text-[white] cursor-pointer`}
                     onClick={() => setEditMode(false)}
                   >
                     Cancel
@@ -397,9 +560,9 @@ function Account() {
           </form>
         </Form>
 
-        {/* right */}
+        {/* === Right Column: Sidebar Actions === */}
         <div className="flex flex-col w-full lg:w-96 gap-6">
-          {/* security card */}
+          {/* Security Card */}
           <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <Lock className="w-4 h-4 text-[#4F6F52]" />
@@ -408,7 +571,7 @@ function Account() {
               </h3>
             </div>
             <div className="p-6 space-y-6">
-              {/* password reset */}
+              {/* Password Reset */}
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold text-gray-700">
                   Password
@@ -431,7 +594,7 @@ function Account() {
 
               <hr className="border-gray-100" />
 
-              {/* MFA section */}
+              {/* MFA Section */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Lock className="w-4 h-4 text-[#4F6F52]" />
@@ -440,65 +603,49 @@ function Account() {
                   </h4>
                 </div>
 
-                {/* disabled MFA */}
-                <div
-                  role="radio"
-                  aria-checked={mfaType === "N/A"}
-                  onClick={() => handleMFAChange("N/A")}
-                  className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition
-                    ${
-                      mfaType === "N/A"
-                        ? "border-[#4F6F52] bg-[#ECE3CE]/30"
-                        : "border-gray-200 hover:bg-[#ECE3CE]/20"
-                    }
-                    ${mfaLoading ? "opacity-50 pointer-events-none" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    checked={mfaType === "N/A"}
-                    readOnly
-                    className="accent-[#4F6F52]"
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      Disabled
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="mfa"
+                      value="N/A"
+                      checked={mfaType === "N/A"}
+                      onChange={() => handleMFAChange("N/A")}
+                      disabled={mfaLoading}
+                      className="accent-[#4F6F52]"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        Disabled
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </label>
 
-                {/* email MFA */}
-                <div
-                  role="radio"
-                  aria-checked={mfaType === "email"}
-                  onClick={() => handleMFAChange("email")}
-                  className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition
-                    ${
-                      mfaType === "email"
-                        ? "border-[#4F6F52] bg-[#ECE3CE]/30"
-                        : "border-gray-200 hover:bg-[#ECE3CE]/20"
-                    }
-                    ${mfaLoading ? "opacity-50 pointer-events-none" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    checked={mfaType === "email"}
-                    readOnly
-                    className="accent-[#4F6F52]"
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      Email Verification
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="mfa"
+                      value="email"
+                      checked={mfaType === "email"}
+                      onChange={() => handleMFAChange("email")}
+                      disabled={mfaLoading}
+                      className="accent-[#4F6F52]"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        Email Verification
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        Code sent to email on login
+                      </div>
                     </div>
-                    <div className="text-[10px] text-gray-500">
-                      Code sent to email on login
-                    </div>
-                  </div>
+                  </label>
                 </div>
               </div>
 
               <hr className="border-gray-100" />
 
-              {/* close account */}
+              {/* Close Account */}
               <div className="pt-2">
                 <Button
                   variant="ghost"
@@ -512,7 +659,7 @@ function Account() {
             </div>
           </div>
 
-          {/* quick links card */}
+          {/* Quick Links Card */}
           <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <User className="w-4 h-4 text-[#4F6F52]" />
@@ -525,6 +672,7 @@ function Account() {
                 { label: "Terms of Service", link: "/policies" },
                 { label: "Socials", link: "/socials" },
                 { label: "Studies", link: "/studies" },
+                { label: "Guide", link: "/guide" },
               ].map((item) => (
                 <Button
                   key={item.label}
@@ -540,10 +688,25 @@ function Account() {
         </div>
       </section>
 
-      {/* dialogs */}
+      {/* === Dialogs === */}
 
-      {/* password reset */}
-      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+      {/* Password Reset Dialog */}
+      <Dialog
+        open={resetOpen}
+        onOpenChange={(open) => {
+          setResetOpen(open);
+          if (!open) {
+            // Reset form when dialog closes
+            setResetCode("");
+            setNewPassword("");
+            setConfirmPassword("");
+            setResetSent(false);
+            setCodeError("");
+            setShowNewPassword(false);
+            setShowConfirmPassword(false);
+          }
+        }}
+      >
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[#4F6F52]">
@@ -618,25 +781,194 @@ function Account() {
                   <label className="text-xs font-semibold text-gray-600">
                     New Password
                   </label>
-                  <Input
-                    type="password"
-                    className="border-gray-200 focus-visible:border-[#4F6F52]"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showNewPassword ? "text" : "password"}
+                      className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52] cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">
                     Confirm
                   </label>
-                  <Input
-                    type="password"
-                    className="border-gray-200 focus-visible:border-[#4F6F52]"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52] cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Password Strength Requirements */}
+              {newPassword && (
+                <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">
+                    Password must contain:
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordChecks.minLength
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {passwordChecks.minLength && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks.minLength
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        8-20 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordChecks.hasUppercase
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {passwordChecks.hasUppercase && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks.hasUppercase
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        One uppercase letter
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordChecks.hasLowercase
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {passwordChecks.hasLowercase && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks.hasLowercase
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        One lowercase letter
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordChecks.hasNumber
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {passwordChecks.hasNumber && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks.hasNumber
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        One number
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordChecks.hasSpecial
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        {passwordChecks.hasSpecial && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks.hasSpecial
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        One special character
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordChecks.match ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                      >
+                        {passwordChecks.match && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks.match
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        Passwords match
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -644,10 +976,25 @@ function Account() {
               type="button"
               className="w-full bg-[#4F6F52] hover:bg-[#3A523D]"
               disabled={
-                resetSubmitting || !codeFormatValid || !passwordChecks.match
+                resetSubmitting ||
+                !codeFormatValid ||
+                !allPasswordRequirementsMet
               }
               onClick={async () => {
                 const userId = user?.customer_id;
+
+                // Validate all password requirements are met
+                if (!allPasswordRequirementsMet) {
+                  toast.error("Please meet all password requirements");
+                  return;
+                }
+
+                // Validate code format
+                if (!codeFormatValid) {
+                  toast.error("Please enter a valid 6-digit code");
+                  return;
+                }
+
                 try {
                   setResetSubmitting(true);
                   const res = await Requests({
@@ -656,11 +1003,25 @@ function Account() {
                     data: { code: resetCode, newPassword },
                   });
                   if (res.data?.ok) {
-                    toast.success("Password changed!");
+                    toast.success("Password changed successfully!");
                     setResetOpen(false);
+                    // Reset form
+                    setResetCode("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    setResetSent(false);
+                    setShowNewPassword(false);
+                    setShowConfirmPassword(false);
+                  } else {
+                    toast.error(
+                      res.data?.message || "Failed to change password",
+                    );
                   }
-                } catch {
-                  toast.error("Failed to change password");
+                } catch (error) {
+                  toast.error(
+                    error.response?.data?.message ||
+                      "Failed to change password",
+                  );
                 } finally {
                   setResetSubmitting(false);
                 }
@@ -672,7 +1033,7 @@ function Account() {
         </DialogContent>
       </Dialog>
 
-      {/* close account */}
+      {/* Close Account Dialog */}
       <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
@@ -705,5 +1066,3 @@ function Account() {
     </section>
   );
 }
-
-export default Account;
