@@ -18,3 +18,7 @@ export type UserSignInDto = {
 export type GoogleSignInDto = {
   credential: string;
 };
+
+export type CheckEmailDto = {
+  email: string;
+}

@@ -58,7 +58,6 @@ export function Login() {
       if (!response.data.ok) {
         setLoginError(response.data.error || "Login failed");
         return;
-        y;
       }
 
       if (response.data.requiresMFA) {
@@ -260,7 +259,7 @@ export function Login() {
                           </FormControl>
                           <div className="flex justify-start mt-2">
                             <Link
-                              to="/password-reset"
+                              to="/forgot-password"
                               className="text-xs font-bold text-[#4F6F52] hover:underline"
                             >
                               Forgot password?

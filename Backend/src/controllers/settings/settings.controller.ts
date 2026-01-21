@@ -8,11 +8,17 @@ import {
   Patch,
   Body,
   Post,
+  Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 import { DatabaseService } from '../../service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
+import supabaseService from '../../service/storage/supabase.service';
 
 type UserPublicRow = {
   customer_id: string;
@@ -46,6 +52,27 @@ export class SettingsController {
     private readonly databaseService: DatabaseService,
     private readonly mailer: BrevoService,
   ) {}
+
+  private async resolveAvatarUrl(userId: string) {
+    const bucket = 'avatars';
+    const exts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+    for (const e of exts) {
+      try {
+        const url = await supabaseService.getSignedUrl(
+          bucket,
+          `avatars/${userId}.${e}`,
+          60,
+        );
+        if (url) return url;
+      } catch (err) {
+        // ignore and continue
+      }
+    }
+    // fallback to a public URL for common extension (may 404 if missing)
+    return (
+      supabaseService.getPublicUrl('avatars', `avatars/${userId}.jpg`) || null
+    );
+  }
 
   private async ensureResetTable() {
     const client = this.databaseService.getClient();
@@ -86,11 +113,14 @@ export class SettingsController {
          LIMIT 1`,
         [customerId],
       );
+      
+      const base = mapUser(userResult.rows[0]);
+      const avatar = await this.resolveAvatarUrl(base.customer_id);
 
       if (userResult.rowCount) {
         return {
           ok: true,
-          user: mapUser(userResult.rows[0] as UserPublicRow),
+          user: {...base, avatar},
         };
       }
     } catch (error) {
@@ -384,6 +414,67 @@ export class SettingsController {
         throw error;
       }
       throw new InternalServerErrorException('Failed to verify password reset');
+    }
+  }
+
+  @Post(':customerId/photo')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
+  async uploadPhoto(
+    @Param('customerId') customerId: string,
+    @UploadedFile() file: any,
+  ) {
+    if (!customerId) throw new BadRequestException('customerId is required');
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    try {
+      const bucket = 'avatars';
+
+      const orig = file.originalname || '';
+      const extMatch = orig.match(/\.([a-zA-Z0-9]+)$/);
+      const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
+      const path = `avatars/${customerId}.${ext}`;
+
+      // upload buffer
+      await supabaseService.uploadBuffer(
+        bucket,
+        path,
+        file.buffer,
+        file.mimetype,
+      );
+
+      const publicUrl = supabaseService.getPublicUrl(bucket, path);
+
+      return {
+        ok: true,
+        url: publicUrl,
+        message: 'Photo uploaded',
+      };
+    } catch (err) {
+      console.error('uploadPhoto error', err);
+      throw new InternalServerErrorException('Failed to upload photo');
+    }
+  }
+
+  @Delete(':customerId/photo')
+  async deletePhoto(@Param('customerId') customerId: string) {
+    if (!customerId) throw new BadRequestException('staffId is required');
+
+    try {
+      const bucket = 'avatars';
+      const exts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+      const paths = exts.map((e) => `avatars/${customerId}.${e}`);
+
+      await supabaseService.remove(bucket, paths);
+
+      return { ok: true, message: 'Photo removed' };
+    } catch (err) {
+      console.error('deletePhoto error', err);
+      throw new InternalServerErrorException('Failed to remove photo');
     }
   }
 }
