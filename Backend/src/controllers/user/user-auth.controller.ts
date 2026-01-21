@@ -1,10 +1,10 @@
-import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, NotFoundException, Post, Get } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, NotFoundException, Post, Get, Param } from '@nestjs/common';
 import { UserAuthService } from '../../service/auth/user-auth.service';
 import type {
   UserSignInDto,
   UserSignUpDto,
   GoogleSignInDto,
-  CheckEmailDto,
+  ForgotPasswordDto,
 } from './user-auth.dto';
 import { randomInt, randomUUID } from 'crypto';
 import { DatabaseService } from '../../service/database/database.service';
@@ -17,6 +17,63 @@ export class UserAuthController {
     private readonly mailer: BrevoService,
     private readonly userAuthService: UserAuthService,
   ) {}
+
+  @Get('check-email/:email')
+  async checkEmailAvailability(@Param('email') email: string) {
+    console.log(email);
+    if (!email) {
+      throw new BadRequestException('Request body is required');
+    }
+
+    return this.userAuthService.checkEmail({ email });
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    console.log(body);
+    if (!body) {
+      throw new BadRequestException('Request body is required');
+    }
+
+    return this.userAuthService.forgotPassword(body);
+  }
+
+  @Post('signup')
+  async signUp(@Body() body: UserSignUpDto) {
+    console.log(body);
+    if (!body) {
+      throw new BadRequestException('Request body is required');
+    }
+
+    return this.userAuthService.signUp(body);
+  }
+
+  @Post('signin')
+  async signIn(@Body() body: UserSignInDto) {
+    if (!body) {
+      throw new BadRequestException('Request body is required');
+    }
+
+    return this.userAuthService.signIn(body);
+  }
+
+  @Post('google-signin')
+  async googleSignIn(@Body() body: GoogleSignInDto) {
+    if (!body || !body.credential) {
+      throw new BadRequestException('Google credential is required');
+    }
+
+    return this.userAuthService.googleSignIn(body.credential);
+  }
+
+  @Post('google-signup')
+  async googleSignUp(@Body() body: GoogleSignInDto) {
+    if (!body || !body.credential) {
+      throw new BadRequestException('Google credential is required');
+    }
+
+    return this.userAuthService.googleSignUp(body.credential);
+  }
 
   @Post('email-verification')
   async sendEmailVerificationForSignup(
@@ -75,52 +132,5 @@ export class UserAuthController {
         'Failed to send verification code',
       );
     }
-  }
-
-  @Get('check-email/:email')
-  async checkEmailAvailability(@Body() body: CheckEmailDto) {
-    console.log(body)
-    if (!body) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return this.userAuthService.checkEmail(body);
-  }
-
-  @Post('signup')
-  async signUp(@Body() body: UserSignUpDto) {
-    console.log(body);
-    if (!body) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return this.userAuthService.signUp(body);
-  }
-
-  @Post('signin')
-  async signIn(@Body() body: UserSignInDto) {
-    if (!body) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return this.userAuthService.signIn(body);
-  }
-
-  @Post('google-signin')
-  async googleSignIn(@Body() body: GoogleSignInDto) {
-    if (!body || !body.credential) {
-      throw new BadRequestException('Google credential is required');
-    }
-
-    return this.userAuthService.googleSignIn(body.credential);
-  }
-
-  @Post('google-signup')
-  async googleSignUp(@Body() body: GoogleSignInDto) {
-    if (!body || !body.credential) {
-      throw new BadRequestException('Google credential is required');
-    }
-
-    return this.userAuthService.googleSignUp(body.credential);
   }
 }

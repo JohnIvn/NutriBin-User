@@ -18,6 +18,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Settings from "@/pages/Settings";
 import ForgotPassword from "@/pages/ForgotPassword";
 import EmailVerification from "@/pages/EmailVerification";
+import { ChangePassword } from "@/pages/ChangePassword";
 
 export default function PageRouter() {
   return (
@@ -27,6 +28,7 @@ export default function PageRouter() {
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/change-password" element={<ChangePassword />} />
       <Route path="/verify" element={<EmailVerification />} />
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<AboutUs />} />

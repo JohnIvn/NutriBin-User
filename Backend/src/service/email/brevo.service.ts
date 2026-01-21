@@ -268,6 +268,81 @@ export class BrevoService {
     return this.sendHtmlEmail(to, subject, html);
   }
 
+  async sendPasswordResetLinkEmail(to: string, token: string, customerId: string) {
+    const link = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/change-password?token=${token}&customerId=${customerId}`;
+    const subject = 'Reset Your NutriBin Password';
+
+    const content = `
+    <h2 style="margin: 0 0 20px 0; color: #CD5C08; font-size: 24px;">
+      Reset Your Password 🔐
+    </h2>
+
+    <p style="margin: 0 0 20px 0;">
+      We received a request to reset your NutriBin account password.
+      Click the button below to continue.
+    </p>
+
+    <div style="
+      background: linear-gradient(135deg, #FFF5E4 0%, #FFE8CC 100%);
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      margin: 30px 0;
+      border: 2px solid #CD5C08;
+    ">
+      <a
+        href="${link}"
+        target="_blank"
+        style="
+          display: inline-block;
+          background-color: #CD5C08;
+          color: #ffffff;
+          padding: 16px 32px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-size: 16px;
+          font-weight: bold;
+        "
+      >
+        Reset Password
+      </a>
+
+      <p style="
+        margin: 20px 0 0 0;
+        color: #666;
+        font-size: 13px;
+        word-break: break-all;
+      ">
+        Or copy and paste this link into your browser:<br />
+        <span style="color: #CD5C08;">${link}</span>
+      </p>
+    </div>
+
+    <div style="
+      background-color: #FFF5E4;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    ">
+      <p style="margin: 0 0 10px 0; font-weight: bold; color: #CD5C08;">
+        ⏱️ Time Sensitive
+      </p>
+      <p style="margin: 0; color: #666; font-size: 14px;">
+        This link will expire in <strong>15 minutes</strong> and can only be used once.
+      </p>
+    </div>
+
+    <p style="margin: 20px 0 0 0; color: #666; font-size: 14px;">
+      If you did not request a password reset, please ignore this email.
+      Your password will remain secure.
+    </p>
+  `;
+
+    const html = this.getEmailTemplate(content, 'Password Reset');
+
+    return this.sendHtmlEmail(to, subject, html);
+  }
+
   async sendRepairNotification(
     to: string,
     repairDetails: {

@@ -4,7 +4,7 @@ import React from "react";
 export default function Home() {
   return (
     <section className="flex flex-col w-full justify-between">
-      <div className="flex-col gap-5 items-center hidden md:flex justify-center bg-[url('/Homepage.png')] bg-cover bg-center h-[100vh]">
+      <div className="flex-col gap-5 items-center hidden md:flex justify-center bg-[url('/Homepage.png')] bg-cover bg-center h-screen">
         <div className="my-10">
           <h1 className="text-8xl text-white font-bold">
             TURN FOOD WASTE INTO

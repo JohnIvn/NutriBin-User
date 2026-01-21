@@ -4,15 +4,17 @@ import {
   InternalServerErrorException,
   Injectable,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 
 import { DatabaseService } from '../database/database.service';
 import { BrevoService } from '../email/brevo.service';
 import type {
   CheckEmailDto,
+  ForgotPasswordDto,
   UserSignInDto,
   UserSignUpDto,
 } from '../../controllers/user/user-auth.dto';
@@ -83,6 +85,60 @@ export class UserAuthService {
       };
     } catch {
       throw new InternalServerErrorException('Failed to check email');
+    }
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto?.email;
+    const normalizedEmail = email.trim().toLowerCase();
+    const client = this.databaseService.getClient();
+
+    try {
+      const userResult = await client.query<{
+        customer_id: string;
+        first_name: string;
+        email: string;
+      }>(
+        `SELECT customer_id, first_name, email FROM user_customer WHERE email = $1 LIMIT 1`,
+        [normalizedEmail],
+      );
+
+      if (!userResult.rowCount) {
+        throw new NotFoundException('Account not found');
+      }
+
+      const user = userResult.rows[0];
+
+      await client.query(
+        'DELETE FROM user_password_resets WHERE customer_id = $1',
+        [user.customer_id],
+      );
+
+      // Generate secure token
+      const token = String(randomInt(100000, 1000000));
+
+      await client.query(
+        `INSERT INTO user_password_resets (customer_id, token, expires_at)
+        VALUES ($1, $2, NOW() + INTERVAL '15 minutes')`,
+        [user.customer_id, token],
+      );
+
+      await this.mailer.sendPasswordResetLinkEmail(user.email, token, user.customer_id);
+
+      return {
+        ok: true,
+        message: 'Password reset link sent to your email',
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to request password reset',
+      );
     }
   }
 
