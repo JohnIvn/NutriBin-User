@@ -29,7 +29,7 @@ export default function Cameras() {
 
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-[1600px] mx-auto px-6 pt-8 space-y-8">
+      <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
         
         {/* header section */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -101,8 +101,8 @@ export default function Cameras() {
                 <Table>
                   <TableHeader className="bg-[#3A4D39]">
                     <TableRow className="hover:bg-[#3A4D39] border-none">
-                      <TableHead className="text-[#ECE3CE] font-bold w-[120px]">Date</TableHead>
-                      <TableHead className="text-[#ECE3CE] font-bold w-[100px]">Time</TableHead>
+                      <TableHead className="text-[#ECE3CE] font-bold w-30">Date</TableHead>
+                      <TableHead className="text-[#ECE3CE] font-bold w-25">Time</TableHead>
                       <TableHead className="text-[#ECE3CE] font-bold">Status</TableHead>
                     </TableRow>
                   </TableHeader>

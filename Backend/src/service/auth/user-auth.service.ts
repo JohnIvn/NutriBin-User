@@ -258,7 +258,7 @@ export class UserAuthService {
     if (!matches) {
       return {
         ok: false,
-        error: 'Wrong password',
+        error: 'Wrong email or password',
       };
     }
 

@@ -105,7 +105,7 @@ export function Login() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       {mfaMessage ? (
         // MFA Verification Message Screen
-        <div className="w-full h-[calc(100vh-48px)] flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
+        <div className="w-full h-[calc(100vh-48px)] flex items-center justify-center bg-linear-to-br from-amber-50 to-orange-50">
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
@@ -144,7 +144,7 @@ export function Login() {
       ) : (
         <div className="min-h-screen w-full bg-[#ECE3CE]/30 font-sans flex items-center justify-center px-4 pt-28 pb-12">
           {/* floating card container */}
-          <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-[600px] border border-[#3A4D39]/5">
+          <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-150 border border-[#3A4D39]/5">
             {/* left column */}
             <div className="hidden lg:flex w-1/2 bg-[#3A4D39] relative flex-col justify-between p-12 text-[#ECE3CE]">
               {/* decorative pattern */}
@@ -190,7 +190,7 @@ export function Login() {
 
             {/* right column */}
             <div className="flex-1 flex items-center justify-center p-8 md:p-12 bg-white">
-              <div className="w-full max-w-[400px] space-y-8">
+              <div className="w-full max-w-100 space-y-8">
                 {/* form header */}
                 <div className="text-center space-y-2">
                   <h2 className="text-3xl font-bold text-[#3A4D39]">

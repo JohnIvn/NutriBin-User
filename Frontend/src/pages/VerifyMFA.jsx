@@ -81,7 +81,7 @@ export function VerifyMFA() {
   }, [searchParams, navigate, login, verified]);
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
+    <div className="w-full h-screen flex items-center justify-center bg-linear-to-br from-amber-50 to-orange-50">
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
         {verifying ? (
           <div className="text-center">

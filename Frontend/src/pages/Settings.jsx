@@ -549,7 +549,7 @@ export default function Settings() {
                     disabled={saveLoading}
                     className={`${
                       editMode ? "inline-flex" : "hidden"
-                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red]/100 hover:text-[white] cursor-pointer`}
+                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red] hover:text-[white] cursor-pointer`}
                     onClick={() => setEditMode(false)}
                   >
                     Cancel

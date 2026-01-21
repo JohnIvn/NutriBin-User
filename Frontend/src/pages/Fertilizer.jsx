@@ -56,7 +56,7 @@ export default function Fertilizer() {
 
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-[1600px] mx-auto px-6 pt-8 space-y-8">
+      <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
         
         {/* header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -102,7 +102,7 @@ export default function Fertilizer() {
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <ChartContainer
                 config={chartConfig}
-                className="mx-auto aspect-square h-[260px] w-full"
+                className="mx-auto aspect-square h-65 w-full"
               >
                 <PieChart>
                   <ChartTooltip
@@ -222,7 +222,7 @@ export default function Fertilizer() {
                 {/* visual bar */}
                 <div className="h-3 w-full bg-[#ECE3CE]/30 rounded-full overflow-hidden border border-[#ECE3CE]">
                    <div 
-                     className="h-full bg-gradient-to-r from-orange-300 to-orange-500 rounded-full transition-all duration-1000 ease-out"
+                     className="h-full bg-linear-to-r from-orange-300 to-orange-500 rounded-full transition-all duration-1000 ease-out"
                      style={{ width: `${Math.min((rawTemp / 100) * 100, 100)}%` }}
                    />
                 </div>

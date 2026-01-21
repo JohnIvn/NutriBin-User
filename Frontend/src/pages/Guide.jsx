@@ -51,12 +51,12 @@ export default function Guide() {
           </div>
 
           {/* image */}
-          <div className="p-8 md:p-12 bg-[#808080]/5 flex justify-center min-h-[600px]">
+          <div className="p-8 md:p-12 bg-[#808080]/5 flex justify-center min-h-150">
             <div className="relative shadow-2xl shadow-black/10 rounded-lg overflow-hidden bg-white max-w-full">
                 <img
                     src="/UserGuide.svg"
                     alt="NutriBin User Manual"
-                    className="block w-full h-auto max-w-[800px]"
+                    className="block w-full h-auto max-w-200"
                 />
             </div>
           </div>
