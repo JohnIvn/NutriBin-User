@@ -1,9 +1,10 @@
-import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, NotFoundException, Post } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, NotFoundException, Post, Get } from '@nestjs/common';
 import { UserAuthService } from '../../service/auth/user-auth.service';
 import type {
   UserSignInDto,
   UserSignUpDto,
   GoogleSignInDto,
+  CheckEmailDto,
 } from './user-auth.dto';
 import { randomInt, randomUUID } from 'crypto';
 import { DatabaseService } from '../../service/database/database.service';
@@ -55,6 +56,7 @@ export class UserAuthController {
       return {
         ok: true,
         message: 'Verification code sent to the email address',
+        code: code.toString(),
       };
     } catch (error) {
       if (
@@ -68,6 +70,16 @@ export class UserAuthController {
         'Failed to send verification code',
       );
     }
+  }
+
+  @Get('check-email/:email')
+  async checkEmailAvailability(@Body() body: CheckEmailDto) {
+    console.log(body)
+    if (!body) {
+      throw new BadRequestException('Request body is required');
+    }
+
+    return this.userAuthService.checkEmail(body);
   }
 
   @Post('signup')
