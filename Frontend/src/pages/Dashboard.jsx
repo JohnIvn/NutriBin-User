@@ -1,16 +1,17 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { 
   Bell, 
   Leaf, 
   Droplets, 
   Thermometer, 
-  Activity, 
   Calendar,
   ArrowUpRight,
   History,
   Wind
 } from "lucide-react";
 
+// --- StatCard Component ---
 const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
   <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#3A4D39]/10 flex flex-col justify-between hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between">
@@ -34,8 +35,7 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
 );
 
 export default function Dashboard() {
-  
-  // mock data
+  // --- Mock Data ---
   const announcements = [
     {
       id: 1,
@@ -53,10 +53,9 @@ export default function Dashboard() {
     }
   ];
 
-  // mock data trash logs
   const trashLogs = [
     {
-      log_id: "a1b2-c3d4",
+      log_id: "a1b2",
       nitrogen: "120 mg/kg",
       phosphorus: "45 mg/kg",
       potassium: "200 mg/kg",
@@ -67,7 +66,7 @@ export default function Dashboard() {
       date_created: "2026-01-20 10:30 AM"
     },
     {
-      log_id: "e5f6-g7h8",
+      log_id: "e5f6",
       nitrogen: "118 mg/kg",
       phosphorus: "42 mg/kg",
       potassium: "195 mg/kg",
@@ -78,7 +77,7 @@ export default function Dashboard() {
       date_created: "2026-01-20 09:15 AM"
     },
     {
-      log_id: "i9j0-k1l2",
+      log_id: "i9j0",
       nitrogen: "125 mg/kg",
       phosphorus: "50 mg/kg",
       potassium: "210 mg/kg",
@@ -92,7 +91,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
+      <section className="max-w-[1600px] mx-auto px-6 pt-8 space-y-8">
         
         {/* header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -116,14 +115,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* announcements */}
-            <div className="lg:col-span-4 bg-[#3A4D39] text-[#ECE3CE] rounded-3xl p-6 shadow-xl shadow-[#3A4D39]/10 flex flex-col h-full min-h-75">
+            <div className="lg:col-span-4 bg-[#3A4D39] text-[#ECE3CE] rounded-3xl p-6 shadow-xl shadow-[#3A4D39]/10 flex flex-col h-full min-h-[300px]">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-white/10 rounded-lg">
                         <Bell className="w-5 h-5 text-[#ECE3CE]" />
                     </div>
                     <h2 className="text-lg font-bold">Announcements</h2>
                 </div>
-                
                 <div className="flex-1 space-y-4">
                     {announcements.map((item) => (
                         <div key={item.id} className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
@@ -142,9 +140,8 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* npk and environment */}
+            {/* stats grid */}
             <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {/* NPK section */}
                 <StatCard 
                     title="Nitrogen (N)" 
                     value="120" 
@@ -167,8 +164,6 @@ export default function Dashboard() {
                     icon={Leaf} 
                     color="bg-orange-100 text-orange-700" 
                 />
-                
-                {/* environmental section */}
                 <StatCard 
                     title="Moisture" 
                     value="65" 
@@ -193,7 +188,7 @@ export default function Dashboard() {
             </div>
         </div>
 
-        {/* trash logs */}
+        {/* table */}
         <div className="bg-white rounded-3xl shadow-sm border border-[#3A4D39]/10 overflow-hidden">
             <div className="px-6 py-5 border-b border-[#ECE3CE] bg-[#FAF9F6] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -202,16 +197,21 @@ export default function Dashboard() {
                     </div>
                     <h2 className="text-base font-bold text-[#3A4D39]">Recent Trash Logs</h2>
                 </div>
-                <button className="text-xs font-bold text-[#4F6F52] hover:text-[#3A4D39] hover:underline">
-                    View All
-                </button>
+
+                {/* logs page */}
+                <Link to="/logs">
+                  <button className="text-xs font-bold text-[#4F6F52] hover:text-[#3A4D39] hover:underline cursor-pointer">
+                      View All
+                  </button>
+                </Link>
             </div>
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-[#FAF9F6] border-b border-[#ECE3CE]">
-                            <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider w-45">Date Created</th>
+                            <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider w-[100px]">Log ID</th>
+                            <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider w-[180px]">Date Created</th>
                             <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider">Nitrogen</th>
                             <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider">Phosphorus</th>
                             <th className="p-4 text-xs font-bold text-[#739072] uppercase tracking-wider">Potassium</th>
@@ -224,6 +224,11 @@ export default function Dashboard() {
                     <tbody className="divide-y divide-[#ECE3CE]">
                         {trashLogs.map((log) => (
                             <tr key={log.log_id} className="hover:bg-[#ECE3CE]/10 transition-colors">
+                                <td className="p-4">
+                                   <span className="font-mono text-xs font-bold text-[#739072] bg-[#ECE3CE]/30 px-2 py-1 rounded select-all">
+                                      {log.log_id}
+                                   </span>
+                                </td>
                                 <td className="p-4 text-sm font-bold text-[#3A4D39] whitespace-nowrap">
                                     {log.date_created}
                                 </td>
