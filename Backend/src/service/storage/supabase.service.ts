@@ -1,8 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Supabase storage helper service
-// Usage: set SUPABASE_URL and SUPABASE_SERVICE_KEY in your environment (.env or process env)
-
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY =
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || '';
@@ -17,7 +14,7 @@ class SupabaseService {
     ) as SupabaseClient<any, 'public'>;
   }
 
-  // Uploads a file Buffer to specified bucket and path (e.g. 'avatars/userid.jpg')
+  // Upload a Buffer to a bucket
   async uploadBuffer(
     bucket: string,
     path: string,
@@ -25,103 +22,86 @@ class SupabaseService {
     contentType = 'application/octet-stream',
   ) {
     if (!bucket || !path) throw new Error('bucket and path are required');
-    try {
-      const { data, error } = await this.client.storage
-        .from(bucket)
-        .upload(path, file, {
-          contentType,
-          // upsert true to overwrite existing
-          upsert: true,
-        });
-      if (error) throw error;
-      return data;
-    } catch (err: any) {
-      // If bucket doesn't exist, try to create it (requires service role key)
-      const message = String(err?.message || err?.msg || err);
-      if (
-        /bucket not found/i.test(message) ||
-        /Bucket not found/i.test(message)
-      ) {
-        try {
-          await this.ensureBucketExists(bucket, true);
-          const { data, error } = await this.client.storage
-            .from(bucket)
-            .upload(path, file, { contentType, upsert: true });
-          if (error) throw error;
-          return data;
-        } catch (err2) {
-          throw err2;
-        }
-      }
 
-      throw err;
-    }
-  }
-
-  // Ensure bucket exists; create if missing (requires service_role key)
-  async ensureBucketExists(bucket: string, isPublic = true) {
-    try {
-      // createBucket will fail if already exists; handle that gracefully
-      const { data, error } = await this.client.storage.createBucket(bucket, {
-        public: isPublic,
+    const { data, error } = await this.client.storage
+      .from(bucket)
+      .upload(path, file, {
+        contentType,
+        upsert: true,
       });
-      if (
-        error &&
-        !(
-          String(error.message).toLowerCase().includes('already exists') ||
-          String(error.message).toLowerCase().includes('bucket already exists')
-        )
-      ) {
-        throw error;
+
+    if (error) {
+      // Check if the bucket is missing
+      if (/bucket not found/i.test(error.message)) {
+        await this.ensureBucketExists(bucket, true);
+        const { data: retryData, error: retryError } = await this.client.storage
+          .from(bucket)
+          .upload(path, file, { contentType, upsert: true });
+
+        if (retryError) throw retryError;
+        return retryData;
       }
-      return data;
-    } catch (err) {
-      // some Supabase clients may return different error shapes
-      const msg = String(err?.message || err);
-      if (msg.toLowerCase().includes('already exists')) return null;
-      throw err;
+      throw error;
     }
+
+    return data;
   }
 
-  // Upload using ReadableStream / Blob-like (works in Node when using File or Buffer with options)
+  // Ensure bucket exists
+  async ensureBucketExists(bucket: string, isPublic = true) {
+    const { data, error } = await this.client.storage.createBucket(bucket, {
+      public: isPublic,
+    });
+
+    if (error && !/already exists/i.test(error.message)) {
+      throw error;
+    }
+
+    return data || null;
+  }
+
+  // Upload a file-like object
   async uploadFile(
     bucket: string,
     path: string,
-    file: any,
+    file: Buffer | Blob | File,
     opts?: { contentType?: string; upsert?: boolean },
   ) {
     if (!bucket || !path) throw new Error('bucket and path are required');
+
     const { data, error } = await this.client.storage
       .from(bucket)
       .upload(path, file, {
         contentType: opts?.contentType,
         upsert: opts?.upsert ?? true,
       });
+
     if (error) throw error;
     return data;
   }
 
-  // Remove object at path
+  // Remove object(s)
   async remove(bucket: string, paths: string | string[]) {
     const { data, error } = await this.client.storage
       .from(bucket)
       .remove(Array.isArray(paths) ? paths : [paths]);
+
     if (error) throw error;
     return data;
   }
 
-  // Get public URL (if bucket is public) or signed URL
+  // Get public URL
   getPublicUrl(bucket: string, path: string) {
-    const res: any = this.client.storage.from(bucket).getPublicUrl(path);
-    // supabase client may return { data: { publicUrl: string } } or similar
-    return res?.data?.publicUrl || res?.data?.publicURL || null;
+    const { data } = this.client.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl || null;
   }
 
-  // Get signed URL for private buckets (expires in seconds)
+  // Get signed URL
   async getSignedUrl(bucket: string, path: string, expires = 60) {
     const { data, error } = await this.client.storage
       .from(bucket)
       .createSignedUrl(path, expires);
+
     if (error) throw error;
     return data.signedUrl;
   }
@@ -129,7 +109,3 @@ class SupabaseService {
 
 const supabaseService = new SupabaseService();
 export default supabaseService;
-
-// Example usage in other services (do not uncomment here):
-// import supabaseService from '../storage/supabase.service';
-// await supabaseService.uploadBuffer('avatars', `users/${userId}.jpg`, fileBuffer, 'image/jpeg');

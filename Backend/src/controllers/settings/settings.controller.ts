@@ -69,9 +69,7 @@ export class SettingsController {
       }
     }
     // fallback to a public URL for common extension (may 404 if missing)
-    return supabaseService.getPublicUrl('avatars', `avatars/${userId}.jpg`) as
-      | string
-      | null;
+    return supabaseService.getPublicUrl('avatars', `avatars/${userId}.jpg`);
   }
 
   private async ensureResetTable() {
