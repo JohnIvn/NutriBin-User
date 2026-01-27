@@ -1,5 +1,28 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import { Injectable } from '@nestjs/common';
 import * as SibApiV3Sdk from 'sib-api-v3-sdk';
+
+type TransactionalEmailsApi = InstanceType<
+  typeof SibApiV3Sdk.TransactionalEmailsApi
+>;
+
+type SendTransacEmailResponse = {
+  messageId?: string | string[];
+};
+
+type TransacEmailPayload = {
+  sender: { email: string; name?: string };
+  to: Array<{ email: string }>;
+  subject: string;
+  htmlContent?: string;
+  textContent?: string;
+  cc?: Array<{ email: string }>;
+  bcc?: Array<{ email: string }>;
+  attachment?: Array<{ name: string; content?: string }>;
+};
 
 export interface EmailOptions {
   to: string | string[];
@@ -18,7 +41,7 @@ export interface EmailOptions {
 
 @Injectable()
 export class BrevoService {
-  private tranEmailApi: any;
+  private tranEmailApi: TransactionalEmailsApi;
   private defaultSender: { email: string; name?: string };
 
   constructor() {
@@ -26,13 +49,20 @@ export class BrevoService {
       process.env.BREVO_API_KEY ||
       process.env.SENDINBLUE_API_KEY ||
       process.env.SIB_API_KEY;
-    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+
+    const defaultClient = SibApiV3Sdk.ApiClient
+      .instance as SibApiV3Sdk.ApiClient;
+
     if (apiKey) {
-      const apiKeyAuth = defaultClient.authentications['api-key'];
-      apiKeyAuth.apiKey = apiKey;
+      const auth = defaultClient.authentications[
+        'api-key'
+      ] as SibApiV3Sdk.Authentication;
+      auth.apiKey = apiKey;
     }
+
     this.tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
     const fromEnv = process.env.MAIL_FROM || process.env.MAIL_USER || '';
+
     if (fromEnv) {
       // MAIL_FROM may be in format "Name <email>"
       const matches = /^(.*)<([^>]+)>$/.exec(fromEnv);
@@ -71,11 +101,10 @@ export class BrevoService {
       process.env.MAIL_USER ||
       '';
 
-    const payload: any = {
-      sender:
-        this.defaultSender && this.defaultSender.email
-          ? this.defaultSender
-          : { email: sender },
+    const payload: TransacEmailPayload = {
+      sender: this.defaultSender?.email
+        ? this.defaultSender
+        : { email: sender },
       to: this.formatRecipients(options.to),
       subject: options.subject,
       htmlContent: options.html,
@@ -102,10 +131,12 @@ export class BrevoService {
     }
 
     try {
-      const result = await this.tranEmailApi.sendTransacEmail(payload);
+      const result = (await this.tranEmailApi.sendTransacEmail(
+        payload,
+      )) as SendTransacEmailResponse;
       return {
         success: true,
-        messageId: result && result.messageId ? result.messageId : undefined,
+        messageId: result.messageId,
         response: result,
       };
     } catch (err: unknown) {
@@ -117,14 +148,12 @@ export class BrevoService {
 
   async verifyConnection(): Promise<boolean> {
     try {
-      // Basic verification: ensure API key exists and TransactionalEmailsApi can be constructed
-      if (
-        !process.env.BREVO_API_KEY &&
-        !process.env.SENDINBLUE_API_KEY &&
-        !process.env.SIB_API_KEY
-      )
-        return false;
-      return true;
+      await Promise.resolve();
+      return !!(
+        process.env.BREVO_API_KEY ||
+        process.env.SENDINBLUE_API_KEY ||
+        process.env.SIB_API_KEY
+      );
     } catch (err) {
       console.error('Brevo verification error:', err);
       return false;
@@ -268,7 +297,11 @@ export class BrevoService {
     return this.sendHtmlEmail(to, subject, html);
   }
 
-  async sendPasswordResetLinkEmail(to: string, token: string, customerId: string) {
+  async sendPasswordResetLinkEmail(
+    to: string,
+    token: string,
+    customerId: string,
+  ) {
     const link = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/change-password?token=${token}&customerId=${customerId}`;
     const subject = 'Reset Your NutriBin Password';
 

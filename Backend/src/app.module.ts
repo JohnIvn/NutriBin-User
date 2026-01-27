@@ -26,6 +26,12 @@ import { IprogSmsService } from './service/iprogsms/iprogsms.service';
     ModuleAnalyticsController,
     TrashLogsController,
   ],
-  providers: [AppService, DatabaseService, UserAuthService, BrevoService, IprogSmsService],
+  providers: [
+    AppService,
+    DatabaseService,
+    UserAuthService,
+    BrevoService,
+    IprogSmsService,
+  ],
 })
 export class AppModule {}

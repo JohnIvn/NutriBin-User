@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect } from "react";
 import Requests from "@/utils/Requests";
 
 const UserContext = createContext(null);
@@ -83,10 +83,4 @@ export function UserProvider({ children }) {
     </UserContext.Provider>
   );
 }
-export function useUser() {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
-  return context;
-}
+

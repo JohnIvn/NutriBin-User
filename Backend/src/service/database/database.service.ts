@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Client } from 'pg';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
-
+/*
 import { createUserCustomerTable } from './models/user-customer.model';
 import { createTrashLogsTable } from './models/trash-logs.model';
 import { createCameraLogsTable } from './models/camera-logs';
@@ -10,7 +10,7 @@ import { createFertilizerAnalyticsTable } from './models/fertilizer-analytics.mo
 import { createMachinesTable } from './models/machines.model';
 import { createModuleAnalyticsTable } from './models/module-analytics.model';
 import { createAuthenticationTable } from './models/authentication';
-
+*/
 dotenv.config();
 
 console.log(chalk.bgBlue.black('[SERVICE] Database service loaded'));

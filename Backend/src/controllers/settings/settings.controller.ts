@@ -65,13 +65,13 @@ export class SettingsController {
         );
         if (url) return url;
       } catch (err) {
-        // ignore and continue
+        console.log(err);
       }
     }
     // fallback to a public URL for common extension (may 404 if missing)
-    return (
-      supabaseService.getPublicUrl('avatars', `avatars/${userId}.jpg`) || null
-    );
+    return supabaseService.getPublicUrl('avatars', `avatars/${userId}.jpg`) as
+      | string
+      | null;
   }
 
   private async ensureResetTable() {
@@ -113,14 +113,18 @@ export class SettingsController {
          LIMIT 1`,
         [customerId],
       );
-      
+
       const base = mapUser(userResult.rows[0]);
       const avatar = await this.resolveAvatarUrl(base.customer_id);
+
+      if (!userResult.rowCount) {
+        throw new NotFoundException('Account not found');
+      }
 
       if (userResult.rowCount) {
         return {
           ok: true,
-          user: {...base, avatar},
+          user: { ...base, avatar },
         };
       }
     } catch (error) {
@@ -422,11 +426,26 @@ export class SettingsController {
     FileInterceptor('photo', {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (req, file, cb) => {
+        const allowed = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'image/avif',
+        ];
+
+        if (!allowed.includes(file.mimetype)) {
+          return cb(new BadRequestException('Unsupported file type'), false);
+        }
+
+        cb(null, true);
+      },
     }),
   )
   async uploadPhoto(
     @Param('customerId') customerId: string,
-    @UploadedFile() file: any,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     if (!customerId) throw new BadRequestException('customerId is required');
     if (!file) throw new BadRequestException('No file uploaded');
@@ -447,7 +466,7 @@ export class SettingsController {
         file.mimetype,
       );
 
-      const publicUrl = supabaseService.getPublicUrl(bucket, path);
+      const publicUrl = supabaseService.getPublicUrl(bucket, path) as string;
 
       return {
         ok: true,

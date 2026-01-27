@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { createHash, randomBytes, randomInt } from 'crypto';
+import { randomBytes, randomInt } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 
 import { DatabaseService } from '../database/database.service';
@@ -123,7 +123,11 @@ export class UserAuthService {
         [user.customer_id, token],
       );
 
-      await this.mailer.sendPasswordResetLinkEmail(user.email, token, user.customer_id);
+      await this.mailer.sendPasswordResetLinkEmail(
+        user.email,
+        token,
+        user.customer_id,
+      );
 
       return {
         ok: true,

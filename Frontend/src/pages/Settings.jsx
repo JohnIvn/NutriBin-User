@@ -12,7 +12,7 @@ import { userAccount } from "@/schema/userAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
@@ -359,7 +359,9 @@ export default function Settings() {
                             fetchProfile();
                             try {
                               refreshUser?.();
-                            } catch (e) {}
+                            } catch (e) {
+                              console.log(e);
+                            }
                             setSelectedPhoto(null);
                             setPreviewUrl("");
                           } else {
@@ -405,7 +407,9 @@ export default function Settings() {
                               toast.success("Photo removed");
                               try {
                                 refreshUser?.();
-                              } catch (e) {}
+                              } catch (e) {
+                                console.log(e);
+                              }
                             } else {
                               toast.error(
                                 res.data?.message || "Failed to remove photo",

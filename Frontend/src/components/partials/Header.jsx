@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/contexts/UserContextHook";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 
 export default function Header() {

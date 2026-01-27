@@ -5,7 +5,7 @@ import {
   FileText 
 } from "lucide-react";
 
-import { useUser } from "@/contexts/UserContext"; 
+import { useUser } from "@/contexts/UserContextHook"; 
 
 export default function Guide() {
   const { user } = useUser();

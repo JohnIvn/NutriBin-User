@@ -2,7 +2,7 @@ import "./App.css";
 import { BrowserRouter } from "react-router-dom";
 import GuestLayout from "@/layouts/GuestLayout";
 import MainLayout from "./layouts/MainLayout";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/contexts/UserContextHook";
 import ScrollToTop from "@/utils/ScrollToTop"; 
 import Header from "./components/partials/Header";
 import Footer from "./components/partials/Footer";

@@ -1,6 +1,5 @@
 import React from "react";
 import { BookOpenIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/solid";
-import { motion } from "framer-motion";
 
 const researchData = [
   {

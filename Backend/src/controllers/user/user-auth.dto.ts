@@ -21,8 +21,8 @@ export type GoogleSignInDto = {
 
 export type CheckEmailDto = {
   email: string;
-}
+};
 
 export type ForgotPasswordDto = {
   email: string;
-}
+};

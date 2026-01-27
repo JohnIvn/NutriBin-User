@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/contexts/UserContextHook";
 import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
 import TOSModal from "@/components/ui/TOSModal";
 

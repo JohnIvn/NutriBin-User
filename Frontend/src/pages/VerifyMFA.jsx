@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import Requests from "@/utils/Requests";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/contexts/UserContextHook";
 
 export function VerifyMFA() {
   const [searchParams] = useSearchParams();

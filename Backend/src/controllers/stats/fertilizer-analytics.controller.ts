@@ -96,6 +96,7 @@ export class FertilizerAnalyticsController {
         analytics: result.rows.map(mapFertilizerAnalytics),
       };
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(
         'Failed to load fertilizer analytics',
       );

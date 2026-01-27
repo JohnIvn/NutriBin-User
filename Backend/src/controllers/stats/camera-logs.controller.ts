@@ -26,6 +26,8 @@ function mapCameraLog(row: CameraLogRow) {
   };
 }
 
+type SqlValue = string | number;
+
 @Controller('camera-logs')
 export class CameraLogsController {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -55,7 +57,7 @@ export class CameraLogsController {
     try {
       // Build WHERE clause safely
       const where: string[] = ['cl.customer_id = $1'];
-      const values: any[] = [customerId];
+      const values: SqlValue[] = [customerId];
 
       if (machineId) {
         where.push(`cl.machine_id = $${values.length + 1}`);

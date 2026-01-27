@@ -140,6 +140,6 @@ export class IprogSmsService {
   }
 
   async verifyConnection(): Promise<boolean> {
-    return !!this.apiToken;
+    return Promise.resolve(!!this.apiToken);
   }
 }

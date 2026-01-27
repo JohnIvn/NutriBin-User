@@ -8,19 +8,13 @@ const SUPABASE_SERVICE_KEY =
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || '';
 
 class SupabaseService {
-  private client: SupabaseClient;
+  private client: SupabaseClient<any, 'public'>;
 
   constructor() {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      console.warn(
-        'SupabaseService: SUPABASE_URL or SUPABASE_SERVICE_KEY not set. Supabase storage will not work until configured.',
-      );
-    }
-
-    this.client = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-      // adjust options as needed
-      auth: { persistSession: false },
-    });
+    this.client = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_KEY,
+    ) as SupabaseClient<any, 'public'>;
   }
 
   // Uploads a file Buffer to specified bucket and path (e.g. 'avatars/userid.jpg')
