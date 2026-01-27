@@ -8,6 +8,11 @@ import { UserAuthService } from './service/auth/user-auth.service';
 import { SettingsController } from './controllers/settings/settings.controller';
 import { BrevoService } from './service/email/brevo.service';
 import { AuthenticationController } from './controllers/settings/authentication.controller';
+import { CameraLogsController } from './controllers/stats/camera-logs.controller';
+import { FertilizerAnalyticsController } from './controllers/stats/fertilizer-analytics.controller';
+import { ModuleAnalyticsController } from './controllers/stats/module-analytics.controller';
+import { TrashLogsController } from './controllers/stats/trash-logs.controller';
+import { IprogSmsService } from './service/iprogsms/iprogsms.service';
 
 @Module({
   imports: [],
@@ -16,7 +21,11 @@ import { AuthenticationController } from './controllers/settings/authentication.
     UserAuthController,
     SettingsController,
     AuthenticationController,
+    CameraLogsController,
+    FertilizerAnalyticsController,
+    ModuleAnalyticsController,
+    TrashLogsController,
   ],
-  providers: [AppService, DatabaseService, UserAuthService, BrevoService],
+  providers: [AppService, DatabaseService, UserAuthService, BrevoService, IprogSmsService],
 })
 export class AppModule {}
