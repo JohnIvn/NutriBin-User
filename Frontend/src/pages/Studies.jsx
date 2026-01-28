@@ -1,5 +1,6 @@
 import React from "react";
 import { BookOpenIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/solid";
+import { motion as Motion } from "framer-motion";
 
 const researchData = [
   {
@@ -54,7 +55,7 @@ const researchData = [
 ];
 
 const StudyItem = ({ title, link }) => (
-  <motion.a
+  <Motion.a
     href={link}
     target="_blank"
     rel="noopener noreferrer"
@@ -86,7 +87,7 @@ const StudyItem = ({ title, link }) => (
       <span>Read Publication</span>
       <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">→</span>
     </div>
-  </motion.a>
+  </Motion.a>
 );
 
 const Studies = () => {
@@ -95,7 +96,7 @@ const Studies = () => {
       <div className="w-full max-w-7xl mx-auto px-6 py-16 pt-32">
         
         {/* header */}
-        <motion.div 
+        <Motion.div 
           className="mb-14 flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left border-b border-[#3A4D39]/10 pb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -112,10 +113,10 @@ const Studies = () => {
               Scientific literature and case studies supporting sustainable composting and organic waste management.
             </p>
           </div>
-        </motion.div>
+        </Motion.div>
 
         {/* grid */}
-        <motion.div
+        <Motion.div
           className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
           initial="hidden"
           animate="show"
@@ -128,7 +129,7 @@ const Studies = () => {
           }}
         >
           {researchData.map((item, index) => (
-            <motion.div
+            <Motion.div
               key={index}
               variants={{
                 hidden: { opacity: 0, y: 20 },
@@ -141,12 +142,12 @@ const Studies = () => {
               className="h-full"
             >
               <StudyItem title={item.title} link={item.link} />
-            </motion.div>
+            </Motion.div>
           ))}
-        </motion.div>
+        </Motion.div>
 
         {/* footer */}
-        <motion.div 
+        <Motion.div 
           className="mt-16 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -155,7 +156,7 @@ const Studies = () => {
           <p className="text-[#739072] text-sm">
             Access to full papers may require academic credentials or subscription.
           </p>
-        </motion.div>
+        </Motion.div>
 
       </div>
     </div>

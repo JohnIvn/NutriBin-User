@@ -1,5 +1,6 @@
 import { LightBulbIcon } from "@heroicons/react/24/solid";
 import { useState, useRef, useEffect } from "react";
+import { motion as Motion } from "framer-motion";
 
 const StudyCard = ({ title, link }) => {
   const [hovered, setHovered] = useState(false);
@@ -16,7 +17,7 @@ const StudyCard = ({ title, link }) => {
   }, [title]);
 
   return (
-    <motion.div
+    <Motion.div
       className="bg-white rounded-lg shadow-lg overflow-hidden relative transform hover:scale-105 hover:shadow-2xl"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -36,7 +37,7 @@ const StudyCard = ({ title, link }) => {
       </div>
 
       {/* Card Body */}
-      <motion.div
+      <Motion.div
         ref={contentRef}
         className="p-4 relative overflow-hidden"
         animate={{ maxHeight: hovered ? contentHeight : COLLAPSED_HEIGHT }}
@@ -50,8 +51,8 @@ const StudyCard = ({ title, link }) => {
         {!hovered && (
           <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
         )}
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   );
 };
 

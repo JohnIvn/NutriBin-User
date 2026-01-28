@@ -6,6 +6,7 @@ import {
   FaLinkedin,
   FaYoutube,
 } from "react-icons/fa";
+import { motion as Motion } from "framer-motion";
 import { FaXTwitter, FaLink, FaArrowRight } from "react-icons/fa6";
 
 export default function Socials() {
@@ -61,7 +62,7 @@ export default function Socials() {
   return (
     <div className="relative w-full min-h-screen flex flex-col lg:flex-row overflow-hidden bg-[#ECE3CE]/30 font-sans">
       {/* right side */}
-      <motion.div
+      <Motion.div
         className="absolute top-0 right-0 w-[45%] h-full hidden lg:block z-0"
         initial={{ opacity: 0, x: 100 }}
         animate={{ opacity: 1, x: 0 }}
@@ -73,12 +74,12 @@ export default function Socials() {
           alt="Socials Illustration"
           className="w-full h-full object-cover grayscale-[20%] contrast-[1.05]"
         />
-      </motion.div>
+      </Motion.div>
 
       {/* left side */}
       <div className="flex flex-col justify-center items-center lg:items-start w-full lg:w-[55%] relative z-10 p-8 lg:pl-20 lg:pr-8 min-h-screen pt-32 lg:pt-25">
         {/* header */}
-        <motion.div
+        <Motion.div
           className="mb-10 lg:mb-14 w-full max-w-lg text-center lg:text-left"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -98,17 +99,17 @@ export default function Socials() {
           <p className="mt-4 text-[#4F6F52] text-lg font-medium max-w-md mx-auto lg:mx-0">
             Follow our journey, get updates, and join the community across all platforms.
           </p>
-        </motion.div>
+        </Motion.div>
 
         {/* social buttons grid */}
-        <motion.div
+        <Motion.div
           className="grid grid-cols-1 w-full max-w-md gap-4"
           variants={containerVariants}
           initial="hidden"
           animate="show"
         >
           {socials.map((social) => (
-            <motion.a
+            <Motion.a
               key={social.name}
               href={social.url}
               target="_blank"
@@ -135,12 +136,12 @@ export default function Socials() {
               <div className="relative z-10 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
                 <FaArrowRight className="text-[#ECE3CE]" />
               </div>
-            </motion.a>
+            </Motion.a>
           ))}
-        </motion.div>
+        </Motion.div>
 
         {/* footer/divider */}
-        <motion.div
+        <Motion.div
           className="mt-12 text-[#739072] text-sm font-medium flex items-center gap-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -148,7 +149,7 @@ export default function Socials() {
         >
           <span className="w-8 h-[2px] bg-[#739072]" />
           <span>Official Social Links</span>
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );

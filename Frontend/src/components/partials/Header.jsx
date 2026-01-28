@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContextHook";
@@ -127,7 +127,7 @@ export default function Header() {
                           className="fixed inset-0 z-55"
                           onClick={() => setUserMenuOpen(false)}
                         />
-                        <motion.div
+                        <Motion.div
                           initial={{ opacity: 0, y: 10, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -155,7 +155,7 @@ export default function Header() {
                           >
                             Log out
                           </button>
-                        </motion.div>
+                        </Motion.div>
                       </>
                     )}
                   </AnimatePresence>
@@ -196,7 +196,7 @@ export default function Header() {
               className="fixed inset-0 bg-black/20 backdrop-blur-sm z-60 md:hidden"
             />
 
-            <motion.div
+            <Motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -273,9 +273,9 @@ export default function Header() {
                       Register
                     </Link>
                   </div>
-                )}
+                )}``
               </div>
-            </motion.div>
+            </Motion.div>
           </>
         )}
       </AnimatePresence>

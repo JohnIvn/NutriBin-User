@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { FaCommentDots, FaPlus, FaMinus } from "react-icons/fa";
 
 const faqsData = [
@@ -39,7 +39,7 @@ const FaqItem = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <motion.div 
+    <Motion.div 
       className="border border-[#3A4D39]/10 rounded-2xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
       initial={false}
     >
@@ -57,7 +57,7 @@ const FaqItem = ({ question, answer }) => {
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <Motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -66,10 +66,10 @@ const FaqItem = ({ question, answer }) => {
             <div className="px-6 pb-6 pt-0 text-[#739072] leading-relaxed border-t border-[#ECE3CE]/30 mt-2">
               <div className="pt-4">{answer}</div>
             </div>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </Motion.div>
   );
 };
 
@@ -79,7 +79,7 @@ export default function Faqs() {
       <div className="w-full max-w-4xl mx-auto px-6">
         
         {/* header */}
-        <motion.div 
+        <Motion.div 
           className="mb-12 flex flex-col md:flex-row items-center md:items-start gap-5 text-center md:text-left"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,10 +96,10 @@ export default function Faqs() {
               Everything you need to know about the NutriBin composting system and maintenance.
             </p>
           </div>
-        </motion.div>
+        </Motion.div>
 
         {/* faqs */}
-        <motion.div
+        <Motion.div
           className="flex flex-col gap-4"
           initial="hidden"
           animate="visible"
@@ -111,7 +111,7 @@ export default function Faqs() {
           }}
         >
           {faqsData.map((faq, idx) => (
-            <motion.div
+            <Motion.div
               key={idx}
               variants={{
                 hidden: { y: 20, opacity: 0 },
@@ -123,9 +123,9 @@ export default function Faqs() {
               }}
             >
               <FaqItem question={faq.question} answer={faq.answer} />
-            </motion.div>
+            </Motion.div>
           ))}
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );
