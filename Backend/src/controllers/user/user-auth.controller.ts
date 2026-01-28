@@ -147,6 +147,7 @@ export class UserAuthController {
   @Post('send-verification')
   async sendEmailVerification(@Body('email') email: string) {
     try {
+      let userId;
       if (!email?.trim()) {
         throw new BadRequestException('Email is required');
       }
@@ -160,9 +161,12 @@ export class UserAuthController {
         customer_id: string;
       }>(`SELECT customer_id FROM user_customer WHERE email=$1`, [email]);
 
-      const customer_id = customer.rows[0].customer_id;
-
-      const userId = customer_id || randomUUID();
+      if (!customer || !customer.rowCount || customer.rowCount !== 0) {
+        const customer_id = customer.rows[0].customer_id;
+        userId = customer_id;
+      } else {
+        userId = randomUUID();
+      }
 
       await client.query(
         `INSERT INTO codes (user_id, code, purpose, expires_at, used)
