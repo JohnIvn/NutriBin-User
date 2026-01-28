@@ -143,4 +143,55 @@ export class UserAuthController {
       );
     }
   }
+
+  @Post('send-verification')
+  async sendEmailVerification(@Body('email') email: string) {
+    try {
+      if (!email?.trim()) {
+        throw new BadRequestException('Email is required');
+      }
+      const client = this.databaseService.getClient();
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const code = String(randomInt(100000, 1000000));
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      const customer = await client.query<{
+        customer_id: string;
+      }>(`SELECT customer_id FROM user_customer WHERE email=$1`, [email]);
+
+      if (customer.rowCount === 0) {
+        throw new NotFoundException('Email not registered');
+      }
+
+      const customer_id = customer.rows[0].customer_id;
+
+      const userId = customer_id || randomUUID();
+
+      await client.query(
+        `INSERT INTO codes (user_id, code, purpose, expires_at, used)
+        VALUES ($1, $2, $3, $4, false)`,
+        [userId, code, 'email_verification', expiresAt],
+      );
+
+      await this.mailer.sendUserVerificationCode(normalizedEmail, code);
+
+      return {
+        ok: true,
+        message: 'Verification code sent to the email address',
+        code: code.toString(),
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to send verification code',
+      );
+    }
+  }
 }
