@@ -3,8 +3,7 @@ import { z } from "zod";
 const genderEnum = z.enum(["male", "female", "others"]);
 
 export const userAccount = z.object({
-  email: z
-    .string(),
+  email: z.string(),
   password: z
     .string()
     .min(8)
@@ -37,7 +36,7 @@ export const accountUser = z
       .max(20, "Password must be less than 20 characters")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
-        "Password must include uppercase, lowercase, number, and special character"
+        "Password must include uppercase, lowercase, number, and special character",
       ),
     confirmPassword: z.string().min(8, "Please confirm your password"),
     birthday: z
@@ -67,6 +66,13 @@ export const accountUser = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+export const accountSettingsSchema = z.object({
+  firstname: z.string().min(3, "Firstname must be at least 3 characters"),
+  lastname: z.string().min(3, "Lastname must be at least 3 characters"),
+  address: z.string().min(10, "Address must be at least 10 characters"),
+  number: z.string().min(11, "Phone number must be at least 11 digits"),
+});
 
 export const adminAccountEdit = z.object({
   firstname: z

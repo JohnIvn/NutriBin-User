@@ -19,6 +19,7 @@ import { memoryStorage } from 'multer';
 import { DatabaseService } from '../../service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
 import supabaseService from '../../service/storage/supabase.service';
+import { IprogSmsService } from 'src/service/iprogsms/iprogsms.service';
 
 type UserPublicRow = {
   customer_id: string;
@@ -51,6 +52,7 @@ export class SettingsController {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly mailer: BrevoService,
+    private readonly iprogSms: IprogSmsService,
   ) {}
 
   private async resolveAvatarUrl(userId: string) {
@@ -134,6 +136,167 @@ export class SettingsController {
       }
 
       throw new InternalServerErrorException('Failed to load settings');
+    }
+  }
+
+  @Post(':customerId/phone/verify/request')
+  async requestPhoneVerification(
+    @Param('customerId') userId: string,
+    @Body() body: { newPhone?: string },
+  ) {
+    if (!userId) throw new BadRequestException('customerId is required');
+    const newPhone = body?.newPhone?.trim();
+    if (!newPhone) throw new BadRequestException('newPhone is required');
+
+    const client = this.databaseService.getClient();
+
+    try {
+      // Check that phone isn't already used by another account
+      const existing = await client.query(
+        `SELECT customer_id FROM user_customer WHERE contact_number = $1 LIMIT 1`,
+        [newPhone],
+      );
+
+      if (existing.rowCount) {
+        return { ok: false, message: 'Phone number already in use' };
+      }
+
+      // Clear previous phone verification codes for this user
+      await client.query(
+        `DELETE FROM codes WHERE user_id = $1 AND purpose = 'other' AND used = false`,
+        [userId],
+      );
+
+      const code = String(randomInt(100000, 1000000));
+
+      await client.query(
+        `INSERT INTO codes (user_id, code, purpose, expires_at)
+         VALUES ($1, $2, 'other', NOW() + INTERVAL '15 minutes')`,
+        [userId, code],
+      );
+
+      try {
+        await this.iprogSms.sendSms({
+          to: newPhone,
+          body: `Your NutriBin verification code is: ${code}`,
+        });
+      } catch (smsErr) {
+        console.error('Failed to send phone verification SMS:', smsErr);
+        throw new InternalServerErrorException(
+          'Failed to send verification SMS',
+        );
+      }
+
+      return { ok: true, message: 'Verification code sent via SMS' };
+    } catch (err) {
+      console.error('requestPhoneVerification error:', err);
+      if (err instanceof BadRequestException) throw err;
+      throw new InternalServerErrorException(
+        'Failed to request phone verification',
+      );
+    }
+  }
+
+  @Get('check-phone/:phone')
+  async checkPhoneAvailability(@Param('phone') phone: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const normalizedPhone = phone.trim();
+
+      const result = await client.query(
+        'SELECT customer_id FROM user_customer WHERE contact_number = $1 LIMIT 1',
+        [normalizedPhone],
+      );
+
+      return {
+        ok: true,
+        available: result.rows.length === 0,
+      };
+    } catch {
+      throw new InternalServerErrorException('Failed to check phone number');
+    }
+  }
+
+  @Post(':customerId/phone/verify')
+  async verifyPhoneChange(
+    @Param('customerId') userId: string,
+    @Body() body: { code?: string; newPhone?: string },
+  ) {
+    if (!userId) throw new BadRequestException('staffId is required');
+    const code = body?.code?.trim();
+    const newPhone = body?.newPhone?.trim();
+
+    if (!code || !/^[0-9]{6}$/.test(code)) {
+      throw new BadRequestException(
+        'Verification code must be a 6-digit number',
+      );
+    }
+    if (!newPhone) {
+      throw new BadRequestException('newPhone is required');
+    }
+
+    const client = this.databaseService.getClient();
+    try {
+      // Get latest code record for this user and purpose
+      const codeResult = await client.query<{
+        code: string;
+        expires_at: string;
+        code_id: string;
+      }>(
+        `SELECT code, expires_at, code_id FROM codes
+         WHERE user_id = $1 AND purpose = 'other' AND used = false
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [userId],
+      );
+
+      if (!codeResult.rowCount) {
+        throw new BadRequestException('No phone verification request found');
+      }
+
+      const record = codeResult.rows[0];
+      const now = new Date();
+      const expiresAt = new Date(record.expires_at);
+      if (expiresAt < now) {
+        throw new BadRequestException('Verification code has expired');
+      }
+      if (record.code !== code) {
+        throw new BadRequestException(
+          'The verification code you entered is incorrect.',
+        );
+      }
+
+      // Update phone number for admin or staff
+      const userResult = await client.query(
+        'SELECT customer_id FROM user_customer WHERE customer_id = $1 LIMIT 1',
+        [userId],
+      );
+      const isUser = (userResult.rowCount ?? 0) > 0;
+
+      if (isUser) {
+        await client.query(
+          'UPDATE user_customer SET contact_number = $1, last_updated = NOW() WHERE customer_id = $2',
+          [newPhone, userId],
+        );
+        const updated = await client.query<UserPublicRow>(
+          `SELECT customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status
+           FROM user_customer WHERE customer_id = $1 LIMIT 1`,
+          [userId],
+        );
+        await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
+          record.code_id,
+        ]);
+        return {
+          ok: true,
+          user: updated.rows[0],
+          message: 'Phone number updated',
+        };
+      }
+    } catch (error) {
+      console.error('verifyPhoneChange error:', error);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to verify phone change');
     }
   }
 

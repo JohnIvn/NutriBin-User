@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/Form";
 import { Input } from "@/components/ui/Input";
-import { userAccount } from "@/schema/userAccount";
+import { accountSettingsSchema } from "@/schema/userAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
@@ -53,10 +53,21 @@ export default function Settings() {
   const [currentAvatar, setCurrentAvatar] = useState(undefined);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [originalNumber, setOriginalNumber] = useState("");
+  const [pendingPhone, setPendingPhone] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(true);
+  const [phoneCode, setPhoneCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [phoneAvailable, setPhoneAvailable] = useState(true);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [savedProfile, setSavedProfile] = useState(null);
   const avatarInputRef = useRef(null);
 
   const form = useForm({
-    resolver: zodResolver(userAccount),
+    resolver: zodResolver(accountSettingsSchema),
+    mode: "onChange",
     defaultValues: {
       firstname: "",
       lastname: "",
@@ -64,6 +75,10 @@ export default function Settings() {
       number: "",
     },
   });
+
+  const {
+    formState: { isValid, isSubmitting, errors },
+  } = form;
 
   const getInitials = (first, last) =>
     `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase();
@@ -93,24 +108,29 @@ export default function Settings() {
         method: "GET",
       });
 
-      console.log(response)
+      console.log(response);
 
       if (response.data.ok) {
         const user = response.data.user;
-        form.reset({
+
+        const profileValues = {
           firstname: user.first_name || "",
           lastname: user.last_name || "",
           address: user.address || "",
           number: user.contact_number || "",
-        });
-        // Set current avatar if provided by API (try several common field names)
+        };
+
+        setSavedProfile(profileValues);
+        setOriginalNumber(profileValues.number);
+
+        form.reset(profileValues);
+
         setCurrentAvatar(
           user.avatar ||
-          user.profile_photo ||
-          user.profile_image ||
-          user.photo ||
-          user?.avatar ||
-          undefined,
+            user.profile_photo ||
+            user.profile_image ||
+            user.photo ||
+            undefined,
         );
         setEmailShown(user?.email || "");
       }
@@ -155,7 +175,7 @@ export default function Settings() {
       if (response.data.ok) {
         setMfaType(newMfaType);
         toast.success(
-          `MFA set to ${newMfaType === "N/A" ? "Disabled" : "Email"}`,
+          `MFA set to ${newMfaType === "N/A" ? "Disabled" : newMfaType === "email" ? "Email" : "SMS"}`,
         );
       }
     } catch (error) {
@@ -176,6 +196,52 @@ export default function Settings() {
     }
     setCodeFormatValid(/^\d{6}$/.test(resetCode.trim()));
   }, [resetCode]);
+
+  // Watch contact number changes to require verification when changed
+  const watchedNumber = form.watch("number");
+  useEffect(() => {
+    if (loading) return;
+    if ((watchedNumber || "") !== (originalNumber || "")) {
+      setPendingPhone(watchedNumber || "");
+      setPhoneVerified(false);
+    } else {
+      setPendingPhone("");
+      setPhoneVerified(true);
+    }
+  }, [watchedNumber, originalNumber, loading]);
+
+  // Debounced availability check for pendingPhone
+  useEffect(() => {
+    if (!pendingPhone) {
+      setPhoneAvailable(true);
+      setCheckingPhone(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCheckingPhone(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await Requests({
+          url: `/settings/check-phone/${encodeURIComponent(pendingPhone)}`,
+          method: "GET",
+        });
+        if (cancelled) return;
+        if (res.data?.ok) setPhoneAvailable(res.data.available === true);
+        else setPhoneAvailable(true);
+      } catch (err) {
+        console.error("phone availability check failed", err);
+        setPhoneAvailable(true);
+      } finally {
+        if (!cancelled) setCheckingPhone(false);
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [pendingPhone]);
 
   const passwordChecks = {
     minLength:
@@ -222,6 +288,69 @@ export default function Settings() {
       console.error(error);
     } finally {
       setSaveLoading(false);
+    }
+  };
+
+  const sendPhoneCode = async () => {
+    const userId = user?.customer_id;
+    if (!userId) return toast.error("No user id");
+    if (!pendingPhone) return toast.error("Enter a phone number to verify");
+
+    if (!phoneAvailable) {
+      toast.error("That phone number is already in use");
+      return;
+    }
+
+    try {
+      setSendingCode(true);
+      const res = await Requests({
+        url: `/settings/${userId}/phone/verify/request`,
+        method: "POST",
+        data: { newPhone: pendingPhone },
+      });
+
+      if (res.data?.ok) {
+        toast.success("Verification code sent");
+      } else {
+        toast.error(res.data?.message || "Failed to send verification code");
+      }
+    } catch (err) {
+      toast.error("Failed to send verification code");
+      console.error(err);
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const verifyPhone = async () => {
+    const userId = user?.customer_id;
+    if (!userId) return toast.error("No user id");
+    if (!phoneCode || !/^[0-9]{6}$/.test(phoneCode.trim()))
+      return setPhoneError("Enter a 6-digit code");
+
+    try {
+      setVerifyingPhone(true);
+      const res = await Requests({
+        url: `/settings/${userId}/phone/verify`,
+        method: "POST",
+        data: { code: phoneCode, newPhone: pendingPhone },
+      });
+
+      if (res.data?.ok) {
+        toast.success("Phone verified");
+        setPhoneVerified(true);
+        setOriginalNumber(pendingPhone);
+        form.setValue("number", pendingPhone);
+        setPhoneCode("");
+        setPhoneError("");
+      } else {
+        toast.error(res.data?.message || "Verification failed");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to verify phone");
+      console.error(err);
+    } finally {
+      setVerifyingPhone(false);
     }
   };
 
@@ -505,7 +634,7 @@ export default function Settings() {
                   )}
                 />
 
-                <div className="gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
                     name="number"
@@ -525,6 +654,70 @@ export default function Settings() {
                       </FormItem>
                     )}
                   />
+                  {editMode &&
+                    pendingPhone &&
+                    pendingPhone !== originalNumber && (
+                      <div className="mt-2 space-y-2">
+                        <p className="text-xs text-gray-500">
+                          You changed your phone number. Please verify it to
+                          save changes.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9"
+                            disabled={
+                              sendingCode || checkingPhone || !phoneAvailable
+                            }
+                            onClick={sendPhoneCode}
+                          >
+                            {sendingCode
+                              ? "Sending..."
+                              : checkingPhone
+                                ? "Checking..."
+                                : "Send verification code"}
+                          </Button>
+
+                          {checkingPhone ? (
+                            <span className="text-sm text-gray-500">
+                              Checking
+                            </span>
+                          ) : !phoneAvailable ? (
+                            <span className="text-sm text-red-600">
+                              Number already in use
+                            </span>
+                          ) : phoneVerified ? (
+                            <span className="text-sm text-green-600">
+                              Verified
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {!phoneVerified && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <Input
+                              placeholder="Enter 6-digit code"
+                              value={phoneCode}
+                              onChange={(e) => setPhoneCode(e.target.value)}
+                              className="h-9 w-44"
+                            />
+                            <Button
+                              size="sm"
+                              className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9"
+                              onClick={verifyPhone}
+                              disabled={verifyingPhone}
+                            >
+                              {verifyingPhone ? "Verifying..." : "Verify"}
+                            </Button>
+                            {phoneError && (
+                              <div className="text-xs text-red-600">
+                                {phoneError}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
@@ -539,7 +732,7 @@ export default function Settings() {
                   </Button>
                   <Button
                     type="button"
-                    disabled={saveLoading}
+                    disabled={saveLoading || !isValid}
                     className={`${
                       editMode ? "inline-flex" : "hidden"
                     } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
@@ -547,6 +740,7 @@ export default function Settings() {
                   >
                     {saveLoading ? "Saving..." : "Save Changes"}
                   </Button>
+                  ``
                   <Button
                     type="button"
                     variant="outline"
@@ -554,7 +748,17 @@ export default function Settings() {
                     className={`${
                       editMode ? "inline-flex" : "hidden"
                     } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red] hover:text-[white] cursor-pointer`}
-                    onClick={() => setEditMode(false)}
+                    onClick={() => {
+                      if (savedProfile) {
+                        form.reset(savedProfile);
+                        setOriginalNumber(savedProfile.number);
+                      }
+                      setPendingPhone("");
+                      setPhoneVerified(true);
+                      setPhoneCode("");
+                      setPhoneError("");
+                      setEditMode(false);
+                    }}
                   >
                     Cancel
                   </Button>
@@ -641,6 +845,26 @@ export default function Settings() {
                       </div>
                       <div className="text-[10px] text-gray-500">
                         Code sent to email on login
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="mfa"
+                      value="sms"
+                      checked={mfaType === "sms"}
+                      onChange={() => handleMFAChange("sms")}
+                      disabled={mfaLoading}
+                      className="accent-[#4F6F52]"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        SMS Verification
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        Code sent to your phone number on login
                       </div>
                     </div>
                   </label>

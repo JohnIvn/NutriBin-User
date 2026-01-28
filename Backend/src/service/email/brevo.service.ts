@@ -220,6 +220,32 @@ export class BrevoService {
     `;
   }
 
+  async sendMfaVerificationEmail(
+    to: string,
+    firstName: string,
+    verificationLink: string,
+  ) {
+    const subject = 'NutriBin - Verify Your Login';
+    const content = `
+      <h2 style="margin: 0 0 20px 0; color: #4F6F52; font-size: 24px;">Verify Your Login 🔐</h2>
+      <p style="margin: 0 0 15px 0;">Hello <strong>${firstName}</strong>,</p>
+      <p style="margin: 0 0 20px 0;">A login attempt was made to your NutriBin account. To complete the sign-in process, please verify your identity by clicking the button below.</p>
+      <div style="text-align: center; margin: 35px 0;">
+        <a href="${verificationLink}" style="display: inline-block; background-color: #4F6F52; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 6px 12px rgba(79, 111, 82, 0.16);">Verify Login</a>
+      </div>
+      <div style="background-color: #F0F7EE; padding: 20px; border-radius: 8px; margin: 25px 0;">
+        <p style="margin: 0 0 10px 0; font-weight: bold; color: #4F6F52;">⏱️ Time Sensitive</p>
+        <p style="margin: 0; color: #666; font-size: 14px;">This verification link will expire in <strong>24 hours</strong>.</p>
+      </div>
+      <div style="background-color: #F7FBF7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #86C166;">
+        <p style="margin: 0 0 10px 0; font-weight: bold; color: #3A4D39;">⚠️ Security Alert</p>
+        <p style="margin: 0; color: #666; font-size: 14px;">If you didn't attempt to log in, please ignore this email and ensure your account password is secure.</p>
+      </div>
+    `;
+    const html = this.getEmailTemplate(content, 'Multi-Factor Authentication');
+    return this.sendHtmlEmail(to, subject, html);
+  }
+
   async sendUserVerificationCode(to: string, code: string) {
     const subject = 'Verify your NutriBin email';
     const content = `
