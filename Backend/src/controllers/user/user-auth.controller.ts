@@ -160,10 +160,6 @@ export class UserAuthController {
         customer_id: string;
       }>(`SELECT customer_id FROM user_customer WHERE email=$1`, [email]);
 
-      if (customer.rowCount === 0) {
-        throw new NotFoundException('Email not registered');
-      }
-
       const customer_id = customer.rows[0].customer_id;
 
       const userId = customer_id || randomUUID();
