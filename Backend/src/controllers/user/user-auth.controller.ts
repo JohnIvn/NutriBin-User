@@ -161,7 +161,7 @@ export class UserAuthController {
         customer_id: string;
       }>(`SELECT customer_id FROM user_customer WHERE email=$1`, [email]);
 
-      if (!customer || !customer.rowCount || customer.rowCount !== 0) {
+      if (!customer || !customer.rowCount || customer.rowCount !== 1) {
         const customer_id = customer.rows[0].customer_id;
         userId = customer_id;
       } else {
