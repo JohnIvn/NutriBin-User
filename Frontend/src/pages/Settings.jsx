@@ -77,7 +77,7 @@ export default function Settings() {
   });
 
   const {
-    formState: { isValid, isSubmitting, errors },
+    formState: { isValid },
   } = form;
 
   const getInitials = (first, last) =>
