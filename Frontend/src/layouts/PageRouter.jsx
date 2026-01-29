@@ -14,16 +14,23 @@ import Fertilizer from "@/pages/Fertilizer";
 import Logs from "@/pages/Logs";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { VerifyMFA } from "@/pages/VerifyMFA";
+import { VerifyMFASMS } from "@/pages/VerifyMFASMS";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Settings from "@/pages/Settings";
 import ForgotPassword from "@/pages/ForgotPassword";
 import EmailVerification from "@/pages/EmailVerification";
 import { ChangePassword } from "@/pages/ChangePassword";
+import { useUser } from "@/contexts/UserContextHook";
+
+function FallbackRoute() {
+  const { user } = useUser();
+  return <Navigate replace to={user ? "/dashboard" : "/login"} />;
+}
 
 export default function PageRouter() {
   return (
     <Routes>
-      <Route path="*" element={<h1>ERROR 401</h1>} />
+      <Route path="*" element={<FallbackRoute />} />
       <Route path="/" element={<Navigate replace to={"/home"} />} />
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
@@ -38,6 +45,7 @@ export default function PageRouter() {
       <Route path="/studies" element={<Studies />} />
       <Route path="/guide" element={<Guide />} />
       <Route path="/verify-mfa" element={<VerifyMFA />} />
+      <Route path="/verify-mfasms" element={<VerifyMFASMS />} />
       <Route
         path="/dashboard"
         element={

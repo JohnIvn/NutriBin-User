@@ -391,8 +391,9 @@ export class UserAuthService {
       return {
         ok: true,
         requiresMFA: true,
+        mfaType: 'email',
         message: 'MFA verification email sent',
-        userId: user.customer_id,
+        customerId: user.customer_id,
       };
     }
 
@@ -456,6 +457,9 @@ export class UserAuthService {
 
     return {
       ok: true,
+      requiresMFA: false,
+      mfaType: 'sms',
+      message: 'MFA verification code sent via SMS',
       user: safeUser,
     };
   }

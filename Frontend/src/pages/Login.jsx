@@ -38,7 +38,6 @@ export function Login() {
   });
 
   async function onSubmit(values) {
-    console.log("called");
     try {
       setLoginError(null);
       setLoginMessage(null);
@@ -60,8 +59,17 @@ export function Login() {
         return;
       }
 
+      console.log(response.data.mfaType, response.data.customerId);
+
       if (response.data.requiresMFA) {
-        setMfaMessage("Check your email to verify your login.");
+        if (response.data.mfaType === "sms") {
+          const id = response.data.customerId;
+          if (id) {
+            navigate(`/verify-mfasms?customerId=${response.data.customerId}`);
+            return;
+          }
+        }
+        setMfaMessage("Go to your email to verify your login with MFA.");
         return;
       }
 

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import Requests from "@/utils/Requests";
 
 export default function EmailVerification() {
   const navigate = useNavigate();
@@ -32,9 +33,13 @@ export default function EmailVerification() {
       setLoading(true);
       setError(null);
 
-      const response = await axios.post("http://localhost:3000/user/signup", {
-        ...registrationData,
-        emailVerificationCode: code,
+      const response = await Requests({
+        url: '/user/signup',
+        method: 'POST',
+        data: {
+          ...registrationData,
+          EmailVerificationCode: code,
+        },
       });
 
       console.log(response)
