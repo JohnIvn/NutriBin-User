@@ -24,7 +24,7 @@ type FertilizerAnalyticsRow = {
   benzene: string | null;
   date_created: string;
 };
-
+ 
 function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
   return {
     id: row.fertilizer_analytics_id,
