@@ -538,9 +538,15 @@ export class UserAuthService {
   async googleSignUp(credential: string) {
     try {
       // Verify the Google token
+      const webClientId = process.env.GOOGLE_CLIENT_ID;
+      const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
+      if (!webClientId || !androidClientId) {
+        throw new Error('Google client IDs are not properly set');
+      }
+
       const ticket = await this.googleClient.verifyIdToken({
         idToken: credential,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: [webClientId, androidClientId],
       });
 
       const payload = ticket.getPayload();
