@@ -13,6 +13,8 @@ import { FertilizerAnalyticsController } from './controllers/stats/fertilizer-an
 import { ModuleAnalyticsController } from './controllers/stats/module-analytics.controller';
 import { TrashLogsController } from './controllers/stats/trash-logs.controller';
 import { IprogSmsService } from './service/iprogsms/iprogsms.service';
+import { DashboardController } from './controllers/stats/dashboard.controller';
+import { AnnouncementsController } from './controllers/settings/announcements.controller';
 
 @Module({
   imports: [],
@@ -25,6 +27,8 @@ import { IprogSmsService } from './service/iprogsms/iprogsms.service';
     FertilizerAnalyticsController,
     ModuleAnalyticsController,
     TrashLogsController,
+    DashboardController,
+    AnnouncementsController,
   ],
   providers: [
     AppService,
