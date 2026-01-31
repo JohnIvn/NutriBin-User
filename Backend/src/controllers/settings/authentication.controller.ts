@@ -12,6 +12,18 @@ import {
 import { DatabaseService } from '../../service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
 
+interface UserRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+  contact_number: string | null;
+  address: string | null;
+  email: string;
+  date_created: Date;
+  last_updated: Date;
+  status: string;
+}
+
 @Controller('authentication')
 export class AuthenticationController {
   constructor(
@@ -240,6 +252,83 @@ export class AuthenticationController {
 
       console.error('Error verifying MFA:', error);
       throw new InternalServerErrorException('Failed to verify MFA');
+    }
+  }
+
+  @Post('verify-mfa-sms')
+  async verifyMfaSms(@Body() body: { code?: string; customerId?: string }) {
+    if (!body.code) throw new BadRequestException('code is required');
+    if (!body.customerId)
+      throw new BadRequestException('customerId is required');
+
+    const client = this.databaseService.getClient();
+
+    try {
+      const userId = body.customerId;
+
+      // Get latest unused mfa code for this user
+      const codeResult = await client.query<{
+        code: string;
+        expires_at: string;
+        code_id: string;
+      }>(
+        `SELECT code, expires_at, code_id FROM codes
+         WHERE user_id = $1 AND purpose = 'mfa' AND used = false
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [userId],
+      );
+
+      if (!codeResult.rowCount) {
+        throw new BadRequestException('No MFA code found for this account');
+      }
+
+      const record = codeResult.rows[0];
+      const now = new Date();
+      const expiresAt = new Date(record.expires_at);
+      if (expiresAt < now) {
+        throw new BadRequestException('Verification code has expired');
+      }
+
+      if (record.code !== String(body.code).trim()) {
+        throw new BadRequestException(
+          'The verification code you entered is incorrect.',
+        );
+      }
+
+      // Mark code as used
+      await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
+        record.code_id,
+      ]);
+
+      // Fetch user data to return after successful verification
+      const userQuery = `SELECT customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status FROM user_customer WHERE customer_id = $1`;
+
+      const userResult = await client.query<UserRow>(userQuery, [userId]);
+      if (!userResult.rowCount) throw new BadRequestException('User not found');
+
+      const user = userResult.rows[0];
+      const safeUser = {
+        customer_id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        contact_number: user.contact_number,
+        address: user.address,
+        email: user.email,
+        date_created: user.date_created,
+        last_updated: user.last_updated,
+        status: user.status,
+      };
+
+      return {
+        ok: true,
+        message: 'MFA verification successful',
+        user: safeUser,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      console.error('Error verifying MFA SMS:', error);
+      throw new InternalServerErrorException('Failed to verify MFA SMS');
     }
   }
 }

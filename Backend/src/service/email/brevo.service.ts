@@ -328,7 +328,7 @@ export class BrevoService {
     token: string,
     customerId: string,
   ) {
-    const link = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/change-password?token=${token}&customerId=${customerId}`;
+    const link = `${process.env.FRONTEND_URL || 'http://localhost:5173'}change-password?token=${token}&customerId=${customerId}`;
     const subject = 'Reset Your NutriBin Password';
 
     const content = `

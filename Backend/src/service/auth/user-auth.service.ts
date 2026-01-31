@@ -376,7 +376,7 @@ export class UserAuthService {
       );
 
       // Send verification email
-      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-mfa?token=${mfaToken}&customerId=${user.customer_id}`;
+      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}verify-mfa?token=${mfaToken}&customerId=${user.customer_id}`;
 
       try {
         await this.mailer.sendMfaVerificationEmail(
@@ -391,8 +391,9 @@ export class UserAuthService {
       return {
         ok: true,
         requiresMFA: true,
+        mfaType: 'email',
         message: 'MFA verification email sent',
-        userId: user.customer_id,
+        customerId: user.customer_id,
       };
     }
 
@@ -456,6 +457,9 @@ export class UserAuthService {
 
     return {
       ok: true,
+      requiresMFA: false,
+      mfaType: 'sms',
+      message: 'MFA verification code sent via SMS',
       user: safeUser,
     };
   }

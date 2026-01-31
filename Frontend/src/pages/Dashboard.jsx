@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
@@ -10,6 +10,8 @@ import {
   History,
   Wind,
 } from "lucide-react";
+import Requests from "@/utils/Requests";
+import { useUser } from "@/contexts/UserContextHook";
 
 // --- StatCard Component ---
 const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => {
@@ -32,7 +34,9 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => {
         </p>
         <div className="flex items-baseline gap-1">
           <h3 className="text-2xl font-black text-[#3A4D39]">{value}</h3>
-          <span className="text-sm font-medium text-[#739072]">{unit}</span>
+          {unit && (
+            <span className="text-sm font-medium text-[#739072]">{unit}</span>
+          )}
         </div>
       </div>
     </div>
@@ -40,61 +44,46 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => {
 };
 
 export default function Dashboard() {
-  // --- Mock Data ---
-  const announcements = [
-    {
-      id: 1,
-      title: "System Update v2.1 Available",
-      date: "2026-01-20",
-      type: "update",
-      content:
-        "New firmware update for ESP32 modules improves connection stability.",
-    },
-    {
-      id: 2,
-      title: "Scheduled Maintenance",
-      date: "2026-01-22",
-      type: "alert",
-      content:
-        "The system will be offline for 30 minutes on Jan 22 for database optimization.",
-    },
-  ];
+  const { user } = useUser();
+  const customerId = user?.customer_id;
+  console.log(customerId);
 
-  const trashLogs = [
-    {
-      log_id: "a1b2",
-      nitrogen: "120 mg/kg",
-      phosphorus: "45 mg/kg",
-      potassium: "200 mg/kg",
-      moisture: "65%",
-      humidity: "55%",
-      temperature: "30°C",
-      ph: "6.8",
-      date_created: "2026-01-20 10:30 AM",
-    },
-    {
-      log_id: "e5f6",
-      nitrogen: "118 mg/kg",
-      phosphorus: "42 mg/kg",
-      potassium: "195 mg/kg",
-      moisture: "62%",
-      humidity: "54%",
-      temperature: "31°C",
-      ph: "6.7",
-      date_created: "2026-01-20 09:15 AM",
-    },
-    {
-      log_id: "i9j0",
-      nitrogen: "125 mg/kg",
-      phosphorus: "50 mg/kg",
-      potassium: "210 mg/kg",
-      moisture: "70%",
-      humidity: "60%",
-      temperature: "29°C",
-      ph: "7.0",
-      date_created: "2026-01-19 04:45 PM",
-    },
-  ];
+  const [announcements, setAnnouncements] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [trashLogs, setTrashLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!customerId) return;
+
+    async function fetchDashboard() {
+      try {
+        const res = await Requests({
+          url: `/dashboard/${customerId}`,
+        });
+
+        const data = res.data;
+
+        setAnnouncements(data.announcements || []);
+        setStats(data.latestAnalytics || null);
+        setTrashLogs(data.trashLogs || []);
+      } catch (err) {
+        console.error("Failed to load dashboard", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboard();
+  }, [customerId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-[#3A4D39] font-bold">
+        Loading dashboard...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
@@ -137,20 +126,23 @@ export default function Dashboard() {
             <div className="flex-1 space-y-4">
               {announcements.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.announcement_id}
                   className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="px-2 py-0.5 bg-[#4F6F52] text-[10px] font-bold uppercase rounded-md tracking-wide">
-                      {item.type}
+                      {item.priority ?? "info"}
                     </span>
                     <span className="text-xs opacity-70 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {item.date}
+                      <Calendar className="w-3 h-3" />
+                      {new Date(
+                        item.date_published ?? item.date_created,
+                      ).toLocaleDateString()}
                     </span>
                   </div>
                   <h3 className="font-bold text-white mb-1">{item.title}</h3>
                   <p className="text-sm opacity-80 leading-relaxed">
-                    {item.content}
+                    {item.body}
                   </p>
                 </div>
               ))}
@@ -161,44 +153,44 @@ export default function Dashboard() {
           <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <StatCard
               title="Nitrogen (N)"
-              value="120"
-              unit="mg/kg"
+              value={stats?.nitrogen ?? "--"}
+              unit=""
               icon={Leaf}
               color="bg-green-100 text-green-700"
               trend="Optimal"
             />
             <StatCard
               title="Phosphorus (P)"
-              value="45"
-              unit="mg/kg"
+              value={stats?.phosphorus ?? "--"}
+              unit=""
               icon={Leaf}
               color="bg-teal-100 text-teal-700"
             />
             <StatCard
               title="Potassium (K)"
-              value="200"
-              unit="mg/kg"
+              value={stats?.potassium ?? "--"}
+              unit=""
               icon={Leaf}
               color="bg-orange-100 text-orange-700"
             />
             <StatCard
               title="Moisture"
-              value="65"
-              unit="%"
+              value={stats?.moisture ?? "--"}
+              unit=""
               icon={Droplets}
               color="bg-blue-100 text-blue-700"
             />
             <StatCard
               title="Temperature"
-              value="30"
-              unit="°C"
+              value={stats?.temperature ?? "--"}
+              unit=""
               icon={Thermometer}
               color="bg-red-100 text-red-700"
             />
             <StatCard
               title="Humidity"
-              value="55"
-              unit="%"
+              value={stats?.humidity ?? "--"}
+              unit=""
               icon={Wind}
               color="bg-cyan-100 text-cyan-700"
             />
@@ -217,7 +209,6 @@ export default function Dashboard() {
               </h2>
             </div>
 
-            {/* logs page */}
             <Link to="/logs">
               <button className="text-xs font-bold text-[#4F6F52] hover:text-[#3A4D39] hover:underline cursor-pointer">
                 View All
@@ -265,12 +256,12 @@ export default function Dashboard() {
                     className="hover:bg-[#ECE3CE]/10 transition-colors"
                   >
                     <td className="p-4">
-                      <span className="font-mono text-xs font-bold text-[#739072] bg-[#ECE3CE]/30 px-2 py-1 rounded select-all">
-                        {log.log_id}
+                      <span className="font-mono text-xs font-bold text-[#739072] bg-[#ECE3CE]/30 px-2 py-1 rounded">
+                        {log.log_id.slice(0, 6)}
                       </span>
                     </td>
                     <td className="p-4 text-sm font-bold text-[#3A4D39] whitespace-nowrap">
-                      {log.date_created}
+                      {new Date(log.date_created).toLocaleString()}
                     </td>
                     <td className="p-4 text-sm text-[#4F6F52] font-mono">
                       {log.nitrogen}
@@ -281,13 +272,13 @@ export default function Dashboard() {
                     <td className="p-4 text-sm text-[#4F6F52] font-mono">
                       {log.potassium}
                     </td>
-                    <td className="p-4 text-sm font-mono font-medium text-blue-600">
+                    <td className="p-4 text-sm font-mono text-blue-600">
                       {log.moisture}
                     </td>
                     <td className="p-4 text-sm font-mono text-[#4F6F52]">
                       {log.humidity}
                     </td>
-                    <td className="p-4 text-sm font-mono text-orange-600 font-medium">
+                    <td className="p-4 text-sm font-mono text-orange-600">
                       {log.temperature}
                     </td>
                     <td className="p-4">
