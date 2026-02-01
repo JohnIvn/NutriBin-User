@@ -7,17 +7,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import { 
-  Video, 
-  History, 
-  Activity, 
-  CheckCircle2, 
+import {
+  Video,
+  History,
+  Activity,
+  CheckCircle2,
   AlertCircle,
-  MoreVertical 
+  MoreVertical,
 } from "lucide-react";
+import { useUser } from "@/contexts/UserContextHook";
+import Requests from "@/utils/Requests";
 
 export default function Cameras() {
   const [loading, setLoading] = useState(true);
+  const { user } = useUser();
+  const customerId = user?.customer_id;
+  const [data, setData] = useState([]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -27,10 +33,34 @@ export default function Cameras() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!customerId) return;
+
+    const fetchLogs = async () => {
+      try {
+        const res = await Requests({
+          url: `/camera-logs/${customerId}`,
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to load camera logs");
+        }
+
+        const data = await res.json();
+        setData(data.logs);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, [customerId, page]);
+
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
       <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
-        
         {/* header section */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-2">
@@ -53,7 +83,6 @@ export default function Cameras() {
 
         {/* main grid content */}
         <div className="grid grid-cols-1 gap-8 pb-20">
-          
           {/* camera 1 */}
           <div className="flex flex-col bg-white rounded-3xl shadow-lg shadow-[#3A4D39]/5 border border-[#3A4D39]/10 overflow-hidden">
             {/* card header */}
@@ -63,8 +92,10 @@ export default function Cameras() {
                   <Video className="w-5 h-5" />
                 </div>
                 <div>
-                   <h2 className="text-base font-bold text-[#3A4D39]">Internal Cam 01</h2>
-                   <p className="text-xs text-[#739072]">Sorting Chamber</p>
+                  <h2 className="text-base font-bold text-[#3A4D39]">
+                    Internal Cam 01
+                  </h2>
+                  <p className="text-xs text-[#739072]">Sorting Chamber</p>
                 </div>
               </div>
             </div>
@@ -74,17 +105,26 @@ export default function Cameras() {
               {loading ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a] text-[#ECE3CE]/50 gap-3">
                   <div className="w-8 h-8 border-2 border-[#ECE3CE]/30 border-t-[#ECE3CE] rounded-full animate-spin" />
-                  <span className="text-sm font-mono tracking-widest uppercase">Connecting Feed...</span>
+                  <span className="text-sm font-mono tracking-widest uppercase">
+                    Connecting Feed...
+                  </span>
                 </div>
               ) : (
                 <>
-                  <video controls autoPlay muted loop className="w-full h-full object-cover">
-                     {/* placeholder src - ensure you have a valid path or use a placeholder image for design testing */}
+                  <video
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    className="w-full h-full object-cover"
+                  >
+                    {/* placeholder src - ensure you have a valid path or use a placeholder image for design testing */}
                     <source src="/video.mp4" type="video/mp4" />
                   </video>
                   {/* live Badge */}
                   <div className="absolute top-4 left-4 px-2 py-1 bg-red-600/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-md flex items-center gap-1.5 shadow-sm backdrop-blur-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />{" "}
+                    Live
                   </div>
                 </>
               )}
@@ -94,49 +134,84 @@ export default function Cameras() {
             <div className="flex-1 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <History className="w-4 h-4 text-[#739072]" />
-                <h3 className="text-sm font-bold text-[#3A4D39] uppercase tracking-wide">Detection Log</h3>
+                <h3 className="text-sm font-bold text-[#3A4D39] uppercase tracking-wide">
+                  Detection Log
+                </h3>
               </div>
-              
+
               <div className="rounded-xl border border-[#ECE3CE] overflow-hidden">
                 <Table>
                   <TableHeader className="bg-[#3A4D39]">
                     <TableRow className="hover:bg-[#3A4D39] border-none">
-                      <TableHead className="text-[#ECE3CE] font-bold w-30">Date</TableHead>
-                      <TableHead className="text-[#ECE3CE] font-bold w-25">Time</TableHead>
-                      <TableHead className="text-[#ECE3CE] font-bold">Status</TableHead>
+                      <TableHead className="text-[#ECE3CE] font-bold w-30">
+                        Date
+                      </TableHead>
+                      <TableHead className="text-[#ECE3CE] font-bold w-25">
+                        Time
+                      </TableHead>
+                      <TableHead className="text-[#ECE3CE] font-bold">
+                        Status
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="bg-white">
-                    {[1, 2, 3].map((_, i) => (
-                      <TableRow key={i} className="hover:bg-[#FAF9F6] border-b border-[#ECE3CE]">
-                        <TableCell className="font-mono text-sm text-[#4F6F52]">2025-09-12</TableCell>
-                        <TableCell className="font-mono text-sm text-[#4F6F52]">09:0{i} AM</TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-100">
-                            <CheckCircle2 className="w-3 h-3" /> No Anomaly
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {data.map((log) => {
+                      const date = new Date(log.date_created);
+
+                      return (
+                        <TableRow
+                          key={log.id}
+                          className="hover:bg-[#FAF9F6] border-b border-[#ECE3CE]"
+                        >
+                          <TableCell className="font-mono text-sm text-[#4F6F52]">
+                            {date.toISOString().split("T")[0]}
+                          </TableCell>
+
+                          <TableCell className="font-mono text-sm text-[#4F6F52]">
+                            {date.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </TableCell>
+
+                          <TableCell>
+                            {log.classification ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
+                                <AlertCircle className="w-3 h-3" />
+                                {log.classification}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-100">
+                                <CheckCircle2 className="w-3 h-3" />
+                                No Anomaly
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+
                     {/* anomaly row */}
                     <TableRow className="hover:bg-[#FAF9F6] border-b border-[#ECE3CE]">
-                        <TableCell className="font-mono text-sm text-[#4F6F52]">2025-09-12</TableCell>
-                        <TableCell className="font-mono text-sm text-[#4F6F52]">09:15 AM</TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
-                            <AlertCircle className="w-3 h-3" /> Foreign Object
-                          </span>
-                        </TableCell>
-                      </TableRow>
+                      <TableCell className="font-mono text-sm text-[#4F6F52]">
+                        2025-09-12
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-[#4F6F52]">
+                        09:15 AM
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
+                          <AlertCircle className="w-3 h-3" /> Foreign Object
+                        </span>
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
             </div>
           </div>
-
         </div>
       </section>
-      
     </div>
   );
 }

@@ -46,7 +46,6 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => {
 export default function Dashboard() {
   const { user } = useUser();
   const customerId = user?.customer_id;
-  console.log(customerId);
 
   const [announcements, setAnnouncements] = useState([]);
   const [stats, setStats] = useState(null);
