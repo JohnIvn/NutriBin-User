@@ -85,6 +85,15 @@ export class UserAuthController {
     return this.userAuthService.googleSignUp(body.credential);
   }
 
+  @Post('google-auth')
+  async googleAuthenticate(@Body() body: GoogleSignInDto) {
+    if (!body || !body.credential) {
+      throw new BadRequestException('Google credential is required');
+    }
+
+    return this.userAuthService.googleAuth(body.credential);
+  }
+
   @Post('email-verification')
   async sendEmailVerificationForSignup(
     @Body('newEmail') newEmail: string,

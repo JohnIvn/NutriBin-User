@@ -647,4 +647,129 @@ export class UserAuthService {
       );
     }
   }
+
+  async googleAuth(credential: string) {
+    try {
+      const webClientId = process.env.GOOGLE_CLIENT_ID;
+      const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
+      if (!webClientId || !androidClientId) {
+        throw new Error('Google client IDs are not properly set');
+      }
+
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: credential,
+        audience: [webClientId, androidClientId],
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      const email = normalizeEmail(payload.email);
+      const firstName = payload.given_name || '';
+      const lastName = payload.family_name || '';
+
+      const client = this.databaseService.getClient();
+
+      // Check if user exists in user table
+      const result = await client.query<UserPublicRow>(
+        `SELECT customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status
+       FROM user_customer
+       WHERE email = $1
+       LIMIT 1`,
+        [email],
+      );
+
+      // User exists - sign in
+      if (result.rowCount) {
+        const user = result.rows[0];
+
+        if (user.status !== 'active') {
+          return {
+            ok: false,
+            error:
+              user.status === 'banned'
+                ? 'This user account is banned'
+                : 'This user account is inactive',
+          };
+        }
+
+        const safeUser = {
+          customer_id: user.customer_id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          contact_number: user.contact_number,
+          address: user.address,
+          email: user.email,
+          date_created: user.date_created,
+          last_updated: user.last_updated,
+          status: user.status,
+        };
+
+        return {
+          ok: true,
+          user: safeUser,
+          isNewUser: false,
+        };
+      }
+
+      // User doesn't exist - sign up
+      // Generate a temporary password, hash it, and store the hash in DB
+      const tempPassword = generateRandomPassword(12);
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+      // Create new user account
+      const newUser = await client.query<UserPublicRow>(
+        `INSERT INTO user_customer (first_name, last_name, email, password)
+       VALUES ($1, $2, $3, $4)
+       RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
+        [firstName, lastName, email, passwordHash],
+      );
+
+      const user = newUser.rows[0];
+      if (!user) {
+        throw new InternalServerErrorException('Failed to create user account');
+      }
+
+      // Email the temporary password to the new customer
+      try {
+        await this.mailer.sendCustomerWelcomeWithPassword(
+          email,
+          firstName || '',
+          tempPassword,
+        );
+      } catch (mailErr) {
+        console.error('Failed to send welcome email with password:', mailErr);
+        // don't block account creation if email sending fails; just log
+      }
+
+      const safeUser = {
+        customer_id: user.customer_id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        contact_number: user.contact_number,
+        address: user.address,
+        email: user.email,
+        date_created: user.date_created,
+        last_updated: user.last_updated,
+        status: user.status,
+      };
+
+      return {
+        ok: true,
+        user: safeUser,
+        isNewUser: true,
+      };
+    } catch (error) {
+      console.error('Google Auth Error:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Failed to authenticate with Google');
+    }
+  }
 }
