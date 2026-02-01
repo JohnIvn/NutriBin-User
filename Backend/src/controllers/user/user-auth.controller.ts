@@ -253,9 +253,8 @@ export class UserAuthController {
   async updatePassword(
     @Body('email') email: string,
     @Body('newPassword') newPassword: string,
-    @Body('verificationCode') verificationCode: string,
   ) {
-    if (!email || !newPassword || !verificationCode) {
+    if (!email || !newPassword) {
       throw new BadRequestException(
         'email, newPassword, and verificationCode are required',
       );
@@ -264,29 +263,6 @@ export class UserAuthController {
     const client = this.databaseService.getClient();
 
     try {
-      // Verify the code first
-      const codeResult = await client.query<{
-        code_id: string;
-        code: string;
-        expires_at: string;
-      }>(
-        `SELECT code_id, code, expires_at FROM codes
-       WHERE code = $1 AND purpose = 'email_verification' AND used = false
-       ORDER BY created_at DESC LIMIT 1`,
-        [String(verificationCode).trim()],
-      );
-
-      if (!codeResult.rowCount) {
-        throw new BadRequestException('Invalid or expired verification code');
-      }
-
-      const record = codeResult.rows[0];
-      const now = new Date();
-      const expiresAt = new Date(record.expires_at);
-      if (expiresAt < now) {
-        throw new BadRequestException('Verification code has expired');
-      }
-
       const hashedPassword = await bcrypt.hash(newPassword.trim(), 10);
 
       const updateResult = await client.query<{
@@ -303,10 +279,6 @@ export class UserAuthController {
       if (!updateResult.rowCount) {
         throw new NotFoundException('Account not found with this email');
       }
-
-      await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
-        record.code_id,
-      ]);
 
       return {
         ok: true,
