@@ -8,8 +8,10 @@ import {
   Post,
   Get,
   Param,
+  Patch,
 } from '@nestjs/common';
 import { UserAuthService } from '../../service/auth/user-auth.service';
+import * as bcrypt from 'bcryptjs';
 import type {
   UserSignInDto,
   UserSignUpDto,
@@ -244,6 +246,81 @@ export class UserAuthController {
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
       throw err;
+    }
+  }
+
+  @Patch('update-password')
+  async updatePassword(
+    @Body('email') email: string,
+    @Body('newPassword') newPassword: string,
+    @Body('verificationCode') verificationCode: string,
+  ) {
+    if (!email || !newPassword || !verificationCode) {
+      throw new BadRequestException(
+        'email, newPassword, and verificationCode are required',
+      );
+    }
+
+    const client = this.databaseService.getClient();
+
+    try {
+      // Verify the code first
+      const codeResult = await client.query<{
+        code_id: string;
+        code: string;
+        expires_at: string;
+      }>(
+        `SELECT code_id, code, expires_at FROM codes
+       WHERE code = $1 AND purpose = 'email_verification' AND used = false
+       ORDER BY created_at DESC LIMIT 1`,
+        [String(verificationCode).trim()],
+      );
+
+      if (!codeResult.rowCount) {
+        throw new BadRequestException('Invalid or expired verification code');
+      }
+
+      const record = codeResult.rows[0];
+      const now = new Date();
+      const expiresAt = new Date(record.expires_at);
+      if (expiresAt < now) {
+        throw new BadRequestException('Verification code has expired');
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword.trim(), 10);
+
+      const updateResult = await client.query<{
+        customer_id: string;
+        email: string;
+      }>(
+        `UPDATE user_customer
+       SET password = $1, last_updated = now()
+       WHERE email = $2
+       RETURNING customer_id, email`,
+        [hashedPassword, email.trim().toLowerCase()],
+      );
+
+      if (!updateResult.rowCount) {
+        throw new NotFoundException('Account not found with this email');
+      }
+
+      await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
+        record.code_id,
+      ]);
+
+      return {
+        ok: true,
+        message: 'Password updated successfully',
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to update password');
     }
   }
 }
