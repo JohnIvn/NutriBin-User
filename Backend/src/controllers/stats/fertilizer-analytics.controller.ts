@@ -59,7 +59,7 @@ export class FertilizerAnalyticsController {
     const client = this.databaseService.getClient();
 
     try {
-      const where: string[] = ['fa.customer_id = $1'];
+      const where: string[] = ['fa.user_id = $1'];
       const values: string[] = [customerId];
 
       // optional, but kept for flexibility
@@ -87,6 +87,7 @@ export class FertilizerAnalyticsController {
         FROM fertilizer_analytics fa
         WHERE ${where.join(' AND ')}
         ORDER BY fa.date_created DESC
+        LIMIT 1
         `,
         values,
       );

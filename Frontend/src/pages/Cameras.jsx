@@ -23,7 +23,7 @@ export default function Cameras() {
   const { user } = useUser();
   const customerId = user?.customer_id;
   const [data, setData] = useState([]);
-  const [page, setPage] = useState(1);
+  const [page ] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
