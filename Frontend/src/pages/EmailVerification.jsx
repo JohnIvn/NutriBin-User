@@ -37,7 +37,7 @@ export default function EmailVerification() {
         method: 'POST',
         data: {
           ...registrationData,
-          EmailVerificationCode: code,
+          emailVerificationCode: code,
         },
       });
 
