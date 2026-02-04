@@ -282,7 +282,17 @@ export class UserAuthService {
     if (!user) {
       throw new InternalServerErrorException('Failed to create user account');
     }
-
+    await client.query(
+      `INSERT INTO authentication (
+      customer_id,
+      authentication_type,
+      enabled,
+      user_type
+   )
+   VALUES ($1, 'N/A', false, 'customer')
+   ON CONFLICT (customer_id) DO NOTHING`,
+      [user.customer_id],
+    );
     return {
       ok: true,
       user,
