@@ -12,8 +12,18 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function About() {
+  const navigate = useNavigate();
+
+  const handleJoinNow = () => {
+    navigate("/register");
+  };
+
+  const handleGuides = () => {
+    navigate("/guide")
+  };
   return (
     <div className="min-h-screen pb-12 font-sans text-[#3A4D39] overflow-x-hidden">
       {/* header */}
@@ -190,10 +200,11 @@ export default function About() {
                     sustainability.
                   </p>
                   <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                    <Button className="bg-[#ECE3CE] text-[#3A4D39] hover:bg-white hover:scale-105 transition-all font-bold h-12 px-8 rounded-full cursor-pointer">
+                    <Button onClick={handleJoinNow} className="bg-[#ECE3CE] text-[#3A4D39] hover:bg-white hover:scale-105 transition-all font-bold h-12 px-8 rounded-full cursor-pointer">
                       Join Now
                     </Button>
                     <Button
+                      onClick={handleGuides}
                       variant="outline"
                       className="border-2 border-[#ECE3CE] text-[#ECE3CE] hover:text-[white] hover:bg-[#ECE3CE]/5 bg-transparent h-12 px-8 rounded-full cursor-pointer hover:border-[white]"
                     >

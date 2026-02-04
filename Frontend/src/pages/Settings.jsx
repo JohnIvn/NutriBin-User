@@ -887,7 +887,7 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Quick Links Card */}
+          {/* Quick Links Card 
           <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <User className="w-4 h-4 text-[#4F6F52]" />
@@ -913,6 +913,7 @@ export default function Settings() {
               ))}
             </div>
           </div>
+          */}
         </div>
       </section>
 
