@@ -223,7 +223,7 @@ export class SettingsController {
     @Param('customerId') userId: string,
     @Body() body: { code?: string; newPhone?: string },
   ) {
-    if (!userId) throw new BadRequestException('staffId is required');
+    if (!userId) throw new BadRequestException('customerId is required');
     const code = body?.code?.trim();
     const newPhone = body?.newPhone?.trim();
 
@@ -267,7 +267,7 @@ export class SettingsController {
         );
       }
 
-      // Update phone number for admin or staff
+      // Update phone number for user
       const userResult = await client.query(
         'SELECT customer_id FROM user_customer WHERE customer_id = $1 LIMIT 1',
         [userId],
@@ -347,7 +347,7 @@ export class SettingsController {
 
       const setClause = `${updates.join(', ')}, last_updated = now()`;
 
-      // Update admin table
+      // Update user table
       const result = await client.query<{
         customer_id: string;
         first_name: string;
@@ -446,7 +446,7 @@ export class SettingsController {
     const client = this.databaseService.getClient();
 
     try {
-      // First check admin table
+      // First check user table
       const userResult = await client.query<{
         customer_id: string;
         first_name: string;
@@ -642,7 +642,7 @@ export class SettingsController {
 
   @Delete(':customerId/photo')
   async deletePhoto(@Param('customerId') customerId: string) {
-    if (!customerId) throw new BadRequestException('staffId is required');
+    if (!customerId) throw new BadRequestException('customerId is required');
 
     try {
       const bucket = 'avatars';
