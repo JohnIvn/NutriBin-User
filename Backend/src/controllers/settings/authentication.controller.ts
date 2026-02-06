@@ -95,45 +95,29 @@ export class AuthenticationController {
     const enabled = body.mfaType !== 'N/A';
     const client = this.databaseService.getClient();
 
-    try {
-      if (body.mfaType === 'sms') {
-        const result = await client.query(
-          `SELECT customer_id, contact_number 
-       FROM user_customer 
-       WHERE customer_id = $1 
+    // ✅ Check SMS requirements BEFORE updating MFA
+    if (body.mfaType === 'sms') {
+      const result = await client.query(
+        `SELECT customer_id, contact_number
+       FROM user_customer
+       WHERE customer_id = $1
        LIMIT 1`,
-          [customerId],
+        [customerId],
+      );
+
+      // customer not found
+      if (!result.rows.length) {
+        throw new BadRequestException('Customer not found');
+      }
+
+      const { contact_number } = result.rows[0];
+
+      // ❗ no contact number
+      if (!contact_number) {
+        throw new BadRequestException(
+          'Cannot enable SMS MFA because customer has no contact number',
         );
-
-        // customer not found
-        if (!result.rows.length) {
-          throw new BadRequestException('Customer not found');
-        }
-
-        const { contact_number } = result.rows[0];
-
-        // ❗ contact number is null / empty
-        if (!contact_number) {
-          throw new BadRequestException(
-            'Cannot enable SMS MFA because customer has no contact number',
-          );
-        }
       }
-
-      return {
-        ok: true,
-        message: 'MFA settings updated successfully',
-        mfaType: body.mfaType,
-      };
-    } catch (error) {
-      console.error('Error updating MFA settings:', error);
-
-      // rethrow Nest exceptions as-is
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to update MFA settings');
     }
 
     try {
