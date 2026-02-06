@@ -34,7 +34,7 @@ export default function Home() {
 
       {/* content body- */}
       <div className="bg-[#ECE3CE]/30 w-full py-20 px-6">
-        <div className="max-w-[1400px] mx-auto space-y-24">
+        <div className="max-w-350 mx-auto space-y-24">
           {/* key features */}
           <section className="space-y-10">
             <h2 className="text-3xl md:text-4xl font-black text-[#3A4D39] pl-2 border-l-4 border-[#3A4D39]">
