@@ -248,6 +248,48 @@ export class UserAuthController {
       throw err;
     }
   }
+  @Post('verify-sms')
+  async verifySms(@Body('verificationCode') verificationCode: string) {
+    try {
+      const client = this.databaseService.getClient();
+
+      const codeResult = await client.query<{
+        code_id: string;
+        code: string;
+        expires_at: string;
+      }>(
+        `SELECT code_id, code, expires_at FROM codes
+           WHERE code = $1 AND purpose = 'sms_verification' AND used = false
+           ORDER BY created_at DESC LIMIT 1`,
+        [String(verificationCode).trim()],
+      );
+
+      if (!codeResult.rowCount) {
+        throw new BadRequestException('Invalid or expired verification code');
+      }
+
+      const record = codeResult.rows[0];
+      const now = new Date();
+      const expiresAt = new Date(record.expires_at);
+      if (expiresAt < now) {
+        throw new BadRequestException('Verification code has expired');
+      }
+
+      // mark code as used
+      await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
+        record.code_id,
+      ]);
+
+      // If no error found
+      return {
+        ok: true,
+        message: 'Successful Verification',
+      };
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw err;
+    }
+  }
 
   @Patch('update-password')
   async updatePassword(
