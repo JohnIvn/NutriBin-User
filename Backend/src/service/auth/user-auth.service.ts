@@ -828,6 +828,17 @@ export class UserAuthService {
       };
     }
 
+    const safeUser: UserPublicRow = {
+      customer_id: user.customer_id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      contact_number: user.contact_number,
+      address: user.address,
+      email: user.email,
+      date_created: user.date_created,
+      last_updated: user.last_updated,
+      status: user.status,
+    };
     // Check if MFA is enabled for this user
     const mfaResult = await client.query<{
       authentication_type: string;
@@ -871,6 +882,7 @@ export class UserAuthService {
           mfaType: 'email',
           message: 'MFA verification code sent to your email',
           customerId: user.customer_id,
+          user: safeUser,
         };
       }
 
@@ -916,26 +928,16 @@ export class UserAuthService {
           mfaType: 'sms',
           message: 'MFA verification code sent via SMS',
           customerId: user.customer_id,
+          user: safeUser,
         };
       }
     }
 
     // No MFA enabled, sign in directly
-    const safeUser: UserPublicRow = {
-      customer_id: user.customer_id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      contact_number: user.contact_number,
-      address: user.address,
-      email: user.email,
-      date_created: user.date_created,
-      last_updated: user.last_updated,
-      status: user.status,
-    };
-
     return {
       ok: true,
       requiresMFA: false,
+      message: 'Successful login',
       user: safeUser,
     };
   }
