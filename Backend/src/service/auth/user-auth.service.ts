@@ -857,11 +857,7 @@ export class UserAuthService {
         );
 
         try {
-          await this.mailer.sendMfaVerificationEmail(
-            user.email,
-            user.first_name,
-            code,
-          );
+          await this.mailer.sendUserVerificationCode(user.email, code);
         } catch (emailErr) {
           console.error('Failed to send MFA email:', emailErr);
           throw new InternalServerErrorException(
