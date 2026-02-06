@@ -339,12 +339,12 @@ export class UserAuthService {
         ok: false,
         error:
           user.status === 'banned'
-            ? 'This admin account is banned'
-            : 'This admin account is inactive',
+            ? 'This user account is banned'
+            : 'This user account is inactive',
       };
     }
 
-    // Check if MFA is enabled for this admin
+    // Check if MFA is enabled for this user
     const mfaResult = await client.query<{
       authentication_type: string;
       enabled: boolean;
@@ -412,7 +412,7 @@ export class UserAuthService {
       mfaResult.rows[0].enabled &&
       mfaResult.rows[0].authentication_type === 'sms'
     ) {
-      // Ensure admin has a contact number
+      // Ensure user has a contact number
       const phone = user.contact_number;
       if (!phone) {
         return {
@@ -441,7 +441,7 @@ export class UserAuthService {
           body: `Your NutriBin verification code is: ${code}`,
         });
       } catch (smsErr) {
-        console.error('Failed to send MFA SMS (admin):', smsErr);
+        console.error('Failed to send MFA SMS (user):', smsErr);
       }
 
       return {
@@ -615,7 +615,7 @@ export class UserAuthService {
         throw new InternalServerErrorException('Failed to create user account');
       }
 
-      // Email the temporary password to the new staff member
+      // Email the temporary password to the new customer member
       try {
         await this.mailer.sendCustomerWelcomeWithPassword(
           email,

@@ -82,7 +82,7 @@ export class AuthenticationController {
   @Patch(':customerId/mfa')
   async updateMFASettings(
     @Param('customerId') customerId: string,
-    @Body() body: { mfaType?: 'N/A' | 'email' },
+    @Body() body: { mfaType?: 'N/A' | 'email' | 'sms' },
   ) {
     if (!customerId) {
       throw new BadRequestException('customerId is required');
@@ -94,6 +94,31 @@ export class AuthenticationController {
 
     const enabled = body.mfaType !== 'N/A';
     const client = this.databaseService.getClient();
+
+    // ✅ Check SMS requirements BEFORE updating MFA
+    if (body.mfaType === 'sms') {
+      const result = await client.query(
+        `SELECT customer_id, contact_number
+       FROM user_customer
+       WHERE customer_id = $1
+       LIMIT 1`,
+        [customerId],
+      );
+
+      // customer not found
+      if (!result.rows.length) {
+        throw new BadRequestException('Customer not found');
+      }
+
+      const { contact_number } = result.rows[0];
+
+      // ❗ no contact number
+      if (!contact_number) {
+        throw new BadRequestException(
+          'Cannot enable SMS MFA because customer has no contact number',
+        );
+      }
+    }
 
     try {
       await client.query(

@@ -250,7 +250,7 @@ export class BrevoService {
     const subject = 'Verify your NutriBin email';
     const content = `
       <h2 style="margin: 0 0 12px 0; color: #4F6F52; font-size: 20px;">Email Verification</h2>
-      <p style="margin: 0 0 10px 0; color: #333; font-size: 15px;">Use the verification code below to confirm your email address for your staff profile.</p>
+      <p style="margin: 0 0 10px 0; color: #333; font-size: 15px;">Use the verification code below to confirm your email address for your customer profile.</p>
       <div style="text-align: center; margin: 18px 0;">
         <p style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #4F6F52; margin: 0;">${code}</p>
       </div>
