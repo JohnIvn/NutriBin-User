@@ -270,9 +270,9 @@ export class UserAuthController {
         email: string;
       }>(
         `UPDATE user_customer
-       SET password = $1, last_updated = now()
-       WHERE email = $2
-       RETURNING customer_id, email`,
+        SET password = $1, last_updated = now()
+        WHERE email = $2
+        RETURNING customer_id, email`,
         [hashedPassword, email.trim().toLowerCase()],
       );
 
@@ -294,5 +294,16 @@ export class UserAuthController {
 
       throw new InternalServerErrorException('Failed to update password');
     }
+  }
+
+  @Post('mobile-signin')
+  async mobileSignIn(
+    @Body() body: UserSignInDto & { verificationCode?: string },
+  ) {
+    if (!body) {
+      throw new BadRequestException('Request body is required');
+    }
+
+    return this.userAuthService.mobileSignIn(body);
   }
 }

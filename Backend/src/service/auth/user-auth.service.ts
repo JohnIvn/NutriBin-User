@@ -782,4 +782,228 @@ export class UserAuthService {
       throw new UnauthorizedException('Failed to authenticate with Google');
     }
   }
+
+  async mobileSignIn(dto: UserSignInDto & { verificationCode?: string }) {
+    const emailRaw = dto?.email;
+    const password = dto?.password;
+    const verificationCode = dto?.verificationCode;
+
+    if (!emailRaw?.trim()) throw new BadRequestException('email is required');
+    if (!password) throw new BadRequestException('password is required');
+
+    const email = normalizeEmail(emailRaw);
+    const client = this.databaseService.getClient();
+
+    const result = await client.query<UserDbRow>(
+      `SELECT customer_id, first_name, last_name, contact_number, address, email, password, date_created, last_updated, status
+       FROM user_customer
+       WHERE email = $1
+       LIMIT 1`,
+      [email],
+    );
+
+    if (!result.rowCount) {
+      return {
+        ok: false,
+        error: 'Account not found',
+      };
+    }
+
+    const user = result.rows[0];
+
+    const matches = await bcrypt.compare(password, user.password);
+    if (!matches) {
+      return {
+        ok: false,
+        error: 'Wrong email or password',
+      };
+    }
+
+    if (user.status !== 'active') {
+      return {
+        ok: false,
+        error:
+          user.status === 'banned'
+            ? 'This user account is banned'
+            : 'This user account is inactive',
+      };
+    }
+
+    // Check if MFA is enabled for this user
+    const mfaResult = await client.query<{
+      authentication_type: string;
+      enabled: boolean;
+    }>(
+      `SELECT authentication_type, enabled FROM authentication WHERE customer_id = $1 LIMIT 1`,
+      [user.customer_id],
+    );
+
+    // If MFA is enabled
+    if (mfaResult.rowCount && mfaResult.rows[0].enabled) {
+      const mfaType = mfaResult.rows[0].authentication_type;
+
+      // If verification code is not provided, we need to send one
+      if (!verificationCode) {
+        if (mfaType === 'email') {
+          // Clear previous MFA codes for this user
+          await client.query(
+            `DELETE FROM codes WHERE user_id = $1 AND purpose = 'mfa' AND used = false`,
+            [user.customer_id],
+          );
+
+          const code = String(randomInt(100000, 1000000));
+
+          await client.query(
+            `INSERT INTO codes (user_id, code, purpose, expires_at)
+             VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
+            [user.customer_id, code],
+          );
+
+          try {
+            await this.mailer.sendUserVerificationCode(user.email, code);
+          } catch (emailErr) {
+            console.error('Failed to send MFA email:', emailErr);
+            throw new InternalServerErrorException(
+              'Failed to send verification email',
+            );
+          }
+
+          return {
+            ok: true,
+            requiresMFA: true,
+            mfaType: 'email',
+            message: 'MFA verification code sent to your email',
+            customerId: user.customer_id,
+          };
+        }
+
+        if (mfaType === 'sms') {
+          const phone = user.contact_number;
+          if (!phone) {
+            return {
+              ok: false,
+              error: 'No phone number on record for SMS verification',
+            };
+          }
+
+          await client.query(
+            `DELETE FROM codes WHERE user_id = $1 AND purpose = 'mfa' AND used = false`,
+            [user.customer_id],
+          );
+
+          const code = String(randomInt(100000, 1000000));
+
+          await client.query(
+            `INSERT INTO codes (user_id, code, purpose, expires_at)
+             VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
+            [user.customer_id, code],
+          );
+
+          try {
+            await this.iprogSms.sendSms({
+              to: phone,
+              body: `Your NutriBin verification code is: ${code}`,
+            });
+          } catch (smsErr) {
+            console.error('Failed to send MFA SMS:', smsErr);
+            throw new InternalServerErrorException(
+              'Failed to send verification SMS',
+            );
+          }
+
+          return {
+            ok: true,
+            requiresMFA: true,
+            mfaType: 'sms',
+            message: 'MFA verification code sent via SMS',
+            customerId: user.customer_id,
+          };
+        }
+      }
+
+      // If verification code is provided, verify it
+      if (verificationCode) {
+        // Verify the code (works for both email and SMS)
+        const codeResult = await client.query<{
+          code: string;
+          expires_at: string;
+          code_id: string;
+        }>(
+          `SELECT code, expires_at, code_id FROM codes
+           WHERE user_id = $1 AND purpose = 'mfa' AND used = false
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [user.customer_id],
+        );
+
+        if (!codeResult.rowCount) {
+          return {
+            ok: false,
+            error: 'No verification code found. Please request a new code.',
+          };
+        }
+
+        const record = codeResult.rows[0];
+        const now = new Date();
+        const expiresAt = new Date(record.expires_at);
+
+        if (expiresAt < now) {
+          return {
+            ok: false,
+            error: 'Verification code has expired',
+          };
+        }
+
+        if (record.code !== String(verificationCode).trim()) {
+          return {
+            ok: false,
+            error: 'The verification code you entered is incorrect.',
+          };
+        }
+
+        // Mark code as used
+        await client.query('UPDATE codes SET used = true WHERE code_id = $1', [
+          record.code_id,
+        ]);
+
+        // Code is valid, proceed with sign-in
+        const safeUser: UserPublicRow = {
+          customer_id: user.customer_id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          contact_number: user.contact_number,
+          address: user.address,
+          email: user.email,
+          date_created: user.date_created,
+          last_updated: user.last_updated,
+          status: user.status,
+        };
+
+        return {
+          ok: true,
+          requiresMFA: false,
+          user: safeUser,
+        };
+      }
+    }
+
+    // No MFA enabled, sign in directly
+    const safeUser: UserPublicRow = {
+      customer_id: user.customer_id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      contact_number: user.contact_number,
+      address: user.address,
+      email: user.email,
+      date_created: user.date_created,
+      last_updated: user.last_updated,
+      status: user.status,
+    };
+
+    return {
+      ok: true,
+      requiresMFA: false,
+      user: safeUser,
+    };
+  }
 }
