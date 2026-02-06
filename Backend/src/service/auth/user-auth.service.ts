@@ -981,7 +981,7 @@ export class UserAuthService {
 
         return {
           ok: true,
-          requiresMFA: false,
+          requiresMFA: true,
           user: safeUser,
         };
       }
