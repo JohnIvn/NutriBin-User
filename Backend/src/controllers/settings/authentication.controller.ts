@@ -24,6 +24,11 @@ interface UserRow {
   status: string;
 }
 
+interface MfaRow {
+  customer_id: string;
+  contact_number: string | null;
+}
+
 @Controller('authentication')
 export class AuthenticationController {
   constructor(
@@ -108,7 +113,7 @@ export class AuthenticationController {
 
     // ✅ Check SMS requirements BEFORE updating MFA
     if (body.mfaType === 'sms') {
-      const result = await client.query(
+      const result = await client.query<MfaRow>(
         `SELECT customer_id, contact_number
        FROM user_customer
        WHERE customer_id = $1
