@@ -3,6 +3,7 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
@@ -48,8 +49,18 @@ export class VideoStreamGateway
   }
 
   @SubscribeMessage('video-frame')
-  handleVideoFrame(client: Socket, @MessageBody() data: any) {
+  handleVideoFrame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: any,
+  ) {
     // Mark this client as a producer if not already
+    if (!client || !client.id) {
+      console.error(
+        '[VideoStream] Received video-frame but client is undefined',
+      );
+      return;
+    }
+
     if (!this.producers.has(client.id)) {
       console.log(`[VideoStream] New producer identified: ${client.id}`);
       this.producers.add(client.id);
