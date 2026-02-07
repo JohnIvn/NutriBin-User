@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Normalize backend base URL so even a bare host like
 // "nutribin-server-backend-production.up.railway.app" becomes a valid HTTPS URL.
-function getBaseUrl() {
+export function getBaseUrl() {
   const raw = import.meta.env.VITE_API_URL;
 
   if (raw && typeof raw === "string") {

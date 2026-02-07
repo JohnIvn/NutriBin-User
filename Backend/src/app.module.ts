@@ -15,6 +15,7 @@ import { TrashLogsController } from './controllers/stats/trash-logs.controller';
 import { IprogSmsService } from './service/iprogsms/iprogsms.service';
 import { DashboardController } from './controllers/stats/dashboard.controller';
 import { AnnouncementsController } from './controllers/settings/announcements.controller';
+import { VideoStreamGateway } from './service/video/video-stream.gateway';
 
 @Module({
   imports: [],
@@ -36,6 +37,7 @@ import { AnnouncementsController } from './controllers/settings/announcements.co
     UserAuthService,
     BrevoService,
     IprogSmsService,
+    VideoStreamGateway,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import {
   Table,
   TableBody,
@@ -14,16 +15,64 @@ import {
   CheckCircle2,
   AlertCircle,
   MoreVertical,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
-import Requests from "@/utils/Requests";
+import Requests, { getBaseUrl } from "@/utils/Requests";
 
 export default function Cameras() {
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
   const customerId = user?.customer_id;
   const [data, setData] = useState([]);
-  const [page ] = useState(1);
+  const [page] = useState(1);
+  const [frame, setFrame] = useState(null);
+  const [feedActive, setFeedActive] = useState(false);
+
+  useEffect(() => {
+    let currentUrl = null;
+    const baseUrl = getBaseUrl();
+    // Convert https:// to http:// if needed for local dev, but io usually handles it if specified correctly
+    // However, if the baseUrl is https, we should probably stick to it or let io handle protocol
+    const socketUrl = baseUrl.replace(/^http/, "ws").replace(/^https/, "wss");
+
+    const socket = io(`${baseUrl}/videostream`, {
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to video stream");
+    });
+
+    socket.on("stream", (data) => {
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+      const blob = new Blob([data], { type: "image/jpeg" });
+      currentUrl = URL.createObjectURL(blob);
+      setFrame(currentUrl);
+      setFeedActive(true);
+    });
+
+    socket.on("stream-status", ({ active }) => {
+      setFeedActive(active);
+      if (!active) {
+        setFrame(null);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      setFeedActive(false);
+      setFrame(null);
+    });
+
+    return () => {
+      socket.disconnect();
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -101,30 +150,44 @@ export default function Cameras() {
             </div>
 
             {/* video player */}
-            <div className="relative w-full aspect-video bg-black group">
-              {loading ? (
+            <div className="relative w-full aspect-video bg-black group font-sans">
+              {!feedActive ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a] text-[#ECE3CE]/50 gap-3">
+                  <div className="flex flex-col items-center gap-4">
+                    <WifiOff className="w-10 h-10 text-[#ECE3CE]/30" />
+                    <span className="text-sm font-mono tracking-widest uppercase">
+                      Feed Offline
+                    </span>
+                    <p className="text-xs text-[#ECE3CE]/20 max-w-[200px] text-center">
+                      The camera is currently disconnected or not transmitting
+                      data.
+                    </p>
+                  </div>
+                </div>
+              ) : !frame ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a] text-[#ECE3CE]/50 gap-3">
                   <div className="w-8 h-8 border-2 border-[#ECE3CE]/30 border-t-[#ECE3CE] rounded-full animate-spin" />
                   <span className="text-sm font-mono tracking-widest uppercase">
-                    Connecting Feed...
+                    Initializing Stream...
                   </span>
                 </div>
               ) : (
                 <>
-                  <video
-                    controls
-                    autoPlay
-                    muted
-                    loop
-                    className="w-full h-full object-cover"
-                  >
-                    {/* placeholder src - ensure you have a valid path or use a placeholder image for design testing */}
-                    <source src="/video.mp4" type="video/mp4" />
-                  </video>
+                  <img
+                    src={frame}
+                    alt="Camera Stream"
+                    className="w-full h-full object-contain bg-black"
+                  />
                   {/* live Badge */}
-                  <div className="absolute top-4 left-4 px-2 py-1 bg-red-600/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-md flex items-center gap-1.5 shadow-sm backdrop-blur-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />{" "}
-                    Live
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-red-600/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-md flex items-center gap-2 shadow-lg backdrop-blur-sm">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />{" "}
+                    Live Feed
+                  </div>
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <div className="px-3 py-1.5 bg-black/50 text-white text-[10px] font-bold uppercase tracking-wider rounded-md flex items-center gap-2 backdrop-blur-sm">
+                      <Wifi className="w-3 h-3 text-green-400" />
+                      Stable
+                    </div>
                   </div>
                 </>
               )}
