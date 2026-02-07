@@ -57,21 +57,34 @@ export class SettingsController {
 
   private async resolveAvatarUrl(userId: string) {
     const bucket = 'avatars';
-    const exts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
-    for (const e of exts) {
-      try {
-        const url = await supabaseService.getSignedUrl(
+    const folder = 'avatars';
+
+    try {
+      const { data: files, error } = await supabaseService.list(bucket, folder);
+
+      if (error) {
+        // If it's just bucket missing or permission, fallback to public URL
+        return supabaseService.getPublicUrl(bucket, `${folder}/${userId}.jpg`);
+      }
+
+      // Look for a file that starts with the userId (e.g., userId.jpg, userId.png)
+      const userAvatar = files?.find((f) => f.name.split('.')[0] === userId);
+
+      if (userAvatar) {
+        return await supabaseService.getSignedUrl(
           bucket,
-          `avatars/${userId}.${e}`,
-          60,
+          `${folder}/${userAvatar.name}`,
+          3600, // 1 hour
         );
-        if (url) return url;
-      } catch (err) {
-        console.log(err);
+      }
+    } catch (err) {
+      if (err?.status !== 400 && err?.statusCode !== '404') {
+        console.warn('[Settings] Failed to resolve avatar URL:', err);
       }
     }
-    // fallback to a public URL for common extension (may 404 if missing)
-    return supabaseService.getPublicUrl('avatars', `avatars/${userId}.jpg`);
+
+    // fallback to a public URL for common extension
+    return supabaseService.getPublicUrl(bucket, `${folder}/${userId}.jpg`);
   }
 
   private async ensureResetTable() {

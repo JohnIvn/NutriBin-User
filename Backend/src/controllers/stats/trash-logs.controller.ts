@@ -135,7 +135,7 @@ export class TrashLogsController {
         logs: dataResult.rows.map(mapTrashLog),
       };
     } catch (error) {
-      console.log(error);
+      console.error('[TrashLogs] Failed to load trash logs:', error.message);
       throw new InternalServerErrorException('Failed to load trash logs');
     }
   }
