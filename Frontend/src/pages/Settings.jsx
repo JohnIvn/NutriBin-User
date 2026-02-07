@@ -10,12 +10,12 @@ import {
 import { Input } from "@/components/ui/Input";
 import { accountSettingsSchema } from "@/schema/userAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
 import { toast } from "sonner";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -27,32 +27,59 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { User, Lock, AlertTriangle, Camera, Eye, EyeOff } from "lucide-react";
 
+// Constants
+const PHONE_VERIFICATION_REGEX = /^[0-9]{6}$/;
+const PASSWORD_REQUIREMENTS = {
+  minLength: 8,
+  maxLength: 20,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumber: true,
+  requireSpecial: true,
+};
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+const PHONE_CHECK_DEBOUNCE = 600;
+
 export default function Settings() {
+  // Form state
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [savedProfile, setSavedProfile] = useState(null);
+
+  // User context
   const { user, logout, refreshUser } = useUser();
   const navigate = useNavigate();
+
+  // Password reset state
   const [resetOpen, setResetOpen] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [emailShown, setEmailShown] = useState("");
   const [resetCode, setResetCode] = useState("");
-  const [_codeError, setCodeError] = useState("");
   const [codeFormatValid, setCodeFormatValid] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Account closure state
   const [closingAccount, setClosingAccount] = useState(false);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+
+  // MFA state
   const [mfaType, setMfaType] = useState("N/A");
   const [mfaLoading, setMfaLoading] = useState(false);
+
+  // Photo upload state
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState(undefined);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const avatarInputRef = useRef(null);
+
+  // Phone verification state
   const [originalNumber, setOriginalNumber] = useState("");
   const [pendingPhone, setPendingPhone] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(true);
@@ -62,9 +89,8 @@ export default function Settings() {
   const [phoneError, setPhoneError] = useState("");
   const [phoneAvailable, setPhoneAvailable] = useState(true);
   const [checkingPhone, setCheckingPhone] = useState(false);
-  const [savedProfile, setSavedProfile] = useState(null);
-  const avatarInputRef = useRef(null);
 
+  // Form setup
   const form = useForm({
     resolver: zodResolver(accountSettingsSchema),
     mode: "onChange",
@@ -77,24 +103,38 @@ export default function Settings() {
   });
 
   const {
-    formState: { isValid },
+    formState: { isValid, isDirty },
   } = form;
 
-  const getInitials = (first, last) =>
-    `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase();
+  // Utility: Get user initials
+  const getInitials = useCallback((first, last) => {
+    return `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase();
+  }, []);
 
-  useEffect(() => {
-    const userId = user?.customer_id;
-    if (userId) {
-      fetchProfile();
-      fetchMFASettings();
-    } else {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.customer_id]);
+  // Utility: Validate password requirements
+  const validatePassword = useCallback(
+    (password) => {
+      return {
+        minLength:
+          password &&
+          password.length >= PASSWORD_REQUIREMENTS.minLength &&
+          password.length <= PASSWORD_REQUIREMENTS.maxLength,
+        hasUppercase: password && /[A-Z]/.test(password),
+        hasLowercase: password && /[a-z]/.test(password),
+        hasNumber: password && /\d/.test(password),
+        hasSpecial: password && /[^A-Za-z0-9]/.test(password),
+        match: password && confirmPassword && password === confirmPassword,
+      };
+    },
+    [confirmPassword],
+  );
 
-  const fetchProfile = async () => {
+  const passwordChecks = validatePassword(newPassword);
+  const allPasswordRequirementsMet =
+    Object.values(passwordChecks).every(Boolean);
+
+  // Fetch profile data
+  const fetchProfile = useCallback(async () => {
     const userId = user?.customer_id;
     if (!userId) {
       setLoading(false);
@@ -108,31 +148,28 @@ export default function Settings() {
         method: "GET",
       });
 
-      console.log(response);
-
       if (response.data.ok) {
-        const user = response.data.user;
+        const userData = response.data.user;
 
         const profileValues = {
-          firstname: user.first_name || "",
-          lastname: user.last_name || "",
-          address: user.address || "",
-          number: user.contact_number || "",
+          firstname: userData.first_name || "",
+          lastname: userData.last_name || "",
+          address: userData.address || "",
+          number: userData.contact_number || "",
         };
 
         setSavedProfile(profileValues);
         setOriginalNumber(profileValues.number);
-
         form.reset(profileValues);
 
         setCurrentAvatar(
-          user.avatar ||
-            user.profile_photo ||
-            user.profile_image ||
-            user.photo ||
+          userData.avatar ||
+            userData.profile_photo ||
+            userData.profile_image ||
+            userData.photo ||
             undefined,
         );
-        setEmailShown(user?.email || "");
+        setEmailShown(userData?.email || "");
       }
     } catch (error) {
       toast.error("Failed to load profile data");
@@ -140,9 +177,10 @@ export default function Settings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.customer_id, form]);
 
-  const fetchMFASettings = async () => {
+  // Fetch MFA settings
+  const fetchMFASettings = useCallback(async () => {
     const userId = user?.customer_id;
     if (!userId) return;
 
@@ -158,8 +196,9 @@ export default function Settings() {
     } catch (error) {
       console.error("Failed to load MFA settings", error);
     }
-  };
+  }, [user?.customer_id]);
 
+  // Handle MFA change
   const handleMFAChange = async (newMfaType) => {
     const userId = user?.customer_id;
     if (!userId) return;
@@ -174,9 +213,13 @@ export default function Settings() {
 
       if (response.data.ok) {
         setMfaType(newMfaType);
-        toast.success(
-          `MFA set to ${newMfaType === "N/A" ? "Disabled" : newMfaType === "email" ? "Email" : "SMS"}`,
-        );
+        const mfaLabel =
+          newMfaType === "N/A"
+            ? "Disabled"
+            : newMfaType === "email"
+              ? "Email"
+              : "SMS";
+        toast.success(`MFA set to ${mfaLabel}`);
       }
     } catch (error) {
       toast.error(
@@ -188,81 +231,20 @@ export default function Settings() {
     }
   };
 
-  useEffect(() => {
-    if (!resetCode) {
-      setCodeFormatValid(false);
-      setCodeError("");
-      return;
-    }
-    setCodeFormatValid(/^\d{6}$/.test(resetCode.trim()));
-  }, [resetCode]);
-
-  // Watch contact number changes to require verification when changed
-  const watchedNumber = form.watch("number");
-  useEffect(() => {
-    if (loading) return;
-    if ((watchedNumber || "") !== (originalNumber || "")) {
-      setPendingPhone(watchedNumber || "");
-      setPhoneVerified(false);
-    } else {
-      setPendingPhone("");
-      setPhoneVerified(true);
-    }
-  }, [watchedNumber, originalNumber, loading]);
-
-  // Debounced availability check for pendingPhone
-  useEffect(() => {
-    if (!pendingPhone) {
-      setPhoneAvailable(true);
-      setCheckingPhone(false);
-      return;
-    }
-
-    let cancelled = false;
-    setCheckingPhone(true);
-    const t = setTimeout(async () => {
-      try {
-        const res = await Requests({
-          url: `/settings/check-phone/${encodeURIComponent(pendingPhone)}`,
-          method: "GET",
-        });
-        if (cancelled) return;
-        if (res.data?.ok) setPhoneAvailable(res.data.available === true);
-        else setPhoneAvailable(true);
-      } catch (err) {
-        console.error("phone availability check failed", err);
-        setPhoneAvailable(true);
-      } finally {
-        if (!cancelled) setCheckingPhone(false);
-      }
-    }, 600);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [pendingPhone]);
-
-  const passwordChecks = {
-    minLength:
-      newPassword && newPassword.length >= 8 && newPassword.length <= 20,
-    hasUppercase: newPassword && /[A-Z]/.test(newPassword),
-    hasLowercase: newPassword && /[a-z]/.test(newPassword),
-    hasNumber: newPassword && /\d/.test(newPassword),
-    hasSpecial: newPassword && /[^A-Za-z0-9]/.test(newPassword),
-    match: newPassword && confirmPassword && newPassword === confirmPassword,
-  };
-
-  const allPasswordRequirementsMet =
-    passwordChecks.minLength &&
-    passwordChecks.hasUppercase &&
-    passwordChecks.hasLowercase &&
-    passwordChecks.hasNumber &&
-    passwordChecks.hasSpecial &&
-    passwordChecks.match;
-
+  // Handle profile submission
   const handleSubmission = async () => {
     const userId = user?.customer_id;
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    // Check if phone needs verification
+    if (!phoneVerified && pendingPhone !== originalNumber) {
+      toast.error("Please verify your new phone number before saving");
+      return;
+    }
+
     try {
       setSaveLoading(true);
       const values = form.getValues();
@@ -281,7 +263,8 @@ export default function Settings() {
       if (response.data.ok) {
         toast.success("Profile updated successfully");
         setEditMode(false);
-        fetchProfile();
+        await fetchProfile();
+        await refreshUser?.();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
@@ -291,10 +274,31 @@ export default function Settings() {
     }
   };
 
+  // Handle profile cancel
+  const handleCancel = useCallback(() => {
+    if (savedProfile) {
+      form.reset(savedProfile);
+      setOriginalNumber(savedProfile.number);
+    }
+    setPendingPhone("");
+    setPhoneVerified(true);
+    setPhoneCode("");
+    setPhoneError("");
+    setEditMode(false);
+  }, [savedProfile, form]);
+
+  // Send phone verification code
   const sendPhoneCode = async () => {
     const userId = user?.customer_id;
-    if (!userId) return toast.error("No user id");
-    if (!pendingPhone) return toast.error("Enter a phone number to verify");
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    if (!pendingPhone) {
+      toast.error("Enter a phone number to verify");
+      return;
+    }
 
     if (!phoneAvailable) {
       toast.error("That phone number is already in use");
@@ -322,11 +326,18 @@ export default function Settings() {
     }
   };
 
+  // Verify phone number
   const verifyPhone = async () => {
     const userId = user?.customer_id;
-    if (!userId) return toast.error("No user id");
-    if (!phoneCode || !/^[0-9]{6}$/.test(phoneCode.trim()))
-      return setPhoneError("Enter a 6-digit code");
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    if (!phoneCode || !PHONE_VERIFICATION_REGEX.test(phoneCode.trim())) {
+      setPhoneError("Enter a 6-digit code");
+      return;
+    }
 
     try {
       setVerifyingPhone(true);
@@ -354,9 +365,166 @@ export default function Settings() {
     }
   };
 
+  // Handle photo upload
+  const handlePhotoUpload = async () => {
+    if (!selectedPhoto) return;
+
+    const userId = user?.customer_id;
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    if (selectedPhoto.size > MAX_PHOTO_SIZE) {
+      toast.error("Photo must be less than 5MB");
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      const fd = new FormData();
+      fd.append("photo", selectedPhoto);
+
+      const res = await Requests({
+        url: `/settings/${userId}/photo`,
+        method: "POST",
+        data: fd,
+      });
+
+      if (res.data?.ok) {
+        toast.success("Photo uploaded");
+        await fetchProfile();
+        await refreshUser?.();
+        setSelectedPhoto(null);
+        setPreviewUrl("");
+      } else {
+        toast.error(res.data?.message || "Upload failed");
+      }
+    } catch (err) {
+      toast.error("Failed to upload photo");
+      console.error(err);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Handle photo removal
+  const handlePhotoRemove = async () => {
+    const userId = user?.customer_id;
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    try {
+      const res = await Requests({
+        url: `/settings/${userId}/photo`,
+        method: "DELETE",
+      });
+
+      if (res.data?.ok) {
+        setCurrentAvatar("");
+        setSelectedPhoto(null);
+        setPreviewUrl("");
+        await fetchProfile();
+        await refreshUser?.();
+        toast.success("Photo removed");
+      } else {
+        toast.error(res.data?.message || "Failed to remove photo");
+      }
+    } catch (err) {
+      toast.error("Failed to remove photo");
+      console.error(err);
+    }
+  };
+
+  // Handle password reset request
+  const handlePasswordResetRequest = async () => {
+    const userId = user?.customer_id;
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    try {
+      setSendingReset(true);
+      const res = await Requests({
+        url: `/settings/${userId}/password-reset`,
+        method: "POST",
+      });
+
+      if (res.data?.ok) {
+        setResetSent(true);
+        toast.success("Code sent!");
+      } else {
+        toast.error(res.data?.message || "Failed to send code");
+      }
+    } catch (err) {
+      toast.error("Error sending code");
+      console.error(err);
+    } finally {
+      setSendingReset(false);
+    }
+  };
+
+  // Handle password reset submission
+  const handlePasswordResetSubmit = async () => {
+    const userId = user?.customer_id;
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    if (!allPasswordRequirementsMet) {
+      toast.error("Please meet all password requirements");
+      return;
+    }
+
+    if (!codeFormatValid) {
+      toast.error("Please enter a valid 6-digit code");
+      return;
+    }
+
+    try {
+      setResetSubmitting(true);
+      const res = await Requests({
+        url: `/settings/${userId}/password-reset/verify`,
+        method: "POST",
+        data: { code: resetCode, newPassword },
+      });
+
+      if (res.data?.ok) {
+        toast.success("Password changed successfully!");
+        handleResetDialogClose();
+      } else {
+        toast.error(res.data?.message || "Failed to change password");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to change password");
+      console.error(error);
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+
+  // Handle reset dialog close
+  const handleResetDialogClose = () => {
+    setResetOpen(false);
+    setResetCode("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setResetSent(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  // Handle account closure
   const handleCloseAccount = async () => {
     const userId = user?.customer_id;
-    if (!userId) return;
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
 
     try {
       setClosingAccount(true);
@@ -374,16 +542,100 @@ export default function Settings() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to close account");
+      console.error(error);
     } finally {
       setClosingAccount(false);
       setCloseConfirmOpen(false);
     }
   };
 
+  // Effect: Load profile and MFA on mount
+  useEffect(() => {
+    const userId = user?.customer_id;
+    if (userId) {
+      fetchProfile();
+      fetchMFASettings();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.customer_id, fetchProfile, fetchMFASettings]);
+
+  // Effect: Validate reset code format
+  useEffect(() => {
+    if (!resetCode) {
+      setCodeFormatValid(false);
+      return;
+    }
+    setCodeFormatValid(/^\d{6}$/.test(resetCode.trim()));
+  }, [resetCode]);
+
+  // Effect: Watch for phone number changes
+  const watchedNumber = form.watch("number");
+  useEffect(() => {
+    if (loading) return;
+
+    if ((watchedNumber || "") !== (originalNumber || "")) {
+      setPendingPhone(watchedNumber || "");
+      setPhoneVerified(false);
+    } else {
+      setPendingPhone("");
+      setPhoneVerified(true);
+    }
+  }, [watchedNumber, originalNumber, loading]);
+
+  // Effect: Check phone availability (debounced)
+  useEffect(() => {
+    if (!pendingPhone) {
+      setPhoneAvailable(true);
+      setCheckingPhone(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCheckingPhone(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await Requests({
+          url: `/settings/check-phone/${encodeURIComponent(pendingPhone)}`,
+          method: "GET",
+        });
+
+        if (!cancelled) {
+          setPhoneAvailable(res.data?.available === true);
+        }
+      } catch (err) {
+        console.error("Phone availability check failed", err);
+        if (!cancelled) {
+          setPhoneAvailable(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingPhone(false);
+        }
+      }
+    }, PHONE_CHECK_DEBOUNCE);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pendingPhone]);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   return (
     <section className="flex bg-[#ECE3CE]/10 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8">
+      {/* Header */}
       <div className="w-full max-w-7xl space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-[black]">
+        <h1 className="text-3xl font-bold tracking-tight text-black">
           Settings
         </h1>
         <p className="text-muted-foreground">
@@ -392,9 +644,10 @@ export default function Settings() {
       </div>
 
       <section className="flex flex-col lg:flex-row w-full max-w-7xl gap-8 items-start">
-        {/* === Left Column: Profile Form === */}
+        {/* Left Column: Profile Form */}
         <Form {...form}>
           <form className="w-full lg:flex-1 space-y-8 bg-white border border-gray-100 shadow-sm rounded-xl p-6 sm:p-8">
+            {/* Section Header */}
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="bg-[#4F6F52]/10 p-2 rounded-lg">
                 <User className="w-5 h-5 text-[#4F6F52]" />
@@ -409,19 +662,20 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Avatar Upload - redesigned */}
+            {/* Avatar Upload */}
             <div className="py-6 border-b border-gray-100">
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <label
                     htmlFor="avatar-input"
-                    className="block w-28 h-28 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-pointer hover:opacity-90"
+                    className="block w-28 h-28 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                    aria-label="Upload profile photo"
                   >
                     <Avatar className="w-full h-full">
                       <AvatarImage
                         src={previewUrl || currentAvatar || undefined}
                         className="w-full h-full object-cover"
-                        alt="Avatar"
+                        alt="Profile avatar"
                       />
                       <AvatarFallback className="bg-[#4F6F52]/10 text-[#4F6F52] font-bold text-xl">
                         {getInitials(
@@ -440,15 +694,20 @@ export default function Settings() {
                     id="avatar-input"
                     ref={avatarInputRef}
                     type="file"
-                    accept="image/*"
-                    className="hidden"
+                    accept="image/jpeg,image/png,image/jpg,image/webp"
+                    className="sr-only"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        if (file.size > MAX_PHOTO_SIZE) {
+                          toast.error("Photo must be less than 5MB");
+                          return;
+                        }
                         setSelectedPhoto(file);
                         setPreviewUrl(URL.createObjectURL(file));
                       }
                     }}
+                    aria-label="Select profile photo file"
                   />
                 </div>
 
@@ -460,49 +719,12 @@ export default function Settings() {
                     Upload a square image for best results. JPG, PNG up to 5MB.
                   </p>
 
-                  <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-3 mt-3 flex-wrap">
                     <Button
                       type="button"
                       disabled={!selectedPhoto || uploadingPhoto}
-                      className="h-9 px-3 bg-[#4F6F52] text-white"
-                      onClick={async () => {
-                        if (!selectedPhoto) return;
-                        const userId = user?.customer_id;
-                        if (!userId) {
-                          toast.error("No user id");
-                          return;
-                        }
-                        try {
-                          setUploadingPhoto(true);
-                          const fd = new FormData();
-                          fd.append("photo", selectedPhoto);
-
-                          const res = await Requests({
-                            url: `/settings/${userId}/photo`,
-                            method: "POST",
-                            data: fd,
-                          });
-
-                          if (res.data?.ok) {
-                            toast.success("Photo uploaded");
-                            fetchProfile();
-                            try {
-                              refreshUser?.();
-                            } catch (e) {
-                              console.log(e);
-                            }
-                            setSelectedPhoto(null);
-                            setPreviewUrl("");
-                          } else {
-                            toast.error(res.data?.message || "Upload failed");
-                          }
-                        } catch (err) {
-                          toast.error("Failed to upload photo");
-                          console.error(err);
-                        } finally {
-                          setUploadingPhoto(false);
-                        }
-                      }}
+                      className="h-9 px-3 bg-[#4F6F52] text-white hover:bg-[#3A523D] disabled:opacity-50"
+                      onClick={handlePhotoUpload}
                     >
                       {uploadingPhoto ? "Uploading..." : "Upload Photo"}
                     </Button>
@@ -519,36 +741,8 @@ export default function Settings() {
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-9 px-3 text-red-600"
-                        onClick={async () => {
-                          const userId = user?.customer_id;
-                          if (!userId) return toast.error("No user id");
-                          try {
-                            const res = await Requests({
-                              url: `/settings/${userId}/photo`,
-                              method: "DELETE",
-                            });
-                            if (res.data?.ok) {
-                              setCurrentAvatar("");
-                              setSelectedPhoto(undefined);
-                              setPreviewUrl("");
-                              fetchProfile();
-                              toast.success("Photo removed");
-                              try {
-                                refreshUser?.();
-                              } catch (e) {
-                                console.log(e);
-                              }
-                            } else {
-                              toast.error(
-                                res.data?.message || "Failed to remove photo",
-                              );
-                            }
-                          } catch (err) {
-                            toast.error("Failed to remove photo");
-                            console.error(err);
-                          }
-                        }}
+                        className="h-9 px-3 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={handlePhotoRemove}
                       >
                         Remove
                       </Button>
@@ -565,6 +759,7 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* Form Fields */}
             {loading ? (
               <div className="flex flex-col items-center gap-3 py-12">
                 <div className="w-8 h-8 border-4 border-[#4F6F52] border-t-transparent rounded-full animate-spin" />
@@ -574,6 +769,7 @@ export default function Settings() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Name Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -587,7 +783,8 @@ export default function Settings() {
                           <Input
                             {...field}
                             disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52]"
+                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
+                            aria-label="First name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -607,7 +804,8 @@ export default function Settings() {
                           <Input
                             {...field}
                             disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52]"
+                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
+                            aria-label="Last name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -616,6 +814,7 @@ export default function Settings() {
                   />
                 </div>
 
+                {/* Address Field */}
                 <FormField
                   control={form.control}
                   name="address"
@@ -626,7 +825,8 @@ export default function Settings() {
                         <Input
                           {...field}
                           disabled={!editMode}
-                          className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52]"
+                          className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
+                          aria-label="Address"
                         />
                       </FormControl>
                       <FormMessage />
@@ -634,6 +834,7 @@ export default function Settings() {
                   )}
                 />
 
+                {/* Contact Number Field */}
                 <div className="grid grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
@@ -647,22 +848,26 @@ export default function Settings() {
                           <Input
                             {...field}
                             disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52]"
+                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
+                            aria-label="Contact number"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* Phone Verification UI */}
                   {editMode &&
                     pendingPhone &&
                     pendingPhone !== originalNumber && (
-                      <div className="mt-2 space-y-2">
-                        <p className="text-xs text-gray-500">
+                      <div className="mt-2 space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-xs text-blue-700 font-medium">
                           You changed your phone number. Please verify it to
                           save changes.
                         </p>
-                        <div className="flex items-center gap-2">
+
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Button
                             size="sm"
                             className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9"
@@ -670,6 +875,7 @@ export default function Settings() {
                               sendingCode || checkingPhone || !phoneAvailable
                             }
                             onClick={sendPhoneCode}
+                            type="button"
                           >
                             {sendingCode
                               ? "Sending..."
@@ -678,97 +884,100 @@ export default function Settings() {
                                 : "Send verification code"}
                           </Button>
 
-                          {checkingPhone ? (
+                          {checkingPhone && (
                             <span className="text-sm text-gray-500">
-                              Checking
+                              Checking availability...
                             </span>
-                          ) : !phoneAvailable ? (
-                            <span className="text-sm text-red-600">
+                          )}
+                          {!checkingPhone && !phoneAvailable && (
+                            <span className="text-sm text-red-600 font-medium">
                               Number already in use
                             </span>
-                          ) : phoneVerified ? (
-                            <span className="text-sm text-green-600">
-                              Verified
+                          )}
+                          {phoneVerified && (
+                            <span className="text-sm text-green-600 font-medium">
+                              ✓ Verified
                             </span>
-                          ) : null}
+                          )}
                         </div>
 
                         {!phoneVerified && (
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-start gap-2 mt-2 flex-wrap">
                             <Input
                               placeholder="Enter 6-digit code"
                               value={phoneCode}
-                              onChange={(e) => setPhoneCode(e.target.value)}
+                              onChange={(e) => {
+                                setPhoneCode(e.target.value.replace(/\D/g, ""));
+                                setPhoneError("");
+                              }}
+                              maxLength={6}
                               className="h-9 w-44"
+                              aria-label="Phone verification code"
                             />
                             <Button
                               size="sm"
                               className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9"
                               onClick={verifyPhone}
                               disabled={verifyingPhone}
+                              type="button"
                             >
                               {verifyingPhone ? "Verifying..." : "Verify"}
                             </Button>
-                            {phoneError && (
-                              <div className="text-xs text-red-600">
-                                {phoneError}
-                              </div>
-                            )}
+                          </div>
+                        )}
+
+                        {phoneError && (
+                          <div className="text-xs text-red-600 font-medium">
+                            {phoneError}
                           </div>
                         )}
                       </div>
                     )}
                 </div>
 
+                {/* Action Buttons */}
                 <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
-                  <Button
-                    type="button"
-                    className={`${
-                      editMode ? "hidden" : "inline-flex"
-                    } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
-                    onClick={() => setEditMode(true)}
-                  >
-                    Edit Profile
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={saveLoading || !isValid}
-                    className={`${
-                      editMode ? "inline-flex" : "hidden"
-                    } h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all cursor-pointer`}
-                    onClick={handleSubmission}
-                  >
-                    {saveLoading ? "Saving..." : "Save Changes"}
-                  </Button>
-                  ``
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={saveLoading}
-                    className={`${
-                      editMode ? "inline-flex" : "hidden"
-                    } h-11 px-8 bg-[red]/80 text-white border-gray-200 font-semibold hover:bg-[red] hover:text-[white] cursor-pointer`}
-                    onClick={() => {
-                      if (savedProfile) {
-                        form.reset(savedProfile);
-                        setOriginalNumber(savedProfile.number);
-                      }
-                      setPendingPhone("");
-                      setPhoneVerified(true);
-                      setPhoneCode("");
-                      setPhoneError("");
-                      setEditMode(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
+                  {!editMode ? (
+                    <Button
+                      type="button"
+                      className="h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all"
+                      onClick={() => setEditMode(true)}
+                    >
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        disabled={
+                          saveLoading ||
+                          !isValid ||
+                          (!phoneVerified && pendingPhone !== originalNumber)
+                        }
+                        className="h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all disabled:opacity-50"
+                        onClick={handleSubmission}
+                      >
+                        {saveLoading ? "Saving..." : "Save Changes"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={saveLoading}
+                        className="h-11 px-8 bg-red-600 text-white border-red-600 font-semibold hover:bg-red-700 hover:border-red-700"
+                        onClick={handleCancel}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
           </form>
         </Form>
 
-        {/* === Right Column: Sidebar Actions === */}
+        {/* Right Column: Security & Actions */}
         <div className="flex flex-col w-full lg:w-96 gap-6">
           {/* Security Card */}
           <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
@@ -778,6 +987,7 @@ export default function Settings() {
                 Security & Privacy
               </h3>
             </div>
+
             <div className="p-6 space-y-6">
               {/* Password Reset */}
               <div className="space-y-3">
@@ -789,7 +999,7 @@ export default function Settings() {
                 </p>
                 <Button
                   variant="outline"
-                  className="w-full justify-between h-10 bg-[#3A4D39] text-white hover:text-[#4F6F52] hover:border-[#4F6F52] cursor-pointer"
+                  className="w-full justify-between h-10 bg-[#3A4D39] text-white hover:bg-[#2A3D29] border-[#3A4D39]"
                   type="button"
                   onClick={() => {
                     setResetSent(false);
@@ -807,67 +1017,53 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   <Lock className="w-4 h-4 text-[#4F6F52]" />
                   <h4 className="text-sm font-semibold text-gray-700">
-                    Multi-Factor Auth
+                    Multi-Factor Authentication
                   </h4>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="mfa"
-                      value="N/A"
-                      checked={mfaType === "N/A"}
-                      onChange={() => handleMFAChange("N/A")}
-                      disabled={mfaLoading}
-                      className="accent-[#4F6F52]"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Disabled
+                <div
+                  className="space-y-2"
+                  role="radiogroup"
+                  aria-label="Multi-factor authentication options"
+                >
+                  {[
+                    { value: "N/A", label: "Disabled", desc: null },
+                    {
+                      value: "email",
+                      label: "Email Verification",
+                      desc: "Code sent to email on login",
+                    },
+                    {
+                      value: "sms",
+                      label: "SMS Verification",
+                      desc: "Code sent to your phone on login",
+                    },
+                  ].map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="mfa"
+                        value={option.value}
+                        checked={mfaType === option.value}
+                        onChange={() => handleMFAChange(option.value)}
+                        disabled={mfaLoading}
+                        className="accent-[#4F6F52] w-4 h-4"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {option.label}
+                        </div>
+                        {option.desc && (
+                          <div className="text-[10px] text-gray-500">
+                            {option.desc}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="mfa"
-                      value="email"
-                      checked={mfaType === "email"}
-                      onChange={() => handleMFAChange("email")}
-                      disabled={mfaLoading}
-                      className="accent-[#4F6F52]"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Email Verification
-                      </div>
-                      <div className="text-[10px] text-gray-500">
-                        Code sent to email on login
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="mfa"
-                      value="sms"
-                      checked={mfaType === "sms"}
-                      onChange={() => handleMFAChange("sms")}
-                      disabled={mfaLoading}
-                      className="accent-[#4F6F52]"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        SMS Verification
-                      </div>
-                      <div className="text-[10px] text-gray-500">
-                        Code sent to your phone number on login
-                      </div>
-                    </div>
-                  </label>
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -877,65 +1073,21 @@ export default function Settings() {
               <div className="pt-2">
                 <Button
                   variant="ghost"
-                  className="w-full h-10 text-red-600 hover:text-red-700 hover:bg-red-50 justify-start px-2 cursor-pointer"
+                  className="w-full h-10 text-red-600 hover:text-red-700 hover:bg-red-50 justify-start px-2"
                   disabled={closingAccount}
                   onClick={() => setCloseConfirmOpen(true)}
+                  type="button"
                 >
                   Deactivate Account
                 </Button>
               </div>
             </div>
           </div>
-
-          {/* Quick Links Card 
-          <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
-              <User className="w-4 h-4 text-[#4F6F52]" />
-              <h3 className="font-bold text-gray-800 text-sm">Resources</h3>
-            </div>
-            <div className="p-2">
-              {[
-                { label: "About Us", link: "/about" },
-                { label: "FAQs", link: "/faqs" },
-                { label: "Terms of Service", link: "/policies" },
-                { label: "Socials", link: "/socials" },
-                { label: "Studies", link: "/studies" },
-                { label: "Guide", link: "/guide" },
-              ].map((item) => (
-                <Button
-                  key={item.label}
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-between h-10 text-gray-600 hover:text-[#4F6F52] hover:bg-[#ECE3CE]/20 font-normal"
-                >
-                  <Link to={item.link}>{item.label}</Link>
-                </Button>
-              ))}
-            </div>
-          </div>
-          */}
         </div>
       </section>
 
-      {/* === Dialogs === */}
-
       {/* Password Reset Dialog */}
-      <Dialog
-        open={resetOpen}
-        onOpenChange={(open) => {
-          setResetOpen(open);
-          if (!open) {
-            // Reset form when dialog closes
-            setResetCode("");
-            setNewPassword("");
-            setConfirmPassword("");
-            setResetSent(false);
-            setCodeError("");
-            setShowNewPassword(false);
-            setShowConfirmPassword(false);
-          }
-        }}
-      >
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[#4F6F52]">
@@ -945,7 +1097,9 @@ export default function Settings() {
               We'll send a code to your email to verify it's you.
             </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4 py-2">
+            {/* Email Display & Send Code */}
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
               <div className="text-sm">
                 <p className="text-gray-500 text-xs uppercase font-bold">
@@ -959,27 +1113,8 @@ export default function Settings() {
                 size="sm"
                 className="bg-[#4F6F52] hover:bg-[#3A523D] text-white text-xs h-8"
                 disabled={sendingReset}
-                onClick={async () => {
-                  const userId = user?.customer_id;
-                  try {
-                    setSendingReset(true);
-                    const res = await Requests({
-                      url: `/settings/${userId}/password-reset`,
-                      method: "POST",
-                    });
-                    if (res.data?.ok) {
-                      setResetSent(true);
-                      setCodeError("");
-                      toast.success("Code sent!");
-                    } else {
-                      toast.error(res.data?.message || "Failed");
-                    }
-                  } catch {
-                    toast.error("Error sending code");
-                  } finally {
-                    setSendingReset(false);
-                  }
-                }}
+                onClick={handlePasswordResetRequest}
+                type="button"
               >
                 {sendingReset
                   ? "Sending..."
@@ -989,272 +1124,159 @@ export default function Settings() {
               </Button>
             </div>
 
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-600">
-                  Verification Code
-                </label>
-                <Input
-                  placeholder="000000"
-                  maxLength={6}
-                  className="text-center tracking-[0.5em] font-mono text-lg border-gray-200 focus-visible:border-[#4F6F52] text-[#4F6F52]"
-                  value={resetCode}
-                  onChange={(e) =>
-                    setResetCode(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-600">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showNewPassword ? "text" : "password"}
-                      className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52] cursor-pointer"
-                      tabIndex={-1}
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-600">
-                    Confirm
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52] cursor-pointer"
-                      tabIndex={-1}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Password Strength Requirements */}
-              {newPassword && (
-                <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                  <p className="text-xs font-semibold text-gray-700 mb-2">
-                    Password must contain:
-                  </p>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                          passwordChecks.minLength
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {passwordChecks.minLength && (
-                          <span className="text-white text-[10px]">✓</span>
-                        )}
-                      </div>
-                      <span
-                        className={
-                          passwordChecks.minLength
-                            ? "text-green-700"
-                            : "text-gray-600"
-                        }
-                      >
-                        8-20 characters
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                          passwordChecks.hasUppercase
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {passwordChecks.hasUppercase && (
-                          <span className="text-white text-[10px]">✓</span>
-                        )}
-                      </div>
-                      <span
-                        className={
-                          passwordChecks.hasUppercase
-                            ? "text-green-700"
-                            : "text-gray-600"
-                        }
-                      >
-                        One uppercase letter
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                          passwordChecks.hasLowercase
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {passwordChecks.hasLowercase && (
-                          <span className="text-white text-[10px]">✓</span>
-                        )}
-                      </div>
-                      <span
-                        className={
-                          passwordChecks.hasLowercase
-                            ? "text-green-700"
-                            : "text-gray-600"
-                        }
-                      >
-                        One lowercase letter
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                          passwordChecks.hasNumber
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {passwordChecks.hasNumber && (
-                          <span className="text-white text-[10px]">✓</span>
-                        )}
-                      </div>
-                      <span
-                        className={
-                          passwordChecks.hasNumber
-                            ? "text-green-700"
-                            : "text-gray-600"
-                        }
-                      >
-                        One number
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                          passwordChecks.hasSpecial
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {passwordChecks.hasSpecial && (
-                          <span className="text-white text-[10px]">✓</span>
-                        )}
-                      </div>
-                      <span
-                        className={
-                          passwordChecks.hasSpecial
-                            ? "text-green-700"
-                            : "text-gray-600"
-                        }
-                      >
-                        One special character
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                          passwordChecks.match ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      >
-                        {passwordChecks.match && (
-                          <span className="text-white text-[10px]">✓</span>
-                        )}
-                      </div>
-                      <span
-                        className={
-                          passwordChecks.match
-                            ? "text-green-700"
-                            : "text-gray-600"
-                        }
-                      >
-                        Passwords match
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Verification Code Input */}
+            <div className="space-y-1">
+              <label
+                htmlFor="reset-code-input"
+                className="text-xs font-semibold text-gray-600"
+              >
+                Verification Code
+              </label>
+              <Input
+                id="reset-code-input"
+                placeholder="000000"
+                maxLength={6}
+                className="text-center tracking-[0.5em] font-mono text-lg border-gray-200 focus-visible:border-[#4F6F52] text-[#4F6F52]"
+                value={resetCode}
+                onChange={(e) =>
+                  setResetCode(e.target.value.replace(/[^0-9]/g, ""))
+                }
+                aria-label="6-digit verification code"
+              />
             </div>
+
+            {/* Password Inputs */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label
+                  htmlFor="new-password-input"
+                  className="text-xs font-semibold text-gray-600"
+                >
+                  New Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="new-password-input"
+                    type={showNewPassword ? "text" : "password"}
+                    className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    aria-label="New password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52]"
+                    tabIndex={-1}
+                    aria-label={
+                      showNewPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label
+                  htmlFor="confirm-password-input"
+                  className="text-xs font-semibold text-gray-600"
+                >
+                  Confirm
+                </label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password-input"
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    aria-label="Confirm password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52]"
+                    tabIndex={-1}
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Password Requirements Checklist */}
+            {newPassword && (
+              <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <p className="text-xs font-semibold text-gray-700 mb-2">
+                  Password must contain:
+                </p>
+                <div className="space-y-1">
+                  {[
+                    { key: "minLength", label: "8-20 characters" },
+                    { key: "hasUppercase", label: "One uppercase letter" },
+                    { key: "hasLowercase", label: "One lowercase letter" },
+                    { key: "hasNumber", label: "One number" },
+                    { key: "hasSpecial", label: "One special character" },
+                    { key: "match", label: "Passwords match" },
+                  ].map((req) => (
+                    <div
+                      key={req.key}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                          passwordChecks[req.key]
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                        aria-label={
+                          passwordChecks[req.key]
+                            ? "Requirement met"
+                            : "Requirement not met"
+                        }
+                      >
+                        {passwordChecks[req.key] && (
+                          <span className="text-white text-[10px]">✓</span>
+                        )}
+                      </div>
+                      <span
+                        className={
+                          passwordChecks[req.key]
+                            ? "text-green-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        {req.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
           <DialogFooter>
             <Button
               type="button"
-              className="w-full bg-[#4F6F52] hover:bg-[#3A523D]"
+              className="w-full bg-[#4F6F52] hover:bg-[#3A523D] disabled:opacity-50"
               disabled={
                 resetSubmitting ||
                 !codeFormatValid ||
                 !allPasswordRequirementsMet
               }
-              onClick={async () => {
-                const userId = user?.customer_id;
-
-                // Validate all password requirements are met
-                if (!allPasswordRequirementsMet) {
-                  toast.error("Please meet all password requirements");
-                  return;
-                }
-
-                // Validate code format
-                if (!codeFormatValid) {
-                  toast.error("Please enter a valid 6-digit code");
-                  return;
-                }
-
-                try {
-                  setResetSubmitting(true);
-                  const res = await Requests({
-                    url: `/settings/${userId}/password-reset/verify`,
-                    method: "POST",
-                    data: { code: resetCode, newPassword },
-                  });
-                  if (res.data?.ok) {
-                    toast.success("Password changed successfully!");
-                    setResetOpen(false);
-                    // Reset form
-                    setResetCode("");
-                    setNewPassword("");
-                    setConfirmPassword("");
-                    setResetSent(false);
-                    setShowNewPassword(false);
-                    setShowConfirmPassword(false);
-                  } else {
-                    toast.error(
-                      res.data?.message || "Failed to change password",
-                    );
-                  }
-                } catch (error) {
-                  toast.error(
-                    error.response?.data?.message ||
-                      "Failed to change password",
-                  );
-                } finally {
-                  setResetSubmitting(false);
-                }
-              }}
+              onClick={handlePasswordResetSubmit}
             >
               {resetSubmitting ? "Updating..." : "Update Password"}
             </Button>
@@ -1262,7 +1284,7 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      {/* Close Account Dialog */}
+      {/* Account Closure Confirmation Dialog */}
       <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
@@ -1271,13 +1293,16 @@ export default function Settings() {
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to deactivate your account? You will be
-              logged out immediately.
+              logged out immediately and your account will be marked as
+              inactive.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
             <Button
               variant="outline"
               onClick={() => setCloseConfirmOpen(false)}
+              disabled={closingAccount}
+              type="button"
             >
               Cancel
             </Button>
@@ -1286,6 +1311,7 @@ export default function Settings() {
               className="bg-red-600 hover:bg-red-700"
               onClick={handleCloseAccount}
               disabled={closingAccount}
+              type="button"
             >
               {closingAccount ? "Deactivating..." : "Yes, Deactivate"}
             </Button>

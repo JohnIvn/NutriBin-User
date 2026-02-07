@@ -40,7 +40,17 @@ export class AuthenticationController {
     const client = this.databaseService.getClient();
 
     try {
-      // Check if MFA row exists
+      // ✅ 1. Validate customer exists FIRST
+      const customerCheck = await client.query(
+        `SELECT customer_id FROM user_customer WHERE customer_id = $1 LIMIT 1`,
+        [customerId],
+      );
+
+      if (customerCheck.rowCount === 0) {
+        throw new BadRequestException('Invalid customerId');
+      }
+
+      // ✅ 2. Try to get existing MFA row
       const result = await client.query<{
         authentication_type: string;
         enabled: boolean;
@@ -52,22 +62,23 @@ export class AuthenticationController {
         [customerId],
       );
 
-      // If no row exists, create one
+      // ✅ 3. If none exists → create safely
       if (result.rowCount === 0) {
         await client.query(
-          `INSERT INTO authentication (customer_id, authentication_type, enabled, user_type)
-          VALUES ($1, 'N/A', false, 'customer')`,
+          `INSERT INTO authentication
+         (customer_id, authentication_type, enabled, user_type)
+         VALUES ($1, 'N/A', false, 'customer')`,
           [customerId],
         );
 
         return {
           ok: true,
-          mfaType: 'customer',
+          mfaType: 'N/A',
+          enabled: false,
           message: 'MFA row created',
         };
       }
 
-      // Row exists, return current type
       return {
         ok: true,
         mfaType: result.rows[0].authentication_type,

@@ -68,10 +68,26 @@ export const accountUser = z
   });
 
 export const accountSettingsSchema = z.object({
-  firstname: z.string().min(3, "Firstname must be at least 3 characters"),
-  lastname: z.string().min(3, "Lastname must be at least 3 characters"),
-  address: z.string().min(10, "Address must be at least 10 characters"),
-  number: z.string().min(11, "Phone number must be at least 11 digits"),
+  firstname: z
+    .string()
+    .min(3, "Firstname must be at least 3 characters")
+    .regex(/^[A-Za-z\s]+$/, "Firstname must contain only letters"),
+
+  lastname: z
+    .string()
+    .min(3, "Lastname must be at least 3 characters")
+    .regex(/^[A-Za-z\s]+$/, "Lastname must contain only letters"),
+
+  address: z
+    .string()
+    .min(10, "Address must be at least 10 characters")
+    // allows letters, numbers, spaces, comma, period, dash, # (adjust if you want stricter)
+    .regex(/^[A-Za-z0-9\s.,\-#]+$/, "Address contains invalid characters"),
+
+  number: z
+    .string()
+    .min(11, "Phone number must be at least 11 digits")
+    .regex(/^[0-9]+$/, "Phone number must contain only digits"),
 });
 
 export const adminAccountEdit = z.object({
