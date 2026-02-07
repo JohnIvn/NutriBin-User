@@ -31,12 +31,7 @@ export default function Cameras() {
   const [feedActive, setFeedActive] = useState(false);
 
   useEffect(() => {
-    let currentUrl = null;
     const baseUrl = getBaseUrl();
-    // Convert https:// to http:// if needed for local dev, but io usually handles it if specified correctly
-    // However, if the baseUrl is https, we should probably stick to it or let io handle protocol
-    const socketUrl = baseUrl.replace(/^http/, "ws").replace(/^https/, "wss");
-
     const socket = io(`${baseUrl}/videostream`, {
       transports: ["websocket"],
       reconnectionAttempts: 5,
@@ -47,30 +42,48 @@ export default function Cameras() {
     });
 
     socket.on("stream", (data) => {
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl);
-      }
       const blob = new Blob([data], { type: "image/jpeg" });
-      currentUrl = URL.createObjectURL(blob);
-      setFrame(currentUrl);
+      const url = URL.createObjectURL(blob);
+
+      setFrame((prev) => {
+        if (prev && prev.startsWith("blob:")) {
+          URL.revokeObjectURL(prev);
+        }
+        return url;
+      });
       setFeedActive(true);
     });
 
     socket.on("stream-status", ({ active }) => {
       setFeedActive(active);
       if (!active) {
-        setFrame(null);
+        setFrame((prev) => {
+          if (prev && prev.startsWith("blob:")) {
+            URL.revokeObjectURL(prev);
+          }
+          return null;
+        });
       }
     });
 
     socket.on("disconnect", () => {
       setFeedActive(false);
-      setFrame(null);
+      setFrame((prev) => {
+        if (prev && prev.startsWith("blob:")) {
+          URL.revokeObjectURL(prev);
+        }
+        return null;
+      });
     });
 
     return () => {
       socket.disconnect();
-      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      setFrame((prev) => {
+        if (prev && prev.startsWith("blob:")) {
+          URL.revokeObjectURL(prev);
+        }
+        return null;
+      });
     };
   }, []);
 
@@ -89,16 +102,16 @@ export default function Cameras() {
       try {
         const res = await Requests({
           url: `/camera-logs/${customerId}`,
+          method: "GET",
         });
 
-        if (!res.ok) {
+        if (res.data?.ok) {
+          setData(res.data.logs || []);
+        } else {
           throw new Error("Failed to load camera logs");
         }
-
-        const data = await res.json();
-        setData(data.logs);
       } catch (err) {
-        console.error(err);
+        console.error("Camera logs error:", err);
       } finally {
         setLoading(false);
       }
