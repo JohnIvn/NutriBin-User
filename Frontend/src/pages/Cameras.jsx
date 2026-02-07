@@ -39,9 +39,11 @@ export default function Cameras() {
 
     socket.on("connect", () => {
       console.log("Connected to video stream");
+      setFeedActive(true);
     });
 
     socket.on("stream", (data) => {
+      console.log("Received stream frame");
       const blob = new Blob([data], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
 
@@ -55,6 +57,7 @@ export default function Cameras() {
     });
 
     socket.on("stream-status", ({ active }) => {
+      console.log("Stream status update:", active);
       setFeedActive(active);
       if (!active) {
         setFrame((prev) => {
