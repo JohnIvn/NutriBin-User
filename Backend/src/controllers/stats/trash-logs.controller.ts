@@ -68,21 +68,45 @@ export class TrashLogsController {
       if (!resolvedMachineId) {
         const machineResult = await client.query<MachineRow>(
           `
-          SELECT machine_id
-          FROM machines
-          WHERE user_id = $1
-            AND is_active = true
-          ORDER BY date_created ASC
+          SELECT m.machine_id
+          FROM machines m
+          JOIN machine_customers mc ON mc.machine_id = m.machine_id
+          WHERE mc.customer_id = $1
+            AND m.is_active = true
           LIMIT 1
           `,
           [customerId],
         );
 
         if (machineResult.rows.length === 0) {
-          throw new BadRequestException('User has no active machines');
+          return {
+            ok: true,
+            logs: [],
+            pagination: {
+              total: 0,
+              page: pageNum,
+              limit: limitNum,
+              totalPages: 0,
+            },
+          };
         }
 
         resolvedMachineId = machineResult.rows[0].machine_id;
+      } else {
+        // 🔒 ensure machine belongs to customer if provided explicitly
+        const machineCheck = await client.query(
+          `
+          SELECT 1
+          FROM machine_customers
+          WHERE machine_id = $1 AND customer_id = $2
+          LIMIT 1
+          `,
+          [resolvedMachineId, customerId],
+        );
+
+        if (!machineCheck.rowCount) {
+          throw new BadRequestException('Machine not found for this customer');
+        }
       }
 
       const where: string[] = ['machine_id = $1'];

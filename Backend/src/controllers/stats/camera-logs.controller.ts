@@ -56,7 +56,7 @@ export class CameraLogsController {
 
     try {
       // Build WHERE clause safely
-      const where: string[] = ['cl.customer_id = $1'];
+      const where: string[] = ['cl.user_id = $1'];
       const values: SqlValue[] = [customerId];
 
       if (machineId) {
@@ -67,10 +67,11 @@ export class CameraLogsController {
         const machineCheck = await client.query(
           `
           SELECT 1
-          FROM machines
-          WHERE machine_id = $1
-            AND customer_id = $2
-            AND is_active = true
+          FROM machines m
+          JOIN machine_customers mc ON mc.machine_id = m.machine_id
+          WHERE m.machine_id = $1
+            AND mc.customer_id = $2
+            AND m.is_active = true
           LIMIT 1
           `,
           [machineId, customerId],

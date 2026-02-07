@@ -102,7 +102,7 @@ export class ModuleAnalyticsController {
           ma.servo_motor,
           ma.date_created
         FROM module_analytics ma
-        WHERE ma.customer_id = $1
+        WHERE ma.user_id = $1
         ORDER BY ma.date_created DESC
         LIMIT 1
         `,

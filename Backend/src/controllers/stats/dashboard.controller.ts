@@ -97,47 +97,47 @@ export class DashboardController {
 
       const machineResult = await client.query<MachineRow>(
         `
-        SELECT machine_id
-        FROM machines
-        WHERE user_id = $1
-          AND is_active = true
-        ORDER BY date_created ASC
+        SELECT m.machine_id
+        FROM machines m
+        JOIN machine_customers mc ON mc.machine_id = m.machine_id
+        WHERE mc.customer_id = $1
+          AND m.is_active = true
         LIMIT 1
         `,
         [customerId],
       );
 
-      if (machineResult.rows.length === 0) {
-        throw new BadRequestException('Customer has no active machines');
+      const machineId = machineResult.rows[0]?.machine_id;
+      let trashLogs: TrashLogRow[] = [];
+
+      if (machineId) {
+        const trashLogsResult = await client.query<TrashLogRow>(
+          `
+          SELECT
+            log_id,
+            nitrogen,
+            phosphorus,
+            potassium,
+            moisture,
+            humidity,
+            temperature,
+            ph,
+            date_created
+          FROM trash_logs
+          WHERE machine_id = $1
+          ORDER BY date_created DESC
+          LIMIT 4
+          `,
+          [machineId],
+        );
+        trashLogs = trashLogsResult.rows;
       }
-
-      const machineId = machineResult.rows[0].machine_id;
-
-      const trashLogs = await client.query<TrashLogRow>(
-        `
-        SELECT
-          log_id,
-          nitrogen,
-          phosphorus,
-          potassium,
-          moisture,
-          humidity,
-          temperature,
-          ph,
-          date_created
-        FROM trash_logs
-        WHERE machine_id = $1
-        ORDER BY date_created DESC
-        LIMIT 4
-        `,
-        [machineId],
-      );
 
       return {
         ok: true,
         announcements: announcement.rows,
         latestAnalytics: analytics.rows[0] ?? null,
-        trashLogs: trashLogs.rows,
+        trashLogs: trashLogs,
       };
     } catch (err) {
       console.error('Dashboard analytics error', err);
