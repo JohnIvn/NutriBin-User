@@ -152,27 +152,25 @@ export class SettingsController {
     }
   }
 
-  @Post(':customerId/phone/verify/request')
-  async requestPhoneVerification(
-    @Param('customerId') userId: string,
-    @Body() body: { newPhone?: string },
-  ) {
-    if (!userId) throw new BadRequestException('customerId is required');
-    const newPhone = body?.newPhone?.trim();
-    if (!newPhone) throw new BadRequestException('newPhone is required');
+  @Post('phone/verify/request')
+  async requestPhoneVerificationByContact(@Body() body: { contact?: string }) {
+    const contact = body?.contact?.trim();
+    if (!contact) throw new BadRequestException('contact is required');
 
     const client = this.databaseService.getClient();
 
     try {
-      // Check that phone isn't already used by another account
-      const existing = await client.query(
+      // Find user by contact number
+      const userResult = await client.query<{ customer_id: string }>(
         `SELECT customer_id FROM user_customer WHERE contact_number = $1 LIMIT 1`,
-        [newPhone],
+        [contact],
       );
 
-      if (existing.rowCount) {
-        return { ok: false, message: 'Phone number already in use' };
+      if (!userResult.rowCount) {
+        throw new NotFoundException('No account found with this phone number');
       }
+
+      const userId = userResult.rows[0].customer_id;
 
       // Clear previous phone verification codes for this user
       await client.query(
@@ -184,13 +182,13 @@ export class SettingsController {
 
       await client.query(
         `INSERT INTO codes (user_id, code, purpose, expires_at)
-         VALUES ($1, $2, 'other', NOW() + INTERVAL '15 minutes')`,
+       VALUES ($1, $2, 'other', NOW() + INTERVAL '15 minutes')`,
         [userId, code],
       );
 
       try {
         await this.iprogSms.sendSms({
-          to: newPhone,
+          to: contact,
           body: `Your NutriBin verification code is: ${code}`,
         });
       } catch (smsErr) {
@@ -202,8 +200,13 @@ export class SettingsController {
 
       return { ok: true, message: 'Verification code sent via SMS' };
     } catch (err) {
-      console.error('requestPhoneVerification error:', err);
-      if (err instanceof BadRequestException) throw err;
+      console.error('requestPhoneVerificationByContact error:', err);
+      if (
+        err instanceof BadRequestException ||
+        err instanceof NotFoundException
+      ) {
+        throw err;
+      }
       throw new InternalServerErrorException(
         'Failed to request phone verification',
       );
