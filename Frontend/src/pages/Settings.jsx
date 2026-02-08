@@ -103,7 +103,7 @@ export default function Settings() {
   });
 
   const {
-    formState: { isValid, isDirty },
+    formState: { isValid },
   } = form;
 
   // Utility: Get user initials
