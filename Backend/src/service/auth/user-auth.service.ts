@@ -898,7 +898,7 @@ export class UserAuthService {
         }
         // Clear previous MFA codes for this user
         await client.query(
-          `DELETE FROM codes WHERE user_id = $1 AND purpose = 'sms_verification' AND used = false`,
+          `DELETE FROM codes WHERE user_id = $1 AND purpose = 'mfa' AND used = false`,
           [user.customer_id],
         );
 
@@ -906,7 +906,7 @@ export class UserAuthService {
 
         await client.query(
           `INSERT INTO codes (user_id, code, purpose, expires_at)
-           VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
+   VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
           [user.customer_id, code],
         );
 
