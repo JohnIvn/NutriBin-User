@@ -111,7 +111,7 @@ export class AuthenticationController {
     const enabled = body.mfaType !== 'N/A';
     const client = this.databaseService.getClient();
 
-    // ✅ Check SMS requirements BEFORE updating MFA
+    // Check SMS requirements BEFORE updating MFA
     if (body.mfaType === 'sms') {
       const result = await client.query<MfaRow>(
         `SELECT customer_id, contact_number
