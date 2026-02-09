@@ -21,6 +21,7 @@ import type {
 import { randomInt, randomUUID } from 'crypto';
 import { DatabaseService } from '../../service/database/database.service';
 import { BrevoService } from '../../service/email/brevo.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('user')
 export class UserAuthController {
@@ -61,6 +62,7 @@ export class UserAuthController {
   }
 
   @Post('signin')
+  @Throttle({ default: { limit: 3, ttl: 60 } })
   async signIn(@Body() body: UserSignInDto) {
     if (!body) {
       throw new BadRequestException('Request body is required');
