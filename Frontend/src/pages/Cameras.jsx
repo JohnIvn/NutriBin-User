@@ -19,10 +19,11 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
-import Requests, { getBaseUrl } from "@/utils/Requests";
+import Requests from "@/utils/Requests";
+import getBaseUrl from "@/utils/GetBaseUrl";
 
 export default function Cameras() {
-  const [loading, setLoading] = useState(true);
+  const [ loading, setLoading ] = useState(true);
   const { user } = useUser();
   const customerId = user?.customer_id;
   const [data, setData] = useState([]);
@@ -115,8 +116,6 @@ export default function Cameras() {
         }
       } catch (err) {
         console.error("Camera logs error:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -234,56 +233,63 @@ export default function Cameras() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="bg-white">
-                    {data.map((log) => {
-                      const date = new Date(log.date_created);
-
-                      return (
-                        <TableRow
-                          key={log.id}
-                          className="hover:bg-[#FAF9F6] border-b border-[#ECE3CE]"
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={3}>
+                          <div className="flex items-center justify-center py-10">
+                            <div className="w-6 h-6 border-2 border-[#3A4D39]/30 border-t-[#3A4D39] rounded-full animate-spin" />
+                            <span className="ml-3 text-sm text-[#739072] font-medium">
+                              Loading logs...
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : data.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={3}
+                          className="text-center py-10 text-[#739072]"
                         >
-                          <TableCell className="font-mono text-sm text-[#4F6F52]">
-                            {date.toISOString().split("T")[0]}
-                          </TableCell>
+                          No camera logs found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      data.map((log) => {
+                        const date = new Date(log.date_created);
 
-                          <TableCell className="font-mono text-sm text-[#4F6F52]">
-                            {date.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </TableCell>
+                        return (
+                          <TableRow
+                            key={log.id}
+                            className="hover:bg-[#FAF9F6] border-b border-[#ECE3CE]"
+                          >
+                            <TableCell className="font-mono text-sm text-[#4F6F52]">
+                              {date.toISOString().split("T")[0]}
+                            </TableCell>
 
-                          <TableCell>
-                            {log.classification ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
-                                <AlertCircle className="w-3 h-3" />
-                                {log.classification}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-100">
-                                <CheckCircle2 className="w-3 h-3" />
-                                No Anomaly
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                            <TableCell className="font-mono text-sm text-[#4F6F52]">
+                              {date.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </TableCell>
 
-                    {/* anomaly row */}
-                    <TableRow className="hover:bg-[#FAF9F6] border-b border-[#ECE3CE]">
-                      <TableCell className="font-mono text-sm text-[#4F6F52]">
-                        2025-09-12
-                      </TableCell>
-                      <TableCell className="font-mono text-sm text-[#4F6F52]">
-                        09:15 AM
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
-                          <AlertCircle className="w-3 h-3" /> Foreign Object
-                        </span>
-                      </TableCell>
-                    </TableRow>
+                            <TableCell>
+                              {log.classification ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
+                                  <AlertCircle className="w-3 h-3" />
+                                  {log.classification}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-100">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  No Anomaly
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </div>

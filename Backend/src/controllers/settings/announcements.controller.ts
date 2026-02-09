@@ -35,10 +35,7 @@ export class AnnouncementsController {
         announcements: result.rows,
       };
     } catch (err) {
-      console.error(
-        '[Announcements] Failed to fetch announcements:',
-        err.message,
-      );
+      console.error('[Announcements] Failed to fetch announcements:', err);
       throw new InternalServerErrorException('Failed to fetch announcements');
     }
   }

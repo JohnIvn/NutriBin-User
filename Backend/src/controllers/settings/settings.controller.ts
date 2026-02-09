@@ -77,8 +77,18 @@ export class SettingsController {
           3600, // 1 hour
         );
       }
-    } catch (err) {
-      if (err?.status !== 400 && err?.statusCode !== '404') {
+    } catch (err: unknown) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        ('status' in err || 'statusCode' in err)
+      ) {
+        const e = err as { status?: number; statusCode?: string };
+
+        if (e.status !== 400 && e.statusCode !== '404') {
+          console.warn('[Settings] Failed to resolve avatar URL:', e);
+        }
+      } else {
         console.warn('[Settings] Failed to resolve avatar URL:', err);
       }
     }
@@ -151,7 +161,7 @@ export class SettingsController {
       throw new InternalServerErrorException('Failed to load settings');
     }
   }
-  
+
   @Post(':customerId/phone/verify/request')
   async requestPhoneVerification(
     @Param('customerId') userId: string,

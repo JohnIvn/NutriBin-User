@@ -99,7 +99,7 @@ export class FertilizerAnalyticsController {
     } catch (error) {
       console.error(
         '[FertilizerAnalytics] Failed to load fertilizer analytics:',
-        error.message,
+        error,
       );
       throw new InternalServerErrorException(
         'Failed to load fertilizer analytics',

@@ -3,7 +3,6 @@ import {
   Get,
   Param,
   InternalServerErrorException,
-  BadRequestException,
 } from '@nestjs/common';
 import { DatabaseService } from 'src/service/database/database.service';
 
