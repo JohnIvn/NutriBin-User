@@ -13,7 +13,7 @@ import { DatabaseService } from '../../service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
 
 interface UserRow {
-  id: string;
+  customer_id: string;
   first_name: string;
   last_name: string;
   contact_number: string | null;
@@ -350,7 +350,7 @@ export class AuthenticationController {
 
       const user = userResult.rows[0];
       const safeUser = {
-        customer_id: user.id,
+        customer_id: user.customer_id,
         first_name: user.first_name,
         last_name: user.last_name,
         contact_number: user.contact_number,

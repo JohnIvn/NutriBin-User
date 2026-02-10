@@ -40,7 +40,7 @@ export function VerifyMFASMS() {
         data: payload,
       });
 
-      if (res.data?.ok) {
+      if (res.data.ok) {
         toast.success("MFA verification successful!");
         login(res.data.user);
         setTimeout(() => navigate("/dashboard"), 500);
