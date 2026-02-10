@@ -83,6 +83,8 @@ export class FertilizerAnalyticsController {
           fa.hydrogen,
           fa.smoke,
           fa.benzene,
+          fa.weight_kg,
+          fa.reed_switch,
           fa.date_created
         FROM fertilizer_analytics fa
         WHERE ${where.join(' AND ')}
