@@ -1,4 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  //BadRequestException,
+  Injectable
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 
 type FetchMachinesRow = {
