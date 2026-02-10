@@ -36,23 +36,22 @@ function mapTrashLog(row: TrashLogRow) {
   };
 }
 
-type MachineRow = {
-  machine_id: string;
-};
-
 @Controller('trash-logs')
 export class TrashLogsController {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  @Get(':customerId')
+  @Get(':machineId')
   async getLogs(
-    @Param('customerId') customerId: string,
-    @Query('machineId') machineId?: string,
+    @Param('machineId') machineId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '10',
   ) {
     const pageNum = Number(page);
     const limitNum = Number(limit);
+
+    if (!machineId) {
+      throw new BadRequestException('machineId is required');
+    }
 
     if (pageNum < 1 || limitNum < 1 || limitNum > 100) {
       throw new BadRequestException('Invalid pagination parameters');
@@ -62,64 +61,14 @@ export class TrashLogsController {
     const client = this.databaseService.getClient();
 
     try {
-      let resolvedMachineId = machineId;
-
-      // 🔍 resolve first active machine for customer
-      if (!resolvedMachineId) {
-        const machineResult = await client.query<MachineRow>(
-          `
-          SELECT m.machine_id
-          FROM machine_customer m
-          JOIN machine_customers mc ON mc.machine_id = m.machine_id
-          WHERE mc.customer_id = $1
-            AND m.is_active = true
-          LIMIT 1
-          `,
-          [customerId],
-        );
-
-        if (machineResult.rows.length === 0) {
-          return {
-            ok: true,
-            logs: [],
-            pagination: {
-              total: 0,
-              page: pageNum,
-              limit: limitNum,
-              totalPages: 0,
-            },
-          };
-        }
-
-        resolvedMachineId = machineResult.rows[0].machine_id;
-      } else {
-        // 🔒 ensure machine belongs to customer if provided explicitly
-        const machineCheck = await client.query(
-          `
-          SELECT 1
-          FROM machine_customers
-          WHERE machine_id = $1 AND customer_id = $2
-          LIMIT 1
-          `,
-          [resolvedMachineId, customerId],
-        );
-
-        if (!machineCheck.rowCount) {
-          throw new BadRequestException('Machine not found for this customer');
-        }
-      }
-
-      const where: string[] = ['machine_id = $1'];
-      const values: Array<string | number> = [resolvedMachineId];
-
       // 🔢 total count
       const countResult = await client.query<{ count: number }>(
         `
         SELECT COUNT(*)::int AS count
         FROM trash_logs
-        WHERE ${where.join(' AND ')}
+        WHERE machine_id = $1
         `,
-        values,
+        [machineId],
       );
 
       const total = countResult.rows[0].count;
@@ -139,17 +88,17 @@ export class TrashLogsController {
           ph,
           date_created
         FROM trash_logs
-        WHERE ${where.join(' AND ')}
+        WHERE machine_id = $1
         ORDER BY date_created DESC
         LIMIT $2
         OFFSET $3
         `,
-        [...values, limitNum, offset],
+        [machineId, limitNum, offset],
       );
 
       return {
         ok: true,
-        machine_id: resolvedMachineId,
+        machine_id: machineId,
         pagination: {
           page: pageNum,
           limit: limitNum,

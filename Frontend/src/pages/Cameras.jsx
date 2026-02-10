@@ -24,7 +24,8 @@ import getBaseUrl from "@/utils/GetBaseUrl";
 
 export default function Cameras() {
   const [ loading, setLoading ] = useState(true);
-  const { user } = useUser();
+  const { user, selectedMachine } = useUser();
+  const machineId = selectedMachine?.machine_id;
   const customerId = user?.customer_id;
   const [data, setData] = useState([]);
   const [page] = useState(1);
@@ -107,6 +108,9 @@ export default function Cameras() {
         const res = await Requests({
           url: `/camera-logs/${customerId}`,
           method: "GET",
+          params: {
+            machineId: machineId
+          }
         });
 
         if (res.data?.ok) {

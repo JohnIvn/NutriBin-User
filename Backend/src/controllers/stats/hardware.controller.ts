@@ -1,0 +1,87 @@
+import {
+  Controller,
+  Post,
+  Body,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { DatabaseService } from '../../service/database/database.service';
+
+@Controller('hardware')
+export class HardwareController {
+  private readonly logger = new Logger(HardwareController.name);
+
+  constructor(private readonly databaseService: DatabaseService) {}
+
+  @Post('sensor-data')
+  async receiveSensorData(
+    @Body()
+    data: {
+      user_id: string;
+      machine_id: string;
+      weight_kg?: number | string;
+      nitrogen?: number | string;
+      phosphorus?: number | string;
+      potassium?: number | string;
+      mq135?: number | string;
+      soil_moisture?: number | string;
+      temperature?: number | string;
+      humidity?: number | string;
+      reed_switch?: number | string;
+      ph?: number | string;
+      methane?: number | string;
+      hydrogen?: number | string;
+      benzene?: number | string;
+    },
+  ) {
+    const client = this.databaseService.getClient();
+    try {
+      this.logger.log(`Received sensor data from machine: ${data.machine_id}`);
+
+      await client.query(
+        `INSERT INTO fertilizer_analytics (
+          user_id, 
+          machine_id, 
+          nitrogen, 
+          phosphorus, 
+          potassium, 
+          temperature, 
+          ph,
+          humidity, 
+          moisture, 
+          methane,
+          hydrogen,
+          smoke,
+          benzene,
+          weight_kg,
+          reed_switch
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [
+          data.user_id,
+          data.machine_id,
+          (data.nitrogen ?? 0).toString(),
+          (data.phosphorus ?? 0).toString(),
+          (data.potassium ?? 0).toString(),
+          (data.temperature ?? 0).toString(),
+          (data.ph ?? 0).toString(),
+          (data.humidity ?? 0).toString(),
+          (data.soil_moisture ?? 0).toString(),
+          (data.methane ?? 0).toString(),
+          (data.hydrogen ?? 0).toString(),
+          (data.mq135 ?? 0).toString(),
+          (data.benzene ?? 0).toString(),
+          (data.weight_kg ?? 0).toString(),
+          (data.reed_switch ?? 0).toString(),
+        ],
+      );
+
+      return {
+        ok: true,
+        message: 'Data saved successfully',
+      };
+    } catch (error) {
+      this.logger.error('Error saving sensor data:', error);
+      throw new InternalServerErrorException('Failed to save sensor data');
+    }
+  }
+}
