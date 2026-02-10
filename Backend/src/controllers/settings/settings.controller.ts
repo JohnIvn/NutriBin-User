@@ -47,6 +47,32 @@ function mapUser(row: UserPublicRow) {
   };
 }
 
+function sanitizeString(
+  value: unknown,
+  options?: {
+    maxLength?: number;
+    allowEmpty?: boolean;
+    pattern?: RegExp;
+  },
+): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') return null;
+
+  let v = value.trim();
+
+  if (!options?.allowEmpty && v === '') return null;
+
+  if (options?.maxLength && v.length > options.maxLength) {
+    v = v.slice(0, options.maxLength);
+  }
+
+  if (options?.pattern && !options.pattern.test(v)) {
+    throw new BadRequestException('Invalid characters detected');
+  }
+
+  return v;
+}
+
 @Controller('settings')
 export class SettingsController {
   constructor(
@@ -395,7 +421,7 @@ export class SettingsController {
       contact?: string | null;
     },
   ) {
-    if (!customerId) {
+    if (!customerId?.trim()) {
       throw new BadRequestException('customerId is required');
     }
 
@@ -403,26 +429,46 @@ export class SettingsController {
 
     try {
       const updates: string[] = [];
-      const values: (string | number | null)[] = [];
+      const values: (string | null)[] = [];
 
-      if (body.firstname !== undefined) {
+      const firstName = sanitizeString(body.firstname, {
+        maxLength: 50,
+        pattern: /^[a-zA-Z\s'-]+$/,
+      });
+
+      const lastName = sanitizeString(body.lastname, {
+        maxLength: 50,
+        pattern: /^[a-zA-Z\s'-]+$/,
+      });
+
+      const address = sanitizeString(body.address, {
+        maxLength: 255,
+        allowEmpty: false,
+      });
+
+      const contact = sanitizeString(body.contact, {
+        maxLength: 20,
+        pattern: /^[0-9+()-\s]+$/,
+      });
+
+      if (firstName !== null) {
         updates.push(`first_name = $${updates.length + 1}`);
-        values.push(body.firstname.trim());
+        values.push(firstName);
       }
 
-      if (body.lastname !== undefined) {
+      if (lastName !== null) {
         updates.push(`last_name = $${updates.length + 1}`);
-        values.push(body.lastname.trim());
+        values.push(lastName);
       }
 
-      if (body.address !== undefined) {
+      if (address !== null) {
         updates.push(`address = $${updates.length + 1}`);
-        values.push(body.address?.trim() || null);
+        values.push(address);
       }
 
-      if (body.contact !== undefined) {
+      if (contact !== null) {
         updates.push(`contact_number = $${updates.length + 1}`);
-        values.push(body.contact?.trim() || null);
+        values.push(contact);
       }
 
       if (updates.length === 0) {
@@ -431,23 +477,12 @@ export class SettingsController {
 
       const setClause = `${updates.join(', ')}, last_updated = now()`;
 
-      // Update user table
-      const result = await client.query<{
-        customer_id: string;
-        first_name: string;
-        last_name: string;
-        contact_number: string | null;
-        address: string | null;
-        email: string;
-        date_created: string;
-        last_updated: string;
-        status: string;
-      }>(
+      const result = await client.query(
         `UPDATE user_customer
-           SET ${setClause}
-           WHERE customer_id = $${updates.length + 1}
-           RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
-        [...values, customerId],
+       SET ${setClause}
+       WHERE customer_id = $${updates.length + 1}
+       RETURNING customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status`,
+        [...values, customerId.trim()],
       );
 
       if (!result.rowCount) {
