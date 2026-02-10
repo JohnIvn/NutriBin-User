@@ -19,6 +19,8 @@ import { UserAuthService } from './service/auth/user-auth.service';
 import { BrevoService } from './service/email/brevo.service';
 import { IprogSmsService } from './service/iprogsms/iprogsms.service';
 import { VideoStreamGateway } from './service/video/video-stream.gateway';
+import { MachineController } from './controllers/machine/machine.controller';
+import { MachineService } from './service/machine/machine.service';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { VideoStreamGateway } from './service/video/video-stream.gateway';
     TrashLogsController,
     DashboardController,
     AnnouncementsController,
+    MachineController,
   ],
   providers: [
     {
@@ -54,6 +57,7 @@ import { VideoStreamGateway } from './service/video/video-stream.gateway';
     BrevoService,
     IprogSmsService,
     VideoStreamGateway,
+    MachineService,
   ],
 })
 export class AppModule {}
