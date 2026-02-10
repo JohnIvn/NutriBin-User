@@ -13,7 +13,6 @@ export default function Footer() {
   return (
     <footer className="w-full bg-[#3A4D39] text-[#ECE3CE] font-sans pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-6 flex flex-col items-center">
-        
         {/* logo */}
         <div className="mb-8">
           <Link to="/" className="group inline-block text-center">
@@ -46,10 +45,20 @@ export default function Footer() {
           <p>
             &copy; {new Date().getFullYear()} NutriBin. All rights reserved.
           </p>
-          
+
           <div className="flex items-center gap-6">
-            <span className="cursor-pointer hover:text-[#ECE3CE] transition-colors">Privacy Policy</span>
-            <span className="cursor-pointer hover:text-[#ECE3CE] transition-colors">Cookie Policy</span>
+            <Link
+              to="/privacy-policy"
+              className="cursor-pointer hover:text-[#ECE3CE] transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/cookie-policy"
+              className="cursor-pointer hover:text-[#ECE3CE] transition-colors"
+            >
+              Cookie Policy
+            </Link>
           </div>
         </div>
       </div>

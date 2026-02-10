@@ -4,6 +4,8 @@ import AboutUs from "@/pages/AboutUs";
 import FAQ from "@/pages/FAQ";
 import Home from "@/pages/Home";
 import TOS from "@/pages/TOS";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import CookiePolicy from "@/pages/CookiePolicy";
 import Socials from "@/pages/Socials";
 import Studies from "@/pages/Studies";
 import Guide from "@/pages/Guide";
@@ -40,6 +42,8 @@ export default function PageRouter() {
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<AboutUs />} />
       <Route path="/terms" element={<TOS />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/cookie-policy" element={<CookiePolicy />} />
       <Route path="/faqs" element={<FAQ />} />
       <Route path="/socials" element={<Socials />} />
       <Route path="/studies" element={<Studies />} />
