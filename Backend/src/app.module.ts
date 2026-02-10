@@ -21,13 +21,15 @@ import { IprogSmsService } from './service/iprogsms/iprogsms.service';
 import { VideoStreamGateway } from './service/video/video-stream.gateway';
 import { MachineController } from './controllers/machine/machine.controller';
 import { MachineService } from './service/machine/machine.service';
+import { MobileController } from './controllers/mobile/mobile.controller';
+import { MobileService } from './service/mobile/mobile.service';
 
 @Module({
   imports: [
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          name: 'auth', 
+          name: 'auth',
           ttl: 60,
           limit: 10,
         },
@@ -46,6 +48,7 @@ import { MachineService } from './service/machine/machine.service';
     DashboardController,
     AnnouncementsController,
     MachineController,
+    MobileController,
   ],
   providers: [
     {
@@ -59,6 +62,7 @@ import { MachineService } from './service/machine/machine.service';
     IprogSmsService,
     VideoStreamGateway,
     MachineService,
+    MobileService,
   ],
 })
 export class AppModule {}
