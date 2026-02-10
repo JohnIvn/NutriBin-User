@@ -27,6 +27,7 @@ import { MachineService } from './service/machine/machine.service';
     ThrottlerModule.forRoot({
       throttlers: [
         {
+          name: 'auth', 
           ttl: 60,
           limit: 10,
         },

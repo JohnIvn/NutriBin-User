@@ -62,7 +62,7 @@ export class UserAuthController {
   }
 
   @Post('signin')
-  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @Throttle({ auth: { limit: 3, ttl: 60000 } })
   async signIn(@Body() body: UserSignInDto) {
     if (!body) {
       throw new BadRequestException('Request body is required');

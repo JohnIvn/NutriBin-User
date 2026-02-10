@@ -69,7 +69,7 @@ export class TrashLogsController {
         const machineResult = await client.query<MachineRow>(
           `
           SELECT m.machine_id
-          FROM machines m
+          FROM machine_customer m
           JOIN machine_customers mc ON mc.machine_id = m.machine_id
           WHERE mc.customer_id = $1
             AND m.is_active = true

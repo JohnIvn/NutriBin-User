@@ -31,10 +31,12 @@ export function UserProvider({ children }) {
           machines = res.data;
         }
       }
+
       const mergedUser = {
         ...userData,
         machines,
       };
+
       setUser(mergedUser);
       localStorage.setItem("user", JSON.stringify(mergedUser));
     } catch (err) {
@@ -44,16 +46,47 @@ export function UserProvider({ children }) {
     }
   };
 
+  const refreshMachines = async () => {
+    if (!user?.customer_id) return null;
+
+    try {
+      const res = await Requests({
+        url: `/machine/${user.customer_id}`,
+      });
+
+      let machines = [];
+      if (Array.isArray(res.data)) {
+        machines = res.data;
+      }
+
+      const updatedUser = {
+        ...user,
+        machines,
+      };
+
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      return machines;
+    } catch (err) {
+      console.error("Failed to refresh machines:", err);
+      return null;
+    }
+  };
+
   const refreshUser = async (overrideUser) => {
     const current = overrideUser || user;
     if (!current) return null;
+
     const userId = current.customer_id;
     if (!userId) return null;
+
     try {
       const res = await Requests({
         url: `/settings/${userId}`,
         method: "GET",
       });
+
       if (res.data?.ok && res.data.user) {
         const merged = {
           ...current,
@@ -74,13 +107,16 @@ export function UserProvider({ children }) {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
+
       const userId = user.customer_id;
       if (!userId) return;
+
       try {
         const res = await Requests({
           url: `/settings/${userId}`,
           method: "GET",
         });
+
         if (res.data?.ok && res.data.user) {
           // Preserve machines array when merging
           const merged = {
@@ -95,6 +131,7 @@ export function UserProvider({ children }) {
         console.error("Failed to refresh user profile:", err);
       }
     };
+
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.customer_id]);
@@ -102,6 +139,7 @@ export function UserProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("selectedMachine");
   };
 
   const [selectedMachine, setSelectedMachine] = useState(() => {
@@ -116,6 +154,7 @@ export function UserProvider({ children }) {
         login,
         logout,
         refreshUser,
+        refreshMachines,
         selectedMachine,
         setSelectedMachine,
       }}

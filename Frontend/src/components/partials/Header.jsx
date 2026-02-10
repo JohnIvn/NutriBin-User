@@ -4,21 +4,35 @@ import {
   Bars3Icon,
   XMarkIcon,
   ChevronDownIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContextHook";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
+import Requests from "@/utils/Requests";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [addMachineOpen, setAddMachineOpen] = useState(false);
+  const [machineSerial, setMachineSerial] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const userMenuRef = useRef(null);
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading, logout, selectedMachine, setSelectedMachine } =
-    useUser();
+  const {
+    user,
+    loading,
+    logout,
+    selectedMachine,
+    setSelectedMachine,
+    refreshMachines,
+  } = useUser();
+
   useEffect(() => {
     if (user?.machines?.length && !selectedMachine) {
       const stored = localStorage.getItem("selectedMachine");
@@ -64,6 +78,42 @@ export default function Header() {
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
     navigate("/login");
+  };
+
+  const handleAddMachine = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await Requests({
+        url: "/machine/add-machine",
+        method: "POST",
+        data: {
+          machineSerial: machineSerial,
+          customerId: user.id || user.customer_id || user.userId,
+        },
+      });
+
+      // use response.data.ok
+      if (!response.data?.ok) {
+        throw new Error(response.data?.error || "Failed to add machine");
+      }
+
+      setSuccess(response.data.message || "Machine added successfully!");
+      setMachineSerial("");
+      await refreshMachines();
+
+      setTimeout(() => {
+        setAddMachineOpen(false);
+        setSuccess("");
+      }, 1000);
+    } catch (err) {
+      setError(err.message || "Failed to add machine. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getInitials = (first, last) =>
@@ -209,9 +259,23 @@ export default function Header() {
                           {/* Machine Selector */}
                           {user?.machines?.length > 0 && (
                             <div className="px-4 py-3 border-b border-[#3A4D39]/10 bg-[#ECE3CE]/30">
-                              <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider block mb-2">
-                                Machines
-                              </label>
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider">
+                                  Machines
+                                </label>
+                                <Motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => {
+                                    setAddMachineOpen(true);
+                                    setUserMenuOpen(false);
+                                  }}
+                                  className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
+                                  title="Add Machine"
+                                >
+                                  <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
+                                </Motion.button>
+                              </div>
                               <select
                                 value={selectedMachine?.machine_id || ""}
                                 onChange={(e) => {
@@ -223,6 +287,7 @@ export default function Header() {
                                     "selectedMachine",
                                     JSON.stringify(machine),
                                   );
+                                  window.location.reload();
                                 }}
                                 className="w-full px-3 py-2 rounded-lg bg-white border border-[#3A4D39]/20
                                          text-[#3A4D39] font-medium text-sm
@@ -238,6 +303,26 @@ export default function Header() {
                                   </option>
                                 ))}
                               </select>
+                            </div>
+                          )}
+
+                          {/* Add Machine Button if no machines */}
+                          {(!user?.machines || user.machines.length === 0) && (
+                            <div className="px-4 py-3 border-b border-[#3A4D39]/10">
+                              <Motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                  setAddMachineOpen(true);
+                                  setUserMenuOpen(false);
+                                }}
+                                className="w-full flex items-center justify-center gap-2 px-3 py-2 
+                                         bg-[#3A4D39] text-[#ECE3CE] rounded-lg font-medium text-sm
+                                         hover:bg-[#4F6F52] transition-colors"
+                              >
+                                <PlusIcon className="w-4 h-4" />
+                                Add Machine
+                              </Motion.button>
                             </div>
                           )}
 
@@ -299,6 +384,155 @@ export default function Header() {
           </div>
         </div>
       </Motion.header>
+
+      {/* Add Machine Modal */}
+      <AnimatePresence>
+        {addMachineOpen && (
+          <>
+            <Motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAddMachineOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
+            />
+
+            <Motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                       w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[61] overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-black text-[#3A4D39]">
+                    Add Machine
+                  </h2>
+                  <Motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setAddMachineOpen(false)}
+                    className="p-1.5 hover:bg-[#3A4D39]/10 rounded-lg transition-colors"
+                  >
+                    <XMarkIcon className="w-5 h-5 text-[#3A4D39]" />
+                  </Motion.button>
+                </div>
+                <p className="text-sm text-[#3A4D39]/70 mt-1">
+                  Enter your machine's serial number to add it to your account
+                </p>
+              </div>
+
+              {/* Modal Body */}
+              <form onSubmit={handleAddMachine} className="px-6 py-6">
+                <div className="mb-4">
+                  <label
+                    htmlFor="machine-serial"
+                    className="block text-sm font-semibold text-[#3A4D39] mb-2"
+                  >
+                    Machine Serial Number
+                  </label>
+                  <input
+                    id="machine-serial"
+                    type="text"
+                    value={machineSerial}
+                    onChange={(e) => setMachineSerial(e.target.value)}
+                    placeholder="e.g., NB-2024-001"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[#3A4D39]/20 
+                             text-[#3A4D39] font-medium
+                             focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30 focus:border-[#3A4D39]/40
+                             placeholder:text-[#3A4D39]/40 transition-all"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <Motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl"
+                  >
+                    <p className="text-sm text-red-700 font-medium">{error}</p>
+                  </Motion.div>
+                )}
+
+                {/* Success Message */}
+                {success && (
+                  <Motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl"
+                  >
+                    <p className="text-sm text-green-700 font-medium">
+                      {success}
+                    </p>
+                  </Motion.div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAddMachineOpen(false)}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
+                             bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
+                             transition-colors disabled:opacity-50"
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <Motion.button
+                    whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                    whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                    type="submit"
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-[#ECE3CE] 
+                             bg-[#3A4D39] hover:bg-[#4F6F52] 
+                             shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:shadow-[#3A4D39]/30
+                             transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                             flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <PlusIcon className="w-5 h-5" />
+                        Add Machine
+                      </>
+                    )}
+                  </Motion.button>
+                </div>
+              </form>
+            </Motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Drawer */}
       <AnimatePresence>
@@ -398,9 +632,23 @@ export default function Header() {
                     {/* Machine Selector Mobile */}
                     {user?.machines?.length > 0 && (
                       <div className="mb-4">
-                        <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider block mb-2 px-1">
-                          Active Machine
-                        </label>
+                        <div className="flex items-center justify-between mb-2 px-1">
+                          <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider">
+                            Active Machine
+                          </label>
+                          <Motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              setAddMachineOpen(true);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
+                            title="Add Machine"
+                          >
+                            <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
+                          </Motion.button>
+                        </div>
                         <select
                           value={selectedMachine?.machine_id || ""}
                           onChange={(e) => {
@@ -412,6 +660,7 @@ export default function Header() {
                               "selectedMachine",
                               JSON.stringify(machine),
                             );
+                            window.location.reload();
                           }}
                           className="w-full px-4 py-3 rounded-xl bg-white border border-[#3A4D39]/20
                                    text-[#3A4D39] font-medium text-sm
@@ -427,6 +676,24 @@ export default function Header() {
                           ))}
                         </select>
                       </div>
+                    )}
+
+                    {/* Add Machine Button if no machines (mobile) */}
+                    {(!user?.machines || user.machines.length === 0) && (
+                      <Motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setAddMachineOpen(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-4
+                                 bg-[#3A4D39] text-[#ECE3CE] rounded-xl font-bold
+                                 hover:bg-[#4F6F52] transition-colors"
+                      >
+                        <PlusIcon className="w-5 h-5" />
+                        Add Machine
+                      </Motion.button>
                     )}
 
                     <Link

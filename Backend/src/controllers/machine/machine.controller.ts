@@ -1,9 +1,10 @@
 import {
   BadRequestException,
+  Body,
   //  Body,
   Controller,
   Get,
-  //  Post,
+  Post,
   //  Patch,
   Param,
 } from '@nestjs/common';
@@ -30,7 +31,19 @@ export class MachineController {
     return this.machineService.fetchMachine(customerId);
   }
 
-  //Uncomment the code
+  @Post('add-machine')
+  async addMachine(
+    @Body('machineSerial') machineSerial: string,
+    @Body('customerId') customerId: string,
+  ) {
+    if (!machineSerial || !customerId) {
+      return { ok: false, error: 'machineSerial and customerId are required' };
+    }
+
+    return this.machineService.addMachine(machineSerial, customerId);
+  }
+
+  //Uncomment the code if it is gonna be used
   /*
   // Fetches machines data on user view (When the user chose a machine to view)
   @Get('data/:machineId')
