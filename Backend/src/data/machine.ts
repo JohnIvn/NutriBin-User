@@ -24,6 +24,13 @@ export interface MachineSerial {
   date_created: string;
 }
 
+export interface MachineDto {
+  customerId: string;
+  name: string;
+  wifi_ssid: string;
+  wifi_password: string;
+}
+
 export interface TrashLog {
   log_id: string;
   machine_id?: string | null;
