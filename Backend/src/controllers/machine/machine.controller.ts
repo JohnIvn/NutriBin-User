@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  Post,
+  Patch,
   Param,
 } from '@nestjs/common';
 import type { MachineDto } from 'src/data/machine';
@@ -25,7 +27,7 @@ export class MachineController {
       throw new BadRequestException('Request body is required');
     }
 
-    return { ok: true };
+    return this.machineService.fetchMachine(customerId);
   }
 
   // Fetches machines data on user view (When the user chose a machine to view)

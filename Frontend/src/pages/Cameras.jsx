@@ -173,7 +173,7 @@ export default function Cameras() {
                     <span className="text-sm font-mono tracking-widest uppercase">
                       Feed Offline
                     </span>
-                    <p className="text-xs text-[#ECE3CE]/20 max-w-[200px] text-center">
+                    <p className="text-xs text-[#ECE3CE]/20 max-w-50 text-center">
                       The camera is currently disconnected or not transmitting
                       data.
                     </p>
