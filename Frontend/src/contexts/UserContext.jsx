@@ -18,16 +18,36 @@ export function UserProvider({ children }) {
     return null;
   });
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+  const login = async (userData) => {
+    try {
+      let machines = [];
+      if (userData?.customer_id) {
+        const res = await Requests({
+          url: `/machine/${userData.customer_id}`,
+        });
+        console.log("Machine response:", res.data);
+        // Response is directly the array of machines
+        if (Array.isArray(res.data)) {
+          machines = res.data;
+        }
+      }
+      const mergedUser = {
+        ...userData,
+        machines,
+      };
+      setUser(mergedUser);
+      localStorage.setItem("user", JSON.stringify(mergedUser));
+    } catch (err) {
+      console.error("Failed to fetch machine", err);
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+    }
   };
 
   const refreshUser = async (overrideUser) => {
     const current = overrideUser || user;
     if (!current) return null;
-    const userId =
-      current.customer_id;
+    const userId = current.customer_id;
     if (!userId) return null;
     try {
       const res = await Requests({
@@ -35,7 +55,11 @@ export function UserProvider({ children }) {
         method: "GET",
       });
       if (res.data?.ok && res.data.user) {
-        const merged = { ...current, ...res.data.user };
+        const merged = {
+          ...current,
+          ...res.data.user,
+          machines: current.machines, // Preserve machines
+        };
         setUser(merged);
         localStorage.setItem("user", JSON.stringify(merged));
         return merged;
@@ -58,16 +82,19 @@ export function UserProvider({ children }) {
           method: "GET",
         });
         if (res.data?.ok && res.data.user) {
-          const merged = { ...user, ...res.data.user };
+          // Preserve machines array when merging
+          const merged = {
+            ...user,
+            ...res.data.user,
+            machines: user.machines, // Keep existing machines
+          };
           setUser(merged);
           localStorage.setItem("user", JSON.stringify(merged));
         }
       } catch (err) {
-        // ignore profile fetch errors
         console.error("Failed to refresh user profile:", err);
       }
     };
-
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.customer_id]);
@@ -77,8 +104,22 @@ export function UserProvider({ children }) {
     localStorage.removeItem("user");
   };
 
+  const [selectedMachine, setSelectedMachine] = useState(() => {
+    const stored = localStorage.getItem("selectedMachine");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   return (
-    <UserContext.Provider value={{ user, login, logout, refreshUser }}>
+    <UserContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        refreshUser,
+        selectedMachine,
+        setSelectedMachine,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

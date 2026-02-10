@@ -9,55 +9,56 @@ import {
 
 import { DatabaseService } from '../../service/database/database.service';
 
-type ModuleAnalyticsRow = {
-  module_analytics_id: string;
-  esp32: boolean | null;
-  arduino_q: boolean | null;
-  arduino_r3: boolean | null;
-  ultrasonic: boolean | null;
-  reed: boolean | null;
-  moisture: boolean | null;
-  temperature: boolean | null;
-  humidity: boolean | null;
-  gas: boolean | null;
-  ph: boolean | null;
-  npk: boolean | null;
-  camera_1: boolean | null;
-  camera_2: boolean | null;
-  stepper_motor: boolean | null;
-  heating_pad: boolean | null;
-  exhaust_fan: boolean | null;
-  dc_motor: boolean | null;
-  grinder_motor: boolean | null;
-  power_supply: boolean | null;
-  servo_motor: boolean | null;
+type MachineAnalyticsRow = {
+  machine_id: string;
+  c1: boolean | null;
+  c2: boolean | null;
+  c3: boolean | null;
+  c4: boolean | null;
+  c5: boolean | null;
+  s1: boolean | null;
+  s2: boolean | null;
+  s3: boolean | null;
+  s4: boolean | null;
+  s5: boolean | null;
+  s6: boolean | null;
+  s7: boolean | null;
+  s8: boolean | null;
+  s9: boolean | null;
+  m1: boolean | null;
+  m2: boolean | null;
+  m3: boolean | null;
+  m4: boolean | null;
+  m5: boolean | null;
+  m6: boolean | null;
+  m7: boolean | null;
   date_created: string;
 };
 
-function mapModuleAnalytics(row: ModuleAnalyticsRow) {
+function mapMachineAnalytics(row: MachineAnalyticsRow) {
   return {
-    id: row.module_analytics_id,
+    id: row.machine_id,
     modules: {
-      esp32: row.esp32,
-      arduino_q: row.arduino_q,
-      arduino_r3: row.arduino_r3,
-      ultrasonic: row.ultrasonic,
-      reed: row.reed,
-      moisture: row.moisture,
-      temperature: row.temperature,
-      humidity: row.humidity,
-      gas: row.gas,
-      ph: row.ph,
-      npk: row.npk,
-      camera_1: row.camera_1,
-      camera_2: row.camera_2,
-      stepper_motor: row.stepper_motor,
-      heating_pad: row.heating_pad,
-      exhaust_fan: row.exhaust_fan,
-      dc_motor: row.dc_motor,
-      grinder_motor: row.grinder_motor,
-      power_supply: row.power_supply,
-      servo_motor: row.servo_motor,
+      arduino_q: row.c1,
+      esp32_filter: row.c2,
+      esp32_grinder: row.c4,
+      esp32_exhaust: row.c5,
+      camera_1: row.s1,
+      camera_2: row.s2,
+      humidity: row.s3,
+      temperature: row.s4,
+      methane: row.s5,
+      nitrogen: row.s6,
+      water: row.s7,
+      npk: row.s8,
+      moisture: row.s9,
+      servo_a: row.m1,
+      servo_b: row.m2,
+      servo_diverter: row.m3,
+      grinder: row.m4,
+      mixer: row.m5,
+      exhaust_fan_in: row.m6,
+      exhaust_fan_out: row.m7,
     },
     date_created: row.date_created,
   };
@@ -67,46 +68,47 @@ function mapModuleAnalytics(row: ModuleAnalyticsRow) {
 export class ModuleAnalyticsController {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  @Get(':customerId')
-  async getLatestModuleAnalytics(@Param('customerId') customerId: string) {
-    if (!customerId) {
+  @Get(':machineId')
+  async getLatestModuleAnalytics(@Param('machineId') machineId: string) {
+    if (!machineId) {
       throw new BadRequestException('customerId is required');
     }
 
     const client = this.databaseService.getClient();
 
     try {
-      const result = await client.query<ModuleAnalyticsRow>(
+      const result = await client.query<MachineAnalyticsRow>(
         `
         SELECT
-          ma.module_analytics_id,
-          ma.esp32,
-          ma.arduino_q,
-          ma.arduino_r3,
-          ma.ultrasonic,
-          ma.reed,
-          ma.moisture,
-          ma.temperature,
-          ma.humidity,
-          ma.gas,
-          ma.ph,
-          ma.npk,
-          ma.camera_1,
-          ma.camera_2,
-          ma.stepper_motor,
-          ma.heating_pad,
-          ma.exhaust_fan,
-          ma.dc_motor,
-          ma.grinder_motor,
-          ma.power_supply,
-          ma.servo_motor,
+          ma.c1,
+          ma.c2,
+          ma.c3,
+          ma.c4,
+          ma.c5,
+          ma.s1,
+          ma.s2,
+          ma.s3,
+          ma.s4,
+          ma.s5,
+          ma.s6,
+          ma.s7,
+          ma.s8,
+          ma.s9,
+          ma.m1,
+          ma.m1,
+          ma.m2,
+          ma.m3,
+          ma.m4,
+          ma.m5,
+          ma.m6,
+          ma.m7,
           ma.date_created
-        FROM module_analytics ma
-        WHERE ma.user_id = $1
+        FROM machines ma
+        WHERE ma.machine_id = $1
         ORDER BY ma.date_created DESC
         LIMIT 1
         `,
-        [customerId],
+        [machineId],
       );
 
       if (!result.rowCount) {
@@ -117,7 +119,7 @@ export class ModuleAnalyticsController {
 
       return {
         ok: true,
-        data: mapModuleAnalytics(result.rows[0]),
+        data: mapMachineAnalytics(result.rows[0]),
       };
     } catch (error) {
       if (

@@ -1,13 +1,13 @@
 import {
   BadRequestException,
-  Body,
+  //  Body,
   Controller,
   Get,
-  Post,
-  Patch,
+  //  Post,
+  //  Patch,
   Param,
 } from '@nestjs/common';
-import type { MachineDto } from 'src/data/machine';
+// import type { MachineDto } from 'src/data/machine';
 import { DatabaseService } from 'src/service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
 import { MachineService } from 'src/service/machine/machine.service';
@@ -30,6 +30,8 @@ export class MachineController {
     return this.machineService.fetchMachine(customerId);
   }
 
+  //Uncomment the code
+  /*
   // Fetches machines data on user view (When the user chose a machine to view)
   @Get('data/:machineId')
   async fetchMachineData(@Param('machineId') machineId: string) {
@@ -76,4 +78,6 @@ export class MachineController {
 
     return { ok: true };
   }
+  
+  */
 }
