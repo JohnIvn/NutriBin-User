@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Post,
@@ -34,17 +35,16 @@ export class MobileController {
   }
 
   // Fetches the machine ID when a user signed in
-  @Get(':customerId')
+  @Get('machine/:customerId')
   async fetchMachineId(@Param('customerId') customerId: string) {
-    console.log('Fetching User Machines');
     if (!customerId) {
-      throw new BadRequestException('Request body is required');
+      throw new BadRequestException('Customer ID Required');
     }
 
     return this.mobileService.fetchMachine(customerId);
   }
 
-  @Post('add-machine')
+  @Post('machine/add-machine')
   async addMachine(
     @Body('machineSerial') machineSerial: string,
     @Body('customerId') customerId: string,
@@ -56,17 +56,21 @@ export class MobileController {
     return this.mobileService.addMachine(machineSerial, customerId);
   }
 
+  // Fetches machines data on user view (When the user chose a machine to view)
+  @Get('machine/data/:customerId/:machineId')
+  async fetchMachineData(
+    @Param('machineId') machineId: string,
+    @Param('customerId') customerId: string,
+  ) {
+    if (!customerId) {
+      throw new ForbiddenException('Customer ID is required');
+    }
+
+    return this.mobileService.fetchMachineData(machineId, customerId);
+  }
+
   //Uncomment the code if it is gonna be used
   /*
-	  // Fetches machines data on user view (When the user chose a machine to view)
-	  @Get('data/:machineId')
-	  async fetchMachineData(@Param('machineId') machineId: string) {
-		if (!machineId) {
-		  throw new BadRequestException('Request body is required');
-		}
-	
-		return { ok: true };
-	  }
 	
 	  // Interval based sending of machine data (From Q to Server), to record machine data and allow non http based connection
 	  @Post('insert/:machineId/:customerId')

@@ -27,18 +27,27 @@ export class MobileService {
     const client = this.databaseService.getClient();
 
     try {
-      const query = await client.query<FetchMachinesRow>(
+      const machineResponse = await client.query<FetchMachinesRow>(
         `
-		SELECT machine_id
-		FROM public.machine_customers
-		WHERE customer_id = $1
-		`,
+      SELECT machine_id
+      FROM machine_customers
+      WHERE customer_id = $1
+      `,
         [customerId],
       );
 
+      if (machineResponse.rowCount === 0) {
+        return {
+          ok: true,
+          data: null,
+          message: 'No machines found for this customer',
+        };
+      }
+
+      const data = machineResponse.rows;
       return {
         ok: true,
-        data: query.rows,
+        data: data,
         message: 'Successful fetching',
       };
     } catch (err) {
@@ -47,7 +56,7 @@ export class MobileService {
     }
   }
 
-  async addMachine(machineSerial: string, customerId: string) {
+  async registerMachine(machineSerial: string, customerId: string) {
     try {
       const serial = machineSerial.trim();
       const client = this.databaseService.getClient();
@@ -65,8 +74,11 @@ export class MobileService {
         [serial],
       );
 
-      if (!result.rowCount) {
-        return { ok: false, error: 'Serial not found' };
+      if (result.rowCount == 0 || !result.rows) {
+        return {
+          ok: false,
+          error: 'Serial does not match any existing machines',
+        };
       }
 
       const machineId = result.rows[0].machine_serial_id;
@@ -99,6 +111,48 @@ export class MobileService {
 
       return {
         ok: true,
+        message: 'Machine added successfully',
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        ok: false,
+        error: 'Internal server error',
+      };
+    }
+  }
+
+  async fetchMachineData(machineId: string, customerId: string) {
+    try {
+      const client = this.databaseService.getClient();
+
+      if (!machineId) {
+        return { ok: false, message: 'Machine ID is required' };
+      }
+      if (!customerId) {
+        return { ok: false, message: 'Customer ID is required' };
+      }
+
+      const result = await client.query<MachineRow>(
+        `
+	  SELECT nitrogen, phosphorus, potassium, 
+	  		 temperature, ph, humidity, moisture, weight_kg, reed_switch,
+			 methane, air_quality, carbon_monoxide, combustible_gases
+	  FROM fertilizer_analytics
+	  WHERE machine_id = $1
+	  AND user_id = $2
+	  `,
+        [machineId, customerId],
+      );
+
+      if (!result.rows || result.rowCount == 0) {
+        return { ok: false, error: 'No data  found' };
+      }
+
+      const machineData = result.rows[0];
+      return {
+        ok: true,
+        data: machineData,
         message: 'Machine added successfully',
       };
     } catch (err) {
