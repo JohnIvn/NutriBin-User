@@ -53,7 +53,7 @@ export class MobileController {
       return { ok: false, error: 'machineSerial and customerId are required' };
     }
 
-    return this.mobileService.addMachine(machineSerial, customerId);
+    return this.mobileService.registerMachine(machineSerial, customerId);
   }
 
   // Fetches machines data on user view (When the user chose a machine to view)
