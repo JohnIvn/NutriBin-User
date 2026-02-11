@@ -23,30 +23,81 @@ export class VideoStreamGateway
   server: Server;
 
   private producers = new Set<string>();
+  private machineRooms = new Map<string, Set<string>>(); // machineId -> Set of client IDs
 
   constructor(private readonly databaseService: DatabaseService) {}
 
   handleConnection(client: Socket) {
-    console.log(`[VideoStream] Client connected: ${client.id}`);
-    const isActive = this.producers.size > 0;
-    client.emit('stream-status', { active: isActive });
+    const { machineId, customerId } = client.handshake.auth || {};
     console.log(
-      `[VideoStream] Initial status sent to ${client.id}: ${isActive}`,
+      `[VideoStream] Client connected: ${client.id}, machineId: ${machineId}, customerId: ${customerId}`,
     );
+
+    if (machineId) {
+      // Join a room based on machineId
+      const roomName = `machine:${machineId}`;
+      client.join(roomName);
+      console.log(`[VideoStream] Client ${client.id} joined room: ${roomName}`);
+
+      // Track clients per machine
+      if (!this.machineRooms.has(machineId)) {
+        this.machineRooms.set(machineId, new Set());
+      }
+      this.machineRooms.get(machineId)?.add(client.id);
+
+      // Check if this machine has active producers
+      const hasProducer = Array.from(this.producers).some((producerId) => {
+        const producerSocket = this.server.sockets.sockets.get(producerId);
+        return producerSocket?.handshake.auth?.machineId === machineId;
+      });
+
+      client.emit('stream-status', { active: hasProducer });
+      console.log(
+        `[VideoStream] Initial status sent to ${client.id}: ${hasProducer}`,
+      );
+    }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`[VideoStream] Client disconnected: ${client.id}`);
+    const { machineId } = client.handshake.auth || {};
+    console.log(
+      `[VideoStream] Client disconnected: ${client.id}, machineId: ${machineId}`,
+    );
+
+    // Remove from machine room tracking
+    if (machineId && this.machineRooms.has(machineId)) {
+      const machineRoom = this.machineRooms.get(machineId);
+      if (machineRoom) {
+        machineRoom.delete(client.id);
+        if (machineRoom.size === 0) {
+          this.machineRooms.delete(machineId);
+        }
+      }
+    }
+
+    // Handle producer disconnect
     if (this.producers.has(client.id)) {
       this.producers.delete(client.id);
       console.log(
         `[VideoStream] Producer removed: ${client.id}. Remaining: ${this.producers.size}`,
       );
-      if (this.producers.size === 0) {
-        this.server.emit('stream-status', { active: false });
-        console.log(
-          '[VideoStream] All producers gone, status emitted: active=false',
+
+      // Notify only the affected machine's room
+      if (machineId) {
+        const roomName = `machine:${machineId}`;
+        const hasOtherProducers = Array.from(this.producers).some(
+          (producerId) => {
+            const producerSocket = this.server.sockets.sockets.get(producerId);
+            return producerSocket?.handshake.auth?.machineId === machineId;
+          },
         );
+
+        if (!hasOtherProducers) {
+          this.server.to(roomName).emit('stream-status', { active: false });
+          console.log(
+            `[VideoStream] No producers for machine ${machineId}, status emitted: active=false`,
+          );
+        }
       }
     }
   }
@@ -64,16 +115,31 @@ export class VideoStreamGateway
       return;
     }
 
-    if (!this.producers.has(client.id)) {
-      console.log(`[VideoStream] New producer identified: ${client.id}`);
-      this.producers.add(client.id);
-      this.server.emit('stream-status', { active: true });
-      console.log('[VideoStream] Producer added, status emitted: active=true');
+    const { machineId } = client.handshake.auth || {};
+    if (!machineId) {
+      console.error(
+        `[VideoStream] video-frame from ${client.id} has no machineId`,
+      );
+      return;
     }
 
-    // Broadcast the video frame to all clients except the sender
-    // Using binary data directly
-    client.broadcast.emit('stream', data);
+    if (!this.producers.has(client.id)) {
+      console.log(
+        `[VideoStream] New producer identified: ${client.id} for machine: ${machineId}`,
+      );
+      this.producers.add(client.id);
+
+      // Notify only clients watching this specific machine
+      const roomName = `machine:${machineId}`;
+      this.server.to(roomName).emit('stream-status', { active: true });
+      console.log(
+        `[VideoStream] Producer added for ${machineId}, status emitted: active=true`,
+      );
+    }
+
+    // Broadcast the video frame ONLY to clients in the same machine room (except sender)
+    const roomName = `machine:${machineId}`;
+    client.to(roomName).emit('stream', data);
   }
 
   @SubscribeMessage('detection')
@@ -90,8 +156,9 @@ export class VideoStreamGateway
   ) {
     console.log(`[VideoStream] Detection received from ${client.id}:`, data);
 
-    // Broadcast to users
-    client.broadcast.emit('detection-update', data);
+    // Broadcast to users watching this specific machine
+    const roomName = `machine:${data.machineId}`;
+    client.to(roomName).emit('detection-update', data);
 
     // Save to database
     const dbClient = this.databaseService.getClient();
