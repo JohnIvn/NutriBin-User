@@ -9,6 +9,7 @@ type Response = {
 
 type FetchMachinesRow = {
   machine_id: string;
+  machine_serial: string;
 };
 
 type MachineRow = {
@@ -29,10 +30,12 @@ export class MobileService {
     try {
       const machineResponse = await client.query<FetchMachinesRow>(
         `
-      SELECT machine_id
-      FROM machine_customers
-      WHERE customer_id = $1
-      `,
+    SELECT mc.machine_id, ms.serial_number
+    FROM machine_customers mc
+    LEFT JOIN machine_serial ms
+      ON mc.machine_id = ms.machine_serial_id
+    WHERE mc.customer_id = $1
+  `,
         [customerId],
       );
 

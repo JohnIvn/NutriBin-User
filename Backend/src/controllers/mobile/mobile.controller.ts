@@ -11,11 +11,6 @@ import { DatabaseService } from 'src/service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
 import { MobileService } from 'src/service/mobile/mobile.service';
 
-type Response = {
-  ok: boolean;
-  message: string;
-  data: any;
-};
 @Controller('mobile')
 export class MobileController {
   constructor(
