@@ -64,6 +64,19 @@ export default function Cameras() {
       setFeedActive(true);
     });
 
+    socket.on("detection-update", (detection) => {
+      console.log("Live detection received:", detection);
+      setData((prev) => [
+        {
+          id: Date.now().toString(),
+          classification: detection.content,
+          date_created: detection.timestamp,
+          details: `Confidence: ${Math.round(detection.confidence * 100)}%`,
+        },
+        ...prev.slice(0, 9), // Keep last 10
+      ]);
+    });
+
     socket.on("stream-status", ({ active }) => {
       console.log("Stream status update:", active);
       setFeedActive(active);

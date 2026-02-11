@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { DatabaseService } from '../database/database.service';
 
 @WebSocketGateway({
   namespace: 'videostream',
@@ -22,6 +23,8 @@ export class VideoStreamGateway
   server: Server;
 
   private producers = new Set<string>();
+
+  constructor(private readonly databaseService: DatabaseService) {}
 
   handleConnection(client: Socket) {
     console.log(`[VideoStream] Client connected: ${client.id}`);
@@ -71,5 +74,45 @@ export class VideoStreamGateway
     // Broadcast the video frame to all clients except the sender
     // Using binary data directly
     client.broadcast.emit('stream', data);
+  }
+
+  @SubscribeMessage('detection')
+  async handleDetection(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      content: string;
+      confidence: number;
+      timestamp: string;
+      machineId: string;
+      customerId: string;
+    },
+  ) {
+    console.log(`[VideoStream] Detection received from ${client.id}:`, data);
+
+    // Broadcast to users
+    client.broadcast.emit('detection-update', data);
+
+    // Save to database
+    const dbClient = this.databaseService.getClient();
+    try {
+      await dbClient.query(
+        `INSERT INTO camera_logs (
+          machine_id, 
+          customer_id, 
+          classification, 
+          details
+        ) VALUES ($1, $2, $3, $4)`,
+        [
+          data.machineId,
+          data.customerId,
+          'large', // Mapping any detection to 'large' as placeholder since classification is ENUM
+          `Detected ${data.content} with ${Math.round(data.confidence * 100)}% confidence at ${data.timestamp}`,
+        ],
+      );
+      console.log('[VideoStream] Detection saved to database');
+    } catch (error) {
+      console.error('[VideoStream] Error saving detection:', error);
+    }
   }
 }
