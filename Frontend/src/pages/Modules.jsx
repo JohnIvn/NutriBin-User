@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ModuleCard from "@/components/ui/ModuleCard";
+import { toast } from "sonner";
 import {
   Cpu,
   Fan,
@@ -20,10 +21,12 @@ import Requests from "@/utils/Requests";
 export default function Modules() {
   const [modules, setModules] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { selectedMachine } = useUser();
+  const { user, selectedMachine } = useUser();
   const machineId = selectedMachine?.machine_id;
+  const customerId = user?.customer_id;
 
-  console.log("machine_id snapshot:", selectedMachine?.machine_id);
+  //console.log(customerId)
+  //console.log("machine_id snapshot:", selectedMachine?.machine_id);
 
   useEffect(() => {
     if (!machineId) return;
@@ -47,6 +50,33 @@ export default function Modules() {
 
     fetchModules();
   }, [machineId]);
+
+  const requestRepair = async () => {
+    if (!machineId || !customerId) {
+      toast.warning("Missing machine or user information");
+      return;
+    }
+
+    try {
+      const res = await Requests({
+        method: "POST",
+        url: "/module-analytics/repair",
+        data: {
+          machineId: machineId,
+          customerId: customerId,
+        },
+      });
+
+      if (res.data?.ok) {
+        toast.success("Repair request submitted successfully");
+      }
+    } catch (err) {
+      const message =
+        err?.response?.data?.message || "Failed to request repair";
+
+      toast.error(message);
+    }
+  };
 
   if (loading) {
     return (
@@ -99,24 +129,28 @@ export default function Modules() {
                 icon={Cpu}
                 offline={modules?.arduino_q}
                 subtext="Main Logic Unit"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="ESP32 Filter"
                 icon={Cpu}
                 offline={modules?.esp32_filter}
                 subtext="Filterings"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="ESP32 Grinder"
                 icon={Cpu}
                 offline={modules?.esp32_grinder}
                 subtext="Processing Unit"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="ESP32 Exhaust"
                 icon={Cpu}
                 offline={modules?.esp32_exhaust}
                 subtext="Ventilation Control"
+                onClick={requestRepair}
               />
             </div>
           </div>
@@ -139,42 +173,49 @@ export default function Modules() {
                 icon={Cog}
                 offline={modules?.servo_a}
                 subtext="Gate Control"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Servo B"
                 icon={Cog}
                 offline={modules?.servo_b}
                 subtext="Valve Control"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Servo Diverter"
                 icon={Cog}
                 offline={modules?.servo_diverter}
                 subtext="Material Routing"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Grinder Motor"
                 icon={Cog}
                 offline={modules?.grinder}
                 subtext="High Torque Grinder"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Mixer Motor"
                 icon={Cog}
                 offline={modules?.mixer}
                 subtext="Mixing System"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Exhaust Fan (In)"
                 icon={Fan}
                 offline={modules?.exhaust_fan_in}
                 subtext="Air Intake"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Exhaust Fan (Out)"
                 icon={Fan}
                 offline={modules?.exhaust_fan_out}
                 subtext="Air Exhaust"
+                onClick={requestRepair}
               />
             </div>
           </div>
@@ -197,54 +238,63 @@ export default function Modules() {
                 icon={Eye}
                 offline={modules?.camera_1}
                 subtext="Input Monitoring"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Camera 2"
                 icon={Eye}
                 offline={modules?.camera_2}
                 subtext="Processing View"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Humidity Sensor"
                 icon={Droplets}
                 offline={modules?.humidity}
                 subtext="DHT22"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Temperature Sensor"
                 icon={Thermometer}
                 offline={modules?.temperature}
                 subtext="Internal Probe"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Methane Sensor"
                 icon={Wind}
                 offline={modules?.methane}
                 subtext="MQ-4 Gas Sensor"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Nitrogen Sensor"
                 icon={Activity}
                 offline={modules?.nitrogen}
                 subtext="Soil Analysis"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Water Level"
                 icon={Droplets}
                 offline={modules?.water}
                 subtext="Tank Monitoring"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="NPK Sensor"
                 icon={Activity}
                 offline={modules?.npk}
                 subtext="Nutrient Detection"
+                onClick={requestRepair}
               />
               <ModuleCard
                 title="Moisture Sensor"
                 icon={Droplets}
                 offline={modules?.moisture}
                 subtext="Capacitive Probe"
+                onClick={requestRepair}
               />
             </div>
           </div>

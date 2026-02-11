@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   InternalServerErrorException,
   NotFoundException,
   Param,
+  Post,
 } from '@nestjs/common';
 
 import { DatabaseService } from '../../service/database/database.service';
@@ -130,6 +132,59 @@ export class ModuleAnalyticsController {
       }
 
       throw new InternalServerErrorException('Failed to load module analytics');
+    }
+  }
+
+  @Post('repair')
+  async requestRepair(
+    @Body('machineId') machineId: string,
+    @Body('customerId') customerId: string,
+  ) {
+    const client = this.databaseService.getClient();
+
+    if (!machineId) {
+      throw new BadRequestException('machineId is missing');
+    }
+
+    if (!customerId) {
+      throw new BadRequestException('customerId is missing');
+    }
+
+    try {
+      const result = await client.query(
+        `
+        SELECT repair_id
+        FROM repair
+        WHERE machine_id = $1 AND user_id = $2
+        `,
+        [machineId, customerId],
+      );
+
+      if (result.rowCount) {
+        throw new BadRequestException('The repair has already been requested');
+      }
+
+      await client.query(
+        `
+        INSERT INTO repair
+        (machine_id, user_id, description, repair_status)
+        VALUES ($1, $2, 'Need Repair', 'active')
+        `,
+        [machineId, customerId],
+      );
+      return {
+        ok: true,
+        message: 'Repair requested success',
+      };
+    } catch (err) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof NotFoundException
+      ) {
+        throw err;
+      }
+
+      throw new InternalServerErrorException('Failed to make request');
     }
   }
 }

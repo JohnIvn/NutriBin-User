@@ -21,7 +21,7 @@ const GAS_STYLES = {
   reed: { bg: "bg-orange-200", pole: "bg-orange-500", text: "text-orange-900" },
 };
 
-export default function GasFlag({ gas, percentage, value }) {
+export default function GasFlag({ gas, percentage }) {
   const gasKey = gas?.toLowerCase();
   const style = GAS_STYLES[gasKey] ?? GAS_STYLES.methane;
 
