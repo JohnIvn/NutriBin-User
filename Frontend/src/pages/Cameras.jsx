@@ -46,12 +46,16 @@ export default function Cameras() {
     });
 
     socket.on("connect", () => {
-      console.log("Connected to video stream");
+      console.log("✅ Connected to video stream");
+      console.log("Auth:", { machineId, customerId });
       setFeedActive(true);
     });
 
     socket.on("stream", (data) => {
-      console.log("Received stream frame");
+      console.log(
+        "📹 Received stream frame, size:",
+        data?.byteLength || data?.length || "unknown",
+      );
       const blob = new Blob([data], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
 
@@ -78,7 +82,10 @@ export default function Cameras() {
     });
 
     socket.on("stream-status", ({ active }) => {
-      console.log("Stream status update:", active);
+      console.log(
+        "📡 Stream status update:",
+        active ? "ACTIVE ✅" : "OFFLINE ❌",
+      );
       setFeedActive(active);
       if (!active) {
         setFrame((prev) => {
@@ -91,6 +98,7 @@ export default function Cameras() {
     });
 
     socket.on("disconnect", () => {
+      console.log("❌ Disconnected from video stream");
       setFeedActive(false);
       setFrame((prev) => {
         if (prev && prev.startsWith("blob:")) {
