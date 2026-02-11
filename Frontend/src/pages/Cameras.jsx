@@ -23,7 +23,7 @@ import Requests from "@/utils/Requests";
 import getBaseUrl from "@/utils/GetBaseUrl";
 
 export default function Cameras() {
-  const [ loading, setLoading ] = useState(true);
+  const [loading, setLoading] = useState(true);
   const { user, selectedMachine } = useUser();
   const machineId = selectedMachine?.machine_id;
   const customerId = user?.customer_id;
@@ -33,10 +33,16 @@ export default function Cameras() {
   const [feedActive, setFeedActive] = useState(false);
 
   useEffect(() => {
+    if (!machineId || !customerId) return;
+
     const baseUrl = getBaseUrl();
     const socket = io(`${baseUrl}/videostream`, {
       transports: ["websocket"],
       reconnectionAttempts: 5,
+      auth: {
+        machineId,
+        customerId,
+      },
     });
 
     socket.on("connect", () => {
@@ -90,7 +96,7 @@ export default function Cameras() {
         return null;
       });
     };
-  }, []);
+  }, [machineId, customerId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -109,8 +115,8 @@ export default function Cameras() {
           url: `/camera-logs/${customerId}`,
           method: "GET",
           params: {
-            machineId: machineId
-          }
+            machineId: machineId,
+          },
         });
 
         if (res.data?.ok) {
