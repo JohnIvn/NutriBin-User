@@ -94,7 +94,7 @@ export default function Dashboard() {
               Dashboard
             </h1>
             <p className="text-[#4F6F52] font-medium mt-1 text-lg">
-              Overview of compost status and recent activities.
+              Overview of all the bins' compost status and recent activities.
             </p>
           </div>
           <div className="text-right hidden md:block">

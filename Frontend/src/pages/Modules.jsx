@@ -97,25 +97,25 @@ export default function Modules() {
               <ModuleCard
                 title="Arduino Q"
                 icon={Cpu}
-                offline={!modules?.arduino_q}
+                offline={modules?.arduino_q}
                 subtext="Main Logic Unit"
               />
               <ModuleCard
                 title="ESP32 Filter"
                 icon={Cpu}
-                offline={!modules?.esp32_filter}
+                offline={modules?.esp32_filter}
                 subtext="Filterings"
               />
               <ModuleCard
                 title="ESP32 Grinder"
                 icon={Cpu}
-                offline={!modules?.esp32_grinder}
+                offline={modules?.esp32_grinder}
                 subtext="Processing Unit"
               />
               <ModuleCard
                 title="ESP32 Exhaust"
                 icon={Cpu}
-                offline={!modules?.esp32_exhaust}
+                offline={modules?.esp32_exhaust}
                 subtext="Ventilation Control"
               />
             </div>
@@ -137,43 +137,43 @@ export default function Modules() {
               <ModuleCard
                 title="Servo A"
                 icon={Cog}
-                offline={!modules?.servo_a}
+                offline={modules?.servo_a}
                 subtext="Gate Control"
               />
               <ModuleCard
                 title="Servo B"
                 icon={Cog}
-                offline={!modules?.servo_b}
+                offline={modules?.servo_b}
                 subtext="Valve Control"
               />
               <ModuleCard
                 title="Servo Diverter"
                 icon={Cog}
-                offline={!modules?.servo_diverter}
+                offline={modules?.servo_diverter}
                 subtext="Material Routing"
               />
               <ModuleCard
                 title="Grinder Motor"
                 icon={Cog}
-                offline={!modules?.grinder}
+                offline={modules?.grinder}
                 subtext="High Torque Grinder"
               />
               <ModuleCard
                 title="Mixer Motor"
                 icon={Cog}
-                offline={!modules?.mixer}
+                offline={modules?.mixer}
                 subtext="Mixing System"
               />
               <ModuleCard
                 title="Exhaust Fan (In)"
                 icon={Fan}
-                offline={!modules?.exhaust_fan_in}
+                offline={modules?.exhaust_fan_in}
                 subtext="Air Intake"
               />
               <ModuleCard
                 title="Exhaust Fan (Out)"
                 icon={Fan}
-                offline={!modules?.exhaust_fan_out}
+                offline={modules?.exhaust_fan_out}
                 subtext="Air Exhaust"
               />
             </div>
@@ -195,55 +195,55 @@ export default function Modules() {
               <ModuleCard
                 title="Camera 1"
                 icon={Eye}
-                offline={!modules?.camera_1}
+                offline={modules?.camera_1}
                 subtext="Input Monitoring"
               />
               <ModuleCard
                 title="Camera 2"
                 icon={Eye}
-                offline={!modules?.camera_2}
+                offline={modules?.camera_2}
                 subtext="Processing View"
               />
               <ModuleCard
                 title="Humidity Sensor"
                 icon={Droplets}
-                offline={!modules?.humidity}
+                offline={modules?.humidity}
                 subtext="DHT22"
               />
               <ModuleCard
                 title="Temperature Sensor"
                 icon={Thermometer}
-                offline={!modules?.temperature}
+                offline={modules?.temperature}
                 subtext="Internal Probe"
               />
               <ModuleCard
                 title="Methane Sensor"
                 icon={Wind}
-                offline={!modules?.methane}
+                offline={modules?.methane}
                 subtext="MQ-4 Gas Sensor"
               />
               <ModuleCard
                 title="Nitrogen Sensor"
                 icon={Activity}
-                offline={!modules?.nitrogen}
+                offline={modules?.nitrogen}
                 subtext="Soil Analysis"
               />
               <ModuleCard
                 title="Water Level"
                 icon={Droplets}
-                offline={!modules?.water}
+                offline={modules?.water}
                 subtext="Tank Monitoring"
               />
               <ModuleCard
                 title="NPK Sensor"
                 icon={Activity}
-                offline={!modules?.npk}
+                offline={modules?.npk}
                 subtext="Nutrient Detection"
               />
               <ModuleCard
                 title="Moisture Sensor"
                 icon={Droplets}
-                offline={!modules?.moisture}
+                offline={modules?.moisture}
                 subtext="Capacitive Probe"
               />
             </div>
