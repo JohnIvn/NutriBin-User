@@ -42,6 +42,8 @@ export default function Register() {
     },
   });
 
+  const passwordValue = form.watch("password") || "";
+
   async function onSubmit(values) {
     try {
       setRegisterError(null);
@@ -52,7 +54,7 @@ export default function Register() {
       const response = await request({
         url: "/user/email-verification",
         method: "POST",
-        data: {newEmail: values.email},
+        data: { newEmail: values.email },
       });
 
       if (!response.data.ok) {
@@ -105,6 +107,14 @@ export default function Register() {
       console.error(error);
     }
   }
+
+  const passwordChecks = {
+    length: passwordValue.length >= 8,
+    upper: /[A-Z]/.test(passwordValue),
+    lower: /[a-z]/.test(passwordValue),
+    number: /[0-9]/.test(passwordValue),
+    special: /[^A-Za-z0-9]/.test(passwordValue),
+  };
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
@@ -314,15 +324,57 @@ export default function Register() {
                     />
                   </div>
 
-                  {/* password hints */}
+                  {/* password hints (LIVE CHECK) */}
                   <div className="bg-[#ECE3CE]/20 p-3 rounded-lg border border-[#3A4D39]/10">
-                    <p className="text-xs font-bold text-[#3A4D39] mb-1">
+                    <p className="text-xs font-bold text-[#3A4D39] mb-2">
                       Password Requirements:
                     </p>
-                    <ul className="text-[10px] text-[#4F6F52] space-y-0.5 list-disc pl-3">
-                      <li>At least 8 characters long</li>
-                      <li>Includes uppercase & lowercase letters</li>
-                      <li>Contains at least one number & special character</li>
+
+                    <ul className="text-[11px] space-y-1">
+                      <li
+                        className={
+                          passwordChecks.length
+                            ? "text-green-600"
+                            : "text-[#4F6F52]"
+                        }
+                      >
+                        {passwordChecks.length ? "✔" : "•"} At least 8
+                        characters
+                      </li>
+
+                      <li
+                        className={
+                          passwordChecks.upper && passwordChecks.lower
+                            ? "text-green-600"
+                            : "text-[#4F6F52]"
+                        }
+                      >
+                        {passwordChecks.upper && passwordChecks.lower
+                          ? "✔"
+                          : "•"}{" "}
+                        Uppercase & lowercase letters
+                      </li>
+
+                      <li
+                        className={
+                          passwordChecks.number
+                            ? "text-green-600"
+                            : "text-[#4F6F52]"
+                        }
+                      >
+                        {passwordChecks.number ? "✔" : "•"} Contains a number
+                      </li>
+
+                      <li
+                        className={
+                          passwordChecks.special
+                            ? "text-green-600"
+                            : "text-[#4F6F52]"
+                        }
+                      >
+                        {passwordChecks.special ? "✔" : "•"} Contains a special
+                        character
+                      </li>
                     </ul>
                   </div>
 
@@ -330,8 +382,20 @@ export default function Register() {
                     <input
                       type="checkbox"
                       checked={tosAccepted}
-                      readOnly
-                      className="mt-1 accent-[#3A4D39]"
+                      readOnly={!tosAccepted}
+                      onChange={(e) => {
+                        // Only allow unchecking if already accepted
+                        if (tosAccepted) {
+                          setTosAccepted(e.target.checked);
+                        }
+                      }}
+                      onClick={() => {
+                        // If not yet accepted, open modal instead of toggling
+                        if (!tosAccepted) {
+                          setTosOpen(true);
+                        }
+                      }}
+                      className="mt-1 accent-[#3A4D39] cursor-pointer"
                     />
                     <span>
                       I agree to the{" "}
@@ -382,9 +446,9 @@ export default function Register() {
 
                   {/* google */}
                   <div className="flex justify-center">
-                    <div className="w-full [&_iframe]:mx-auto">
+                    <div className="flex justify-center w-full max-w-[400px] mx-auto">
                       <GoogleLogin
-                        width="100%"
+                        width={400}
                         logo_alignment="center"
                         shape="pill"
                         theme="outline"

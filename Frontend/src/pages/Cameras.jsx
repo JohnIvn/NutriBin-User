@@ -23,7 +23,7 @@ import Requests from "@/utils/Requests";
 import getBaseUrl from "@/utils/GetBaseUrl";
 
 export default function Cameras() {
-  const [ loading, setLoading ] = useState(true);
+  const [loading, setLoading] = useState(true);
   const { user, selectedMachine } = useUser();
   const machineId = selectedMachine?.machine_id;
   const customerId = user?.customer_id;
@@ -33,19 +33,29 @@ export default function Cameras() {
   const [feedActive, setFeedActive] = useState(false);
 
   useEffect(() => {
+    if (!machineId || !customerId) return;
+
     const baseUrl = getBaseUrl();
     const socket = io(`${baseUrl}/videostream`, {
       transports: ["websocket"],
       reconnectionAttempts: 5,
+      auth: {
+        machineId,
+        customerId,
+      },
     });
 
     socket.on("connect", () => {
-      console.log("Connected to video stream");
+      console.log("✅ Connected to video stream");
+      console.log("Auth:", { machineId, customerId });
       setFeedActive(true);
     });
 
     socket.on("stream", (data) => {
-      console.log("Received stream frame");
+      console.log(
+        "📹 Received stream frame, size:",
+        data?.byteLength || data?.length || "unknown",
+      );
       const blob = new Blob([data], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
 
@@ -58,8 +68,24 @@ export default function Cameras() {
       setFeedActive(true);
     });
 
+    socket.on("detection-update", (detection) => {
+      console.log("Live detection received:", detection);
+      setData((prev) => [
+        {
+          id: Date.now().toString(),
+          classification: detection.content,
+          date_created: detection.timestamp,
+          details: `Confidence: ${Math.round(detection.confidence * 100)}%`,
+        },
+        ...prev.slice(0, 9), // Keep last 10
+      ]);
+    });
+
     socket.on("stream-status", ({ active }) => {
-      console.log("Stream status update:", active);
+      console.log(
+        "📡 Stream status update:",
+        active ? "ACTIVE ✅" : "OFFLINE ❌",
+      );
       setFeedActive(active);
       if (!active) {
         setFrame((prev) => {
@@ -72,6 +98,7 @@ export default function Cameras() {
     });
 
     socket.on("disconnect", () => {
+      console.log("❌ Disconnected from video stream");
       setFeedActive(false);
       setFrame((prev) => {
         if (prev && prev.startsWith("blob:")) {
@@ -90,7 +117,7 @@ export default function Cameras() {
         return null;
       });
     };
-  }, []);
+  }, [machineId, customerId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -109,8 +136,8 @@ export default function Cameras() {
           url: `/camera-logs/${customerId}`,
           method: "GET",
           params: {
-            machineId: machineId
-          }
+            machineId: machineId,
+          },
         });
 
         if (res.data?.ok) {

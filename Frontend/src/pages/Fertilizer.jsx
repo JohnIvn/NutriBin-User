@@ -35,8 +35,8 @@ export default function Fertilizer() {
         const res = await Requests({
           url: `/fertilizer-analytics/${customerId}`,
           params: {
-            machineId: machineId
-          }
+            machineId: machineId,
+          },
         });
 
         console.log(res.data.analytics);
@@ -96,10 +96,30 @@ export default function Fertilizer() {
 
   const GAS_DATA = analytics
     ? [
-        { type: "methane", percentage: parseFloat(analytics.methane || 0) },
-        { type: "hydrogen", percentage: parseFloat(analytics.hydrogen || 0) },
-        { type: "smoke", percentage: parseFloat(analytics.smoke || 0) },
-        { type: "benzene", percentage: parseFloat(analytics.benzene || 0) },
+        {
+          type: "methane",
+          percentage: parseFloat(analytics.methane || 0),
+        },
+        {
+          type: "air quality",
+          percentage: parseFloat(analytics.air_quality || 0),
+        },
+        {
+          type: "carbon monoxide",
+          percentage: parseFloat(analytics.carbon_monoxide || 0),
+        },
+        {
+          type: "combustible gases",
+          percentage: parseFloat(analytics.combustible_gases || 0),
+        },
+        {
+          type: "weight",
+          percentage: parseFloat(analytics.weight_kg || 0),
+        },
+        {
+          type: "reed",
+          percentage: parseFloat(analytics.reed_switch || 0),
+        },
       ]
     : [];
 
@@ -327,7 +347,7 @@ export default function Fertilizer() {
                   <Zap className="w-5 h-5" />
                 </div>
                 <h2 className="text-base font-bold text-[#3A4D39]">
-                  Air Quality & Gas Analysis
+                  Air Quality & Properties
                 </h2>
               </div>
 

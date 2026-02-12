@@ -19,9 +19,11 @@ type FertilizerAnalyticsRow = {
   humidity: string | null;
   moisture: string | null;
   methane: string | null;
-  hydrogen: string | null;
-  smoke: string | null;
-  benzene: string | null;
+  air_quality: string | null;
+  carbon_monoxide: string | null;
+  combustible_gases: string | null;
+  weight_kg: string | null;
+  reed_switch: string | null;
   date_created: string;
 };
 
@@ -36,9 +38,11 @@ function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
     humidity: row.humidity,
     moisture: row.moisture,
     methane: row.methane,
-    hydrogen: row.hydrogen,
-    smoke: row.smoke,
-    benzene: row.benzene,
+    air_quality: row.air_quality,
+    carbon_monoxide: row.carbon_monoxide,
+    combustible_gases: row.combustible_gases,
+    weight_kg: row.weight_kg,
+    reed_switch: row.reed_switch,
     date_created: row.date_created,
   };
 }
@@ -80,9 +84,9 @@ export class FertilizerAnalyticsController {
           fa.humidity,
           fa.moisture,
           fa.methane,
-          fa.hydrogen,
-          fa.smoke,
-          fa.benzene,
+          fa.air_quality,
+          fa.carbon_monoxide,
+          fa.combustible_gases,
           fa.weight_kg,
           fa.reed_switch,
           fa.date_created
