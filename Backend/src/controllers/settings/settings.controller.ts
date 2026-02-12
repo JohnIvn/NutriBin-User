@@ -701,6 +701,39 @@ export class SettingsController {
     }
   }
 
+  @Get(':customerId/photo')
+  async getPhoto(@Param('customerId') customerId: string) {
+    if (!customerId) {
+      throw new BadRequestException('customerId is required');
+    }
+
+    try {
+      const avatar = await this.resolveAvatarUrl(customerId);
+
+      if (!avatar) {
+        return {
+          ok: true,
+          message: 'No photo found',
+        };
+      }
+
+      return {
+        ok: true,
+        data: { avatar },
+        message: 'Photo found',
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to load settings');
+    }
+  }
+
   @Post(':customerId/photo')
   @UseInterceptors(
     FileInterceptor('photo', {
