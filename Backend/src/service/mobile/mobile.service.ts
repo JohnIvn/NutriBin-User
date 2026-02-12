@@ -166,4 +166,54 @@ export class MobileService {
       };
     }
   }
+
+  async deleteMachineAssociation(machineId: string, customerId: string) {
+    try {
+      const client = this.databaseService.getClient();
+
+      if (!machineId) {
+        return { ok: false, error: 'Machine id is required' };
+      }
+
+      if (!customerId) {
+        return { ok: false, error: 'Customer id is required' };
+      }
+
+      const result = await client.query<MachineRow>(
+        `
+	  SELECT machine_id, customer_id
+	  FROM machine_customers
+	  WHERE machine_id = $1 AND customer_id = $2 
+	  `,
+        [machineId, customerId],
+      );
+
+      if (result.rowCount === 0) {
+        return {
+          ok: false,
+          error: 'No machine found registered with user',
+        };
+      }
+
+      await client.query(
+        `
+	  DELETE
+    FROM machine_customers 
+	  WHERE machine_id = $1 AND customer_id = $2 
+	  `,
+        [machineId, customerId],
+      );
+
+      return {
+        ok: true,
+        message: 'Machine registration removed successfully',
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        ok: false,
+        error: 'Internal server error',
+      };
+    }
+  }
 }
