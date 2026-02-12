@@ -316,7 +316,7 @@ export function Login() {
                     <div className="flex justify-center">
                       <div className="w-full [&_iframe]:mx-auto">
                         <GoogleLogin
-                          width="100%"
+                          width="400"
                           logo_alignment="center"
                           shape="pill"
                           theme="outline"

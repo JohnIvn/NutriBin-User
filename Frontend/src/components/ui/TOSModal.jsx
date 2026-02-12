@@ -1,9 +1,36 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
 import Tos from "@/pages/TOS";
 
 export default function TOSModal({ open, onClose, onAccept }) {
+  const scrollRef = useRef(null);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  
+  useEffect(() => {
+    if (open) {
+      setHasScrolled(false);
+
+      // reset scroll position to top
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+      }
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const threshold = 20; // small allowance
+    const reachedBottom =
+      el.scrollTop + el.clientHeight >= el.scrollHeight - threshold;
+
+    if (reachedBottom) {
+      setHasScrolled(true);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -24,7 +51,11 @@ export default function TOSModal({ open, onClose, onAccept }) {
         </button>
 
         {/* scrollable content */}
-        <div className="overflow-y-auto">
+        <div
+          className="overflow-y-auto"
+          ref={scrollRef}
+          onScroll={handleScroll}
+        >
           <Tos />
         </div>
 
@@ -32,9 +63,17 @@ export default function TOSModal({ open, onClose, onAccept }) {
         <div className="border-t border-[#ECE3CE] p-6 flex flex-col sm:flex-row justify-center gap-6 bg-white">
           <button
             onClick={onAccept}
-            className="bg-[#3A4D39] hover:bg-[#4F6F52] text-white h-14 px-12 text-lg rounded-full font-bold shadow-lg transition-all hover:-translate-y-1 flex items-center justify-center"
+            disabled={!hasScrolled}
+            className={`h-14 px-12 text-lg rounded-full font-bold shadow-lg transition-all flex items-center justify-center
+            ${
+              hasScrolled
+                ? "bg-[#3A4D39] hover:bg-[#4F6F52] text-white hover:-translate-y-1 cursor-pointer"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }
+          `}
           >
-            <Check className="mr-2 h-6 w-6" /> I Accept the Terms
+            <Check className="mr-2 h-6 w-6" />
+            {hasScrolled ? "I Accept the Terms" : "Scroll to read all terms"}
           </button>
 
           <button
@@ -44,7 +83,6 @@ export default function TOSModal({ open, onClose, onAccept }) {
             Decline
           </button>
         </div>
-
       </div>
     </div>
   );

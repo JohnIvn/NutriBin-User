@@ -3,7 +3,7 @@ import { ScrollText, Check, X } from "lucide-react";
 
 export default function Tos() {
   return (
-    <div className="min-h-screen pb-12 font-sans text-[#3A4D39] overflow-x-hidden">
+    <div className="min-h-full pb-12 font-sans text-[#3A4D39] overflow-x-hidden">
       
       {/* header */}
       <header className="pt-30 pb-32 px-10 text-center text-white relative">
