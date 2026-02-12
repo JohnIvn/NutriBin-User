@@ -446,9 +446,9 @@ export default function Register() {
 
                   {/* google */}
                   <div className="flex justify-center">
-                    <div className="w-full [&_iframe]:mx-full">
+                    <div className="flex justify-center w-full max-w-[400px] mx-auto">
                       <GoogleLogin
-                        width="400"
+                        width={400}
                         logo_alignment="center"
                         shape="pill"
                         theme="outline"
