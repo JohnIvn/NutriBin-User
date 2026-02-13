@@ -5,6 +5,7 @@ import {
   XMarkIcon,
   ChevronDownIcon,
   PlusIcon,
+  BellIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContextHook";
@@ -59,6 +60,11 @@ const ANIMATION_VARIANTS = {
     },
   },
   userMenu: {
+    initial: { opacity: 0, y: 10, scale: 0.95 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: 10, scale: 0.95 },
+  },
+  notificationMenu: {
     initial: { opacity: 0, y: 10, scale: 0.95 },
     animate: { opacity: 1, y: 0, scale: 1 },
     exit: { opacity: 0, y: 10, scale: 0.95 },
@@ -180,6 +186,219 @@ const UserAvatar = ({ user, getInitials }) => (
     </AvatarFallback>
   </Avatar>
 );
+
+const NotificationButton = ({ notificationMenuRef }) => {
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    // Mock data - replace with actual notifications from websocket
+    {
+      id: 1,
+      title: "Machine Alert",
+      message: "Temperature threshold exceeded on Machine NB-001",
+      timestamp: new Date(Date.now() - 5 * 60000),
+      read: false,
+      type: "alert",
+    },
+    {
+      id: 2,
+      title: "Fertilizer Low",
+      message: "Fertilizer level below 20% on Machine NB-001",
+      timestamp: new Date(Date.now() - 30 * 60000),
+      read: false,
+      type: "warning",
+    },
+    {
+      id: 3,
+      title: "System Update",
+      message: "Machine NB-001 firmware updated successfully",
+      timestamp: new Date(Date.now() - 2 * 60 * 60000),
+      read: true,
+      type: "info",
+    },
+  ]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAsRead = useCallback((id) => {
+    setNotifications((prev) =>
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+  }, []);
+
+  const clearNotification = useCallback((id) => {
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+  }, []);
+
+  const formatTimestamp = (date) => {
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case "alert":
+        return "bg-red-100 border-red-200 text-red-700";
+      case "warning":
+        return "bg-yellow-100 border-yellow-200 text-yellow-700";
+      case "info":
+        return "bg-blue-100 border-blue-200 text-blue-700";
+      default:
+        return "bg-[#ECE3CE] border-[#3A4D39]/20 text-[#3A4D39]";
+    }
+  };
+
+  return (
+    <div className="relative" ref={notificationMenuRef}>
+      <Motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setNotificationOpen((v) => !v)}
+        className="relative p-2.5 rounded-xl bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
+                 transition-all duration-200 group"
+      >
+        <BellIcon className="w-5 h-5 text-[#3A4D39]" />
+        {unreadCount > 0 && (
+          <Motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
+                     bg-red-500 text-white text-[10px] font-bold
+                     rounded-full flex items-center justify-center
+                     ring-2 ring-white"
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </Motion.span>
+        )}
+      </Motion.button>
+
+      <AnimatePresence>
+        {notificationOpen && (
+          <Motion.div
+            {...ANIMATION_VARIANTS.notificationMenu}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute right-0 mt-3 w-80 max-h-[32rem] bg-white border border-[#3A4D39]/10 
+                     shadow-xl rounded-2xl overflow-hidden flex flex-col"
+          >
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-[#3A4D39]/10 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[#3A4D39]">
+                  Notifications
+                </h3>
+                {unreadCount > 0 && (
+                  <p className="text-xs text-[#3A4D39]/60 mt-0.5">
+                    {unreadCount} unread
+                  </p>
+                )}
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs font-semibold text-[#3A4D39] hover:text-[#4F6F52] 
+                           transition-colors underline-offset-2 hover:underline"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+
+            {/* Notifications List */}
+            <div className="flex-1 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4">
+                  <BellIcon className="w-12 h-12 text-[#3A4D39]/20 mb-3" />
+                  <p className="text-sm font-medium text-[#3A4D39]/60">
+                    No notifications
+                  </p>
+                  <p className="text-xs text-[#3A4D39]/40 mt-1">
+                    You're all caught up!
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#3A4D39]/5">
+                  {notifications.map((notification, index) => (
+                    <Motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => markAsRead(notification.id)}
+                      className={`p-4 hover:bg-[#ECE3CE]/30 transition-colors cursor-pointer
+                                ${!notification.read ? "bg-[#ECE3CE]/20" : ""}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-sm font-bold text-[#3A4D39] truncate">
+                              {notification.title}
+                            </h4>
+                            {!notification.read && (
+                              <span className="w-2 h-2 rounded-full bg-[#4F6F52] flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-[#3A4D39]/70 line-clamp-2 mb-2">
+                            {notification.message}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border
+                                        ${getTypeColor(notification.type)}`}
+                            >
+                              {notification.type}
+                            </span>
+                            <span className="text-[10px] text-[#3A4D39]/50">
+                              {formatTimestamp(notification.timestamp)}
+                            </span>
+                          </div>
+                        </div>
+                        <Motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearNotification(notification.id);
+                          }}
+                          className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors flex-shrink-0"
+                        >
+                          <XMarkIcon className="w-4 h-4 text-[#3A4D39]/40" />
+                        </Motion.button>
+                      </div>
+                    </Motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {notifications.length > 0 && (
+              <div className="px-4 py-3 border-t border-[#3A4D39]/10 bg-[#ECE3CE]/30">
+                <button
+                  onClick={() => setNotifications([])}
+                  className="w-full text-xs font-semibold text-[#3A4D39] hover:text-[#4F6F52] 
+                           transition-colors text-center py-1"
+                >
+                  Clear all notifications
+                </button>
+              </div>
+            )}
+          </Motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const AddMachineModal = ({
   isOpen,
@@ -490,6 +709,7 @@ export default function Header() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const userMenuRef = useRef(null);
+  const notificationMenuRef = useRef(null);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -615,16 +835,6 @@ export default function Header() {
                   {link.name}
                 </NavLink>
               ))}
-
-              {/* Machine Selector */}
-              {user && (
-                <MachineSelector
-                  user={user}
-                  selectedMachine={selectedMachine}
-                  setSelectedMachine={setSelectedMachine}
-                  onAdd={() => setAddMachineOpen(true)}
-                />
-              )}
             </nav>
 
             {/* Center Logo */}
@@ -656,6 +866,11 @@ export default function Header() {
                       {link.name}
                     </NavLink>
                   ))}
+
+                  {/* Notification Button */}
+                  <NotificationButton
+                    notificationMenuRef={notificationMenuRef}
+                  />
 
                   <UserMenu
                     user={user}

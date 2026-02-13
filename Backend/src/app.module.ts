@@ -23,9 +23,11 @@ import { MachineController } from './controllers/machine/machine.controller';
 import { MachineService } from './service/machine/machine.service';
 import { MobileController } from './controllers/mobile/mobile.controller';
 import { MobileService } from './service/mobile/mobile.service';
+import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
 
 @Module({
   imports: [
+    MachineNotificationsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
