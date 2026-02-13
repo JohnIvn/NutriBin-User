@@ -24,6 +24,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/Dialog";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMapEvents,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { User, Lock, AlertTriangle, Camera, Eye, EyeOff } from "lucide-react";
 
@@ -50,6 +59,7 @@ export default function Settings() {
   // User context
   const { user, logout, refreshUser } = useUser();
   const navigate = useNavigate();
+  const defaultPosition = [14.5995, 120.9842];
 
   // Password reset state
   const [resetOpen, setResetOpen] = useState(false);
@@ -518,6 +528,19 @@ export default function Settings() {
     setShowConfirmPassword(false);
   };
 
+  const handleDragEnd = async (e) => {
+    const { lat, lng } = e.target.getLatLng();
+
+    // Nominatim / other reverse geocoding
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+    );
+    const data = await res.json();
+
+    const addressString = data.display_name || `${lat}, ${lng}`;
+    form.setValue("address", addressString);
+  };
+
   // Handle account closure
   const handleCloseAccount = async () => {
     const userId = user?.customer_id;
@@ -630,6 +653,16 @@ export default function Settings() {
       }
     };
   }, [previewUrl]);
+
+  function MapClickHandler({ form }) {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        form.setValue("address", `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      },
+    });
+    return null;
+  }
 
   return (
     <section className="flex bg-[#ECE3CE]/10 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8">
@@ -814,25 +847,52 @@ export default function Settings() {
                   />
                 </div>
 
-                {/* Address Field */}
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-600">Address</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          disabled={!editMode}
-                          className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
-                          aria-label="Address"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                {/* Address Field with Map */}
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-600">Address</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={!editMode}
+                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
+                            aria-label="Address"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Map */}
+                  {editMode && (
+                    <MapContainer
+                      center={defaultPosition} // default coordinates
+                      zoom={13}
+                      scrollWheelZoom={true}
+                      style={{ height: "250px", width: "100%" }}
+                      className="rounded-lg border border-gray-200"
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker
+                        position={defaultPosition}
+                        draggable={editMode}
+                        eventHandlers={{ dragend: handleDragEnd }}
+                      >
+                        <Popup>Drag me to update your location</Popup>
+                      </Marker>
+                      {/* Optional: click-to-set */}
+                      <MapClickHandler form={form} />
+                    </MapContainer>
                   )}
-                />
+                </div>
 
                 {/* Contact Number Field */}
                 <div className="grid grid-cols-1 gap-6">
