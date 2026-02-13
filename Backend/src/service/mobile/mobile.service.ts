@@ -174,6 +174,54 @@ export class MobileService {
     }
   }
 
+  async fetchNotifications(machineId: string, customerId: string) {
+    try {
+      const client = this.databaseService.getClient();
+
+      if (!machineId) {
+        return { ok: false, message: 'Machine ID is required' };
+      }
+      if (!customerId) {
+        return { ok: false, message: 'Customer ID is required' };
+      }
+
+      const result = await client.query<MachineRow>(
+        `
+  SELECT nitrogen, phosphorus, potassium, 
+         temperature, ph, humidity, moisture, weight_kg, reed_switch,
+         methane, air_quality, carbon_monoxide, combustible_gases
+  FROM machine_notifications fa
+  WHERE fa.machine_id = $1 
+    AND EXISTS (
+      SELECT 1 
+      FROM machine_customers mc
+      WHERE mc.machine_id = $1
+        AND mc.customer_id = $2
+    )
+  ORDER BY fa.created_at DESC
+  LIMIT 1
+  `,
+        [machineId, customerId],
+      );
+
+      if (!result.rows || result.rowCount == 0) {
+        return { ok: false, error: 'No data  found' };
+      }
+
+      const notificationData = result.rows[0];
+      return {
+        ok: true,
+        data: notificationData,
+        message: 'Machine added successfully',
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        ok: false,
+        error: 'Internal server error',
+      };
+    }
+  }
   async deleteMachineAssociation(machineId: string, customerId: string) {
     try {
       const client = this.databaseService.getClient();
