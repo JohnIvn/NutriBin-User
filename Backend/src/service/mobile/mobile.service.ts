@@ -138,13 +138,20 @@ export class MobileService {
 
       const result = await client.query<MachineRow>(
         `
-	  SELECT nitrogen, phosphorus, potassium, 
-	  		 temperature, ph, humidity, moisture, weight_kg, reed_switch,
-			 methane, air_quality, carbon_monoxide, combustible_gases
-	  FROM fertilizer_analytics
-	  WHERE machine_id = $1
-	  AND user_id = $2
-	  `,
+  SELECT nitrogen, phosphorus, potassium, 
+         temperature, ph, humidity, moisture, weight_kg, reed_switch,
+         methane, air_quality, carbon_monoxide, combustible_gases
+  FROM fertilizer_analytics fa
+  WHERE fa.machine_id = $1 
+    AND EXISTS (
+      SELECT 1 
+      FROM machine_customers mc
+      WHERE mc.machine_id = $1
+        AND mc.customer_id = $2
+    )
+  ORDER BY fa.date_created DESC
+  LIMIT 1
+  `,
         [machineId, customerId],
       );
 
@@ -157,6 +164,99 @@ export class MobileService {
         ok: true,
         data: machineData,
         message: 'Machine added successfully',
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        ok: false,
+        error: 'Internal server error',
+      };
+    }
+  }
+
+  async fetchNotifications(machineId: string, customerId: string) {
+    try {
+      const client = this.databaseService.getClient();
+
+      if (!machineId) {
+        return { ok: false, message: 'Machine ID is required' };
+      }
+      if (!customerId) {
+        return { ok: false, message: 'Customer ID is required' };
+      }
+
+      const result = await client.query<MachineRow>(
+        `
+  SELECT header, subheader, type, description, date, resolved
+  FROM machine_notifications mn
+  WHERE mn.machine_id = $1 
+    AND EXISTS (
+      SELECT 1 
+      FROM machine_customers mc
+      WHERE mc.machine_id = $1
+        AND mc.customer_id = $2
+    )
+  `,
+        [machineId, customerId],
+      );
+
+      if (!result.rows || result.rowCount == 0) {
+        return { ok: false, error: 'No data  found' };
+      }
+
+      return {
+        ok: true,
+        data: result.rows,
+        message: 'Machine added successfully',
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        ok: false,
+        error: 'Internal server error',
+      };
+    }
+  }
+  async deleteMachineAssociation(machineId: string, customerId: string) {
+    try {
+      const client = this.databaseService.getClient();
+
+      if (!machineId) {
+        return { ok: false, error: 'Machine id is required' };
+      }
+
+      if (!customerId) {
+        return { ok: false, error: 'Customer id is required' };
+      }
+
+      const result = await client.query<MachineRow>(
+        `
+	  SELECT machine_id, customer_id
+	  FROM machine_customers
+	  WHERE machine_id = $1 AND customer_id = $2 
+	  `,
+        [machineId, customerId],
+      );
+
+      if (result.rowCount === 0) {
+        return {
+          ok: false,
+          error: 'No machine found registered with user',
+        };
+      }
+
+      await client.query(
+        `
+	  DELETE
+    FROM machine_customers 
+	  WHERE machine_id = $1 AND customer_id = $2 
+	  `,
+        [machineId, customerId],
+      );
+
+      return {
+        ok: true,
+        message: 'Machine registration removed successfully',
       };
     } catch (err) {
       console.error(err);

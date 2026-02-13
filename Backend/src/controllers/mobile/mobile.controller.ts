@@ -64,6 +64,32 @@ export class MobileController {
     return this.mobileService.fetchMachineData(machineId, customerId);
   }
 
+  // Fetches machines data on user view (When the user chose a machine to view)
+  @Get('machine/notifications/:customerId/:machineId')
+  async fetchNotifications(
+    @Param('machineId') machineId: string,
+    @Param('customerId') customerId: string,
+  ) {
+    if (!customerId) {
+      throw new ForbiddenException('Customer ID is required');
+    }
+
+    return this.mobileService.fetchNotifications(machineId, customerId);
+  }
+
+  // Fetches machines data on user view (When the user chose a machine to view)
+  @Post('machine/delete/:customerId/:machineId')
+  async deleteMachineAssociation(
+    @Param('machineId') machineId: string,
+    @Param('customerId') customerId: string,
+  ) {
+    if (!customerId) {
+      throw new ForbiddenException('Customer ID is required');
+    }
+
+    return this.mobileService.deleteMachineAssociation(machineId, customerId);
+  }
+
   //Uncomment the code if it is gonna be used
   /*
 	
