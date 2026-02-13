@@ -11,6 +11,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContextHook";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import Requests from "@/utils/Requests";
+import { io } from "socket.io-client";
+import getBaseUrl from "@/utils/GetBaseUrl";
 
 // Constants
 const NAVIGATION = {
@@ -188,51 +190,31 @@ const UserAvatar = ({ user, getInitials }) => (
 );
 
 const NotificationButton = ({ notificationMenuRef }) => {
+  const { selectedMachine } = useUser();
+  const machineId = selectedMachine?.machine_id;
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    // Mock data - replace with actual notifications from websocket
-    {
-      id: 1,
-      title: "Machine Alert",
-      message: "Temperature threshold exceeded on Machine NB-001",
-      timestamp: new Date(Date.now() - 5 * 60000),
-      read: false,
-      type: "alert",
-    },
-    {
-      id: 2,
-      title: "Fertilizer Low",
-      message: "Fertilizer level below 20% on Machine NB-001",
-      timestamp: new Date(Date.now() - 30 * 60000),
-      read: false,
-      type: "warning",
-    },
-    {
-      id: 3,
-      title: "System Update",
-      message: "Machine NB-001 firmware updated successfully",
-      timestamp: new Date(Date.now() - 2 * 60 * 60000),
-      read: true,
-      type: "info",
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // Mark single notification as read
   const markAsRead = useCallback((id) => {
     setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
   }, []);
 
+  // Mark all as read
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }, []);
 
+  // Clear single notification
   const clearNotification = useCallback((id) => {
-    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
+  // Format timestamp
   const formatTimestamp = (date) => {
     const now = new Date();
     const diff = now - date;
@@ -258,6 +240,55 @@ const NotificationButton = ({ notificationMenuRef }) => {
         return "bg-[#ECE3CE] border-[#3A4D39]/20 text-[#3A4D39]";
     }
   };
+
+  // -----------------------------
+  // WebSocket connection
+  // -----------------------------
+  useEffect(() => {
+    if (!machineId) return;
+
+    const baseUrl = getBaseUrl();
+
+    const socket = io(baseUrl); // change if needed
+
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server");
+
+      // Emit and receive data via ACK callback
+      socket.emit("getNotifications", machineId, (data) => {
+        console.log("Received notifications via ACK:", data); // <- will log your array
+        setNotifications(
+          data.map((n) => ({
+            id: n.notification_id,
+            title: n.header,
+            message: n.description || n.subheader || "",
+            timestamp: new Date(n.date_created),
+            read: n.resolved || false,
+            type: n.type,
+          })),
+        );
+      });
+    });
+
+    // Optional: listen for new notifications pushed from backend
+    socket.on("notification", (n) => {
+      setNotifications((prev) => [
+        {
+          id: n.notification_id,
+          title: n.header,
+          message: n.description || n.subheader || "",
+          timestamp: new Date(n.date_created),
+          read: n.resolved || false,
+          type: n.type,
+        },
+        ...prev,
+      ]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [machineId]);
 
   return (
     <div className="relative" ref={notificationMenuRef}>
