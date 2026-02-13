@@ -468,6 +468,7 @@ export default function Register() {
         </div>
       </div>
       <TOSModal
+        key={tosOpen ? "open" : "closed"} // 👈 This resets the internal state automatically
         open={tosOpen}
         onClose={() => setTosOpen(false)}
         onAccept={() => {

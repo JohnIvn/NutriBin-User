@@ -7,13 +7,10 @@ export default function TOSModal({ open, onClose, onAccept }) {
   const [hasScrolled, setHasScrolled] = useState(false);
   
   useEffect(() => {
-    if (open) {
-      setHasScrolled(false);
+    if (!open) return;
 
-      // reset scroll position to top
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = 0;
-      }
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
     }
   }, [open]);
 
@@ -23,12 +20,13 @@ export default function TOSModal({ open, onClose, onAccept }) {
     const el = scrollRef.current;
     if (!el) return;
 
-    const threshold = 20; // small allowance
+    const threshold = 20;
     const reachedBottom =
       el.scrollTop + el.clientHeight >= el.scrollHeight - threshold;
 
+    // ✅ avoid redundant renders
     if (reachedBottom) {
-      setHasScrolled(true);
+      setHasScrolled((prev) => (prev ? prev : true));
     }
   };
 
