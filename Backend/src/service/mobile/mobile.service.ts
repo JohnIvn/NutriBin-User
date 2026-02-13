@@ -149,7 +149,7 @@ export class MobileService {
       WHERE mc.machine_id = $1
         AND mc.customer_id = $2
     )
-  ORDER BY fa.created_at DESC
+  ORDER BY fa.date_created DESC
   LIMIT 1
   `,
         [machineId, customerId],
@@ -187,19 +187,15 @@ export class MobileService {
 
       const result = await client.query<MachineRow>(
         `
-  SELECT nitrogen, phosphorus, potassium, 
-         temperature, ph, humidity, moisture, weight_kg, reed_switch,
-         methane, air_quality, carbon_monoxide, combustible_gases
-  FROM machine_notifications fa
-  WHERE fa.machine_id = $1 
+  SELECT header, subheader, type, description, date, resolved
+  FROM machine_notifications mn
+  WHERE mn.machine_id = $1 
     AND EXISTS (
       SELECT 1 
       FROM machine_customers mc
       WHERE mc.machine_id = $1
         AND mc.customer_id = $2
     )
-  ORDER BY fa.created_at DESC
-  LIMIT 1
   `,
         [machineId, customerId],
       );
@@ -208,10 +204,9 @@ export class MobileService {
         return { ok: false, error: 'No data  found' };
       }
 
-      const notificationData = result.rows[0];
       return {
         ok: true,
-        data: notificationData,
+        data: result.rows,
         message: 'Machine added successfully',
       };
     } catch (err) {
