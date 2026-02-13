@@ -34,7 +34,23 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
-import { User, Lock, AlertTriangle, Camera, Eye, EyeOff } from "lucide-react";
+import {
+  User,
+  Lock,
+  AlertTriangle,
+  Camera,
+  Eye,
+  EyeOff,
+  MapPin,
+  Phone,
+  Mail,
+  Shield,
+  Check,
+  X,
+  Loader2,
+  Upload,
+  Trash2,
+} from "lucide-react";
 
 // Constants
 const PHONE_VERIFICATION_REGEX = /^[0-9]{6}$/;
@@ -665,572 +681,661 @@ export default function Settings() {
   }
 
   return (
-    <section className="flex bg-[#ECE3CE]/10 flex-col min-h-screen w-full justify-start items-center p-4 sm:p-8 gap-8">
-      {/* Header */}
-      <div className="w-full max-w-7xl space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-black">
-          Settings
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your account details and preferences.
-        </p>
-      </div>
+    <section className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#4F6F52]/5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header Section */}
+        <div className="space-y-1">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-[#4F6F52] to-[#3A523D] bg-clip-text text-transparent">
+            Account Settings
+          </h1>
+          <p className="text-gray-600">
+            Manage your personal information and security preferences
+          </p>
+        </div>
 
-      <section className="flex flex-col lg:flex-row w-full max-w-7xl gap-8 items-start">
-        {/* Left Column: Profile Form */}
-        <Form {...form}>
-          <form className="w-full lg:flex-1 space-y-8 bg-white border border-gray-100 shadow-sm rounded-xl p-6 sm:p-8">
-            {/* Section Header */}
-            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-              <div className="bg-[#4F6F52]/10 p-2 rounded-lg">
-                <User className="w-5 h-5 text-[#4F6F52]" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">
-                  Personal Information
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Update your personal details here.
-                </p>
-              </div>
-            </div>
-
-            {/* Avatar Upload */}
-            <div className="py-6 border-b border-gray-100">
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <label
-                    htmlFor="avatar-input"
-                    className="block w-28 h-28 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
-                    aria-label="Upload profile photo"
-                  >
-                    <Avatar className="w-full h-full">
-                      <AvatarImage
-                        src={previewUrl || currentAvatar || undefined}
-                        className="w-full h-full object-cover"
-                        alt="Profile avatar"
-                      />
-                      <AvatarFallback className="bg-[#4F6F52]/10 text-[#4F6F52] font-bold text-xl">
-                        {getInitials(
-                          form.getValues().firstname ||
-                            user?.first_name ||
-                            user?.email?.[0],
-                          form.getValues().lastname || user?.last_name || "",
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute right-0 bottom-0 -mb-1 -mr-1 bg-white rounded-full p-1 shadow">
-                      <Camera className="w-4 h-4 text-gray-600" />
-                    </div>
-                  </label>
-                  <input
-                    id="avatar-input"
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/jpg,image/webp"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > MAX_PHOTO_SIZE) {
-                          toast.error("Photo must be less than 5MB");
-                          return;
-                        }
-                        setSelectedPhoto(file);
-                        setPreviewUrl(URL.createObjectURL(file));
-                      }
-                    }}
-                    aria-label="Select profile photo file"
-                  />
-                </div>
-
-                <div className="flex-1">
-                  <p className="text-sm text-gray-700 font-medium">
-                    Profile Photo
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload a square image for best results. JPG, PNG up to 5MB.
-                  </p>
-
-                  <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <Button
-                      type="button"
-                      disabled={!selectedPhoto || uploadingPhoto}
-                      className="h-9 px-3 bg-[#4F6F52] text-white hover:bg-[#3A523D] disabled:opacity-50"
-                      onClick={handlePhotoUpload}
-                    >
-                      {uploadingPhoto ? "Uploading..." : "Upload Photo"}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      className="h-9 px-3 bg-[#4F6F52] hover:bg-[#3A523D] text-white"
-                      onClick={() => avatarInputRef.current?.click()}
-                    >
-                      Choose
-                    </Button>
-
-                    {(selectedPhoto || currentAvatar) && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-9 px-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={handlePhotoRemove}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Profile Section - Takes 2 columns */}
+          <div className="lg:col-span-2 space-y-6">
+            <Form {...form}>
+              <form className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Profile Header */}
+                <div className="bg-gradient-to-r from-[#4F6F52] to-[#3A523D] px-6 py-8">
+                  <div className="flex items-center gap-6">
+                    {/* Avatar Section */}
+                    <div className="relative group">
+                      <label
+                        htmlFor="avatar-input"
+                        className="block w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer transition-transform hover:scale-105"
+                        aria-label="Upload profile photo"
                       >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-
-                  {selectedPhoto && (
-                    <div className="mt-2 text-xs text-gray-600">
-                      Selected: {selectedPhoto.name} (
-                      {Math.round(selectedPhoto.size / 1024)} KB)
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Form Fields */}
-            {loading ? (
-              <div className="flex flex-col items-center gap-3 py-12">
-                <div className="w-8 h-8 border-4 border-[#4F6F52] border-t-transparent rounded-full animate-spin" />
-                <p className="text-[#4F6F52] text-sm font-medium">
-                  Loading profile...
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Name Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="firstname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-600">
-                          First Name
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
-                            aria-label="First name"
+                        <Avatar className="w-full h-full">
+                          <AvatarImage
+                            src={previewUrl || currentAvatar || undefined}
+                            className="w-full h-full object-cover"
+                            alt="Profile avatar"
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="lastname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-600">
-                          Last Name
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
-                            aria-label="Last name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Address Field with Map */}
-                <div className="space-y-2">
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-600">Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
-                            aria-label="Address"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Map */}
-                  {editMode && (
-                    <MapContainer
-                      center={defaultPosition} // default coordinates
-                      zoom={13}
-                      scrollWheelZoom={true}
-                      style={{ height: "250px", width: "100%" }}
-                      className="rounded-lg border border-gray-200"
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      <Marker
-                        position={defaultPosition}
-                        draggable={editMode}
-                        eventHandlers={{ dragend: handleDragEnd }}
-                      >
-                        <Popup>Drag me to update your location</Popup>
-                      </Marker>
-                      {/* Optional: click-to-set */}
-                      <MapClickHandler form={form} />
-                    </MapContainer>
-                  )}
-                </div>
-
-                {/* Contact Number Field */}
-                <div className="grid grid-cols-1 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-600">
-                          Contact Number
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            disabled={!editMode}
-                            className="h-11 border-gray-200 focus-visible:ring-[#4F6F52] focus-visible:border-[#4F6F52] text-[#4F6F52] disabled:opacity-60"
-                            aria-label="Contact number"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Phone Verification UI */}
-                  {editMode &&
-                    pendingPhone &&
-                    pendingPhone !== originalNumber && (
-                      <div className="mt-2 space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-xs text-blue-700 font-medium">
-                          You changed your phone number. Please verify it to
-                          save changes.
-                        </p>
-
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Button
-                            size="sm"
-                            className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9"
-                            disabled={
-                              sendingCode || checkingPhone || !phoneAvailable
+                          <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-sm">
+                            {getInitials(
+                              form.getValues().firstname ||
+                                user?.first_name ||
+                                user?.email?.[0],
+                              form.getValues().lastname ||
+                                user?.last_name ||
+                                "",
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-white" />
+                        </div>
+                      </label>
+                      <input
+                        id="avatar-input"
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > MAX_PHOTO_SIZE) {
+                              toast.error("Photo must be less than 5MB");
+                              return;
                             }
-                            onClick={sendPhoneCode}
-                            type="button"
-                          >
-                            {sendingCode
-                              ? "Sending..."
-                              : checkingPhone
-                                ? "Checking..."
-                                : "Send verification code"}
-                          </Button>
+                            setSelectedPhoto(file);
+                            setPreviewUrl(URL.createObjectURL(file));
+                          }
+                        }}
+                        aria-label="Select profile photo file"
+                      />
+                    </div>
 
-                          {checkingPhone && (
-                            <span className="text-sm text-gray-500">
-                              Checking availability...
-                            </span>
-                          )}
-                          {!checkingPhone && !phoneAvailable && (
-                            <span className="text-sm text-red-600 font-medium">
-                              Number already in use
-                            </span>
-                          )}
-                          {phoneVerified && (
-                            <span className="text-sm text-green-600 font-medium">
-                              ✓ Verified
-                            </span>
-                          )}
+                    {/* User Info */}
+                    <div className="flex-1 text-white">
+                      <h2 className="text-2xl font-bold">
+                        {form.getValues().firstname ||
+                          user?.first_name ||
+                          "User"}{" "}
+                        {form.getValues().lastname || user?.last_name || ""}
+                      </h2>
+                      <p className="text-white/80 flex items-center gap-2 mt-1">
+                        <Mail className="w-4 h-4" />
+                        {emailShown || user?.email}
+                      </p>
+
+                      {/* Photo Action Buttons */}
+                      <div className="flex items-center gap-2 mt-4 flex-wrap">
+                        {selectedPhoto && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={uploadingPhoto}
+                            className="h-8 px-3 bg-white text-[#4F6F52] hover:bg-white/90"
+                            onClick={handlePhotoUpload}
+                          >
+                            {uploadingPhoto ? (
+                              <>
+                                <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-3 h-3 mr-1.5" />
+                                Upload
+                              </>
+                            )}
+                          </Button>
+                        )}
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 px-3 bg-white/20 text-white hover:bg-white/30 border border-white/30"
+                          onClick={() => avatarInputRef.current?.click()}
+                        >
+                          <Camera className="w-3 h-3 mr-1.5" />
+                          Change Photo
+                        </Button>
+
+                        {(selectedPhoto || currentAvatar) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-3 text-white/90 hover:bg-white/20"
+                            onClick={handlePhotoRemove}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1.5" />
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+
+                      {selectedPhoto && (
+                        <div className="mt-2 text-xs text-white/70">
+                          {selectedPhoto.name} (
+                          {Math.round(selectedPhoto.size / 1024)} KB)
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Fields */}
+                <div className="p-6 space-y-6">
+                  {loading ? (
+                    <div className="flex flex-col items-center gap-4 py-16">
+                      <Loader2 className="w-10 h-10 text-[#4F6F52] animate-spin" />
+                      <p className="text-gray-500 font-medium">
+                        Loading your profile...
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Personal Information */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                          <User className="w-4 h-4 text-[#4F6F52]" />
+                          <h3 className="font-semibold text-gray-900">
+                            Personal Information
+                          </h3>
                         </div>
 
-                        {!phoneVerified && (
-                          <div className="flex items-start gap-2 mt-2 flex-wrap">
-                            <Input
-                              placeholder="Enter 6-digit code"
-                              value={phoneCode}
-                              onChange={(e) => {
-                                setPhoneCode(e.target.value.replace(/\D/g, ""));
-                                setPhoneError("");
-                              }}
-                              maxLength={6}
-                              className="h-9 w-44"
-                              aria-label="Phone verification code"
-                            />
-                            <Button
-                              size="sm"
-                              className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9"
-                              onClick={verifyPhone}
-                              disabled={verifyingPhone}
-                              type="button"
-                            >
-                              {verifyingPhone ? "Verifying..." : "Verify"}
-                            </Button>
-                          </div>
-                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="firstname"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                  First Name
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    disabled={!editMode}
+                                    className="h-11 border-gray-200 focus-visible:ring-2 focus-visible:ring-[#4F6F52]/20 focus-visible:border-[#4F6F52] disabled:bg-gray-50 disabled:text-gray-500 transition-all"
+                                    placeholder="Enter your first name"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                        {phoneError && (
-                          <div className="text-xs text-red-600 font-medium">
-                            {phoneError}
+                          <FormField
+                            control={form.control}
+                            name="lastname"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                  Last Name
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    disabled={!editMode}
+                                    className="h-11 border-gray-200 focus-visible:ring-2 focus-visible:ring-[#4F6F52]/20 focus-visible:border-[#4F6F52] disabled:bg-gray-50 disabled:text-gray-500 transition-all"
+                                    placeholder="Enter your last name"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                          <Phone className="w-4 h-4 text-[#4F6F52]" />
+                          <h3 className="font-semibold text-gray-900">
+                            Contact Information
+                          </h3>
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="number"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium text-gray-700">
+                                Phone Number
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!editMode}
+                                  className="h-11 border-gray-200 focus-visible:ring-2 focus-visible:ring-[#4F6F52]/20 focus-visible:border-[#4F6F52] disabled:bg-gray-50 disabled:text-gray-500 transition-all"
+                                  placeholder="+63 XXX XXX XXXX"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Phone Verification UI */}
+                        {editMode &&
+                          pendingPhone &&
+                          pendingPhone !== originalNumber && (
+                            <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-200 space-y-3 animate-in slide-in-from-top-2">
+                              <div className="flex items-start gap-2">
+                                <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-blue-900">
+                                    Phone Verification Required
+                                  </p>
+                                  <p className="text-xs text-blue-700 mt-1">
+                                    Verify your new number to save changes
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+                                  disabled={
+                                    sendingCode ||
+                                    checkingPhone ||
+                                    !phoneAvailable
+                                  }
+                                  onClick={sendPhoneCode}
+                                  type="button"
+                                >
+                                  {sendingCode ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                      Sending...
+                                    </>
+                                  ) : (
+                                    "Send Code"
+                                  )}
+                                </Button>
+
+                                {checkingPhone && (
+                                  <span className="text-sm text-gray-600 flex items-center gap-1.5">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Checking...
+                                  </span>
+                                )}
+                                {!checkingPhone && !phoneAvailable && (
+                                  <span className="text-sm text-red-600 font-medium flex items-center gap-1.5">
+                                    <X className="w-4 h-4" />
+                                    Number in use
+                                  </span>
+                                )}
+                                {phoneVerified && (
+                                  <span className="text-sm text-green-600 font-medium flex items-center gap-1.5">
+                                    <Check className="w-4 h-4" />
+                                    Verified
+                                  </span>
+                                )}
+                              </div>
+
+                              {!phoneVerified && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Input
+                                    placeholder="6-digit code"
+                                    value={phoneCode}
+                                    onChange={(e) => {
+                                      setPhoneCode(
+                                        e.target.value.replace(/\D/g, ""),
+                                      );
+                                      setPhoneError("");
+                                    }}
+                                    maxLength={6}
+                                    className="h-9 w-32 text-center tracking-widest font-mono"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+                                    onClick={verifyPhone}
+                                    disabled={verifyingPhone}
+                                    type="button"
+                                  >
+                                    {verifyingPhone ? (
+                                      <>
+                                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                        Verifying...
+                                      </>
+                                    ) : (
+                                      "Verify"
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
+
+                              {phoneError && (
+                                <p className="text-xs text-red-600 font-medium">
+                                  {phoneError}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Address Information */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                          <MapPin className="w-4 h-4 text-[#4F6F52]" />
+                          <h3 className="font-semibold text-gray-900">
+                            Address
+                          </h3>
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium text-gray-700">
+                                Street Address
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!editMode}
+                                  className="h-11 border-gray-200 focus-visible:ring-2 focus-visible:ring-[#4F6F52]/20 focus-visible:border-[#4F6F52] disabled:bg-gray-50 disabled:text-gray-500 transition-all"
+                                  placeholder="Enter your address"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {editMode && (
+                          <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
+                            <MapContainer
+                              center={defaultPosition}
+                              zoom={13}
+                              scrollWheelZoom={true}
+                              style={{ height: "280px", width: "100%" }}
+                            >
+                              <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                              />
+                              <Marker
+                                position={defaultPosition}
+                                draggable={editMode}
+                                eventHandlers={{ dragend: handleDragEnd }}
+                              >
+                                <Popup>Drag me to update your location</Popup>
+                              </Marker>
+                              <MapClickHandler form={form} />
+                            </MapContainer>
                           </div>
                         )}
                       </div>
-                    )}
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
-                  {!editMode ? (
-                    <Button
-                      type="button"
-                      className="h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all"
-                      onClick={() => setEditMode(true)}
-                    >
-                      Edit Profile
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        type="button"
-                        disabled={
-                          saveLoading ||
-                          !isValid ||
-                          (!phoneVerified && pendingPhone !== originalNumber)
-                        }
-                        className="h-11 px-8 bg-[#4F6F52] hover:bg-[#3A523D] text-white font-semibold transition-all disabled:opacity-50"
-                        onClick={handleSubmission}
-                      >
-                        {saveLoading ? "Saving..." : "Save Changes"}
-                      </Button>
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
+                        {!editMode ? (
+                          <Button
+                            type="button"
+                            className="h-11 px-8 bg-gradient-to-r from-[#4F6F52] to-[#3A523D] hover:from-[#3A523D] hover:to-[#2A3D29] text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                            onClick={() => setEditMode(true)}
+                          >
+                            <User className="w-4 h-4 mr-2" />
+                            Edit Profile
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              type="button"
+                              disabled={
+                                saveLoading ||
+                                !isValid ||
+                                (!phoneVerified &&
+                                  pendingPhone !== originalNumber)
+                              }
+                              className="h-11 px-8 bg-gradient-to-r from-[#4F6F52] to-[#3A523D] hover:from-[#3A523D] hover:to-[#2A3D29] text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={handleSubmission}
+                            >
+                              {saveLoading ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Save Changes
+                                </>
+                              )}
+                            </Button>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={saveLoading}
-                        className="h-11 px-8 bg-red-600 text-white border-red-600 font-semibold hover:bg-red-700 hover:border-red-700"
-                        onClick={handleCancel}
-                      >
-                        Cancel
-                      </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              disabled={saveLoading}
+                              className="h-11 px-8 border-2 border-gray-300 hover:bg-gray-50 font-semibold transition-all"
+                              onClick={handleCancel}
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
-              </div>
-            )}
-          </form>
-        </Form>
+              </form>
+            </Form>
+          </div>
 
-        {/* Right Column: Security & Actions */}
-        <div className="flex flex-col w-full lg:w-96 gap-6">
-          {/* Security Card */}
-          <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-[#4F6F52]" />
-              <h3 className="font-bold text-gray-800 text-sm">
-                Security & Privacy
-              </h3>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Password Reset */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-gray-700">
-                  Password
-                </h4>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Secure your account by updating your password regularly.
-                </p>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between h-10 bg-[#3A4D39] text-white hover:bg-[#2A3D29] border-[#3A4D39]"
-                  type="button"
-                  onClick={() => {
-                    setResetSent(false);
-                    setResetOpen(true);
-                  }}
-                >
-                  Change Password
-                </Button>
+          {/* Security Sidebar - Takes 1 column */}
+          <div className="space-y-6">
+            {/* Security Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-[#4F6F52] to-[#3A523D] px-5 py-4">
+                <div className="flex items-center gap-2 text-white">
+                  <Lock className="w-5 h-5" />
+                  <h3 className="font-bold text-lg">Security</h3>
+                </div>
               </div>
 
-              <hr className="border-gray-100" />
-
-              {/* MFA Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-[#4F6F52]" />
-                  <h4 className="text-sm font-semibold text-gray-700">
-                    Multi-Factor Authentication
-                  </h4>
+              <div className="p-5 space-y-6">
+                {/* Password Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#4F6F52]" />
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Password
+                    </h4>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Keep your account secure with a strong password
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 bg-gradient-to-r from-[#4F6F52] to-[#3A523D] text-white hover:from-[#3A523D] hover:to-[#2A3D29] border-none shadow-sm hover:shadow-md transition-all"
+                    type="button"
+                    onClick={() => {
+                      setResetSent(false);
+                      setResetOpen(true);
+                    }}
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Change Password
+                  </Button>
                 </div>
 
-                <div
-                  className="space-y-2"
-                  role="radiogroup"
-                  aria-label="Multi-factor authentication options"
-                >
-                  {[
-                    { value: "N/A", label: "Disabled", desc: null },
-                    {
-                      value: "email",
-                      label: "Email Verification",
-                      desc: "Code sent to email on login",
-                    },
-                    {
-                      value: "sms",
-                      label: "SMS Verification",
-                      desc: "Code sent to your phone on login",
-                    },
-                  ].map((option) => (
-                    <label
-                      key={option.value}
-                      className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-[#ECE3CE]/20 cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="radio"
-                        name="mfa"
-                        value={option.value}
-                        checked={mfaType === option.value}
-                        onChange={() => handleMFAChange(option.value)}
-                        disabled={mfaLoading}
-                        className="accent-[#4F6F52] w-4 h-4"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">
-                          {option.label}
-                        </div>
-                        {option.desc && (
-                          <div className="text-[10px] text-gray-500">
-                            {option.desc}
+                <div className="border-t border-gray-100" />
+
+                {/* MFA Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#4F6F52]" />
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Two-Factor Authentication
+                    </h4>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      { value: "N/A", label: "Disabled", icon: X },
+                      { value: "email", label: "Email", icon: Mail },
+                      { value: "sms", label: "SMS", icon: Phone },
+                    ].map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <label
+                          key={option.value}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                            mfaType === option.value
+                              ? "border-[#4F6F52] bg-[#4F6F52]/5"
+                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="mfa"
+                            value={option.value}
+                            checked={mfaType === option.value}
+                            onChange={() => handleMFAChange(option.value)}
+                            disabled={mfaLoading}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                              mfaType === option.value
+                                ? "border-[#4F6F52] bg-[#4F6F52]"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {mfaType === option.value && (
+                              <div className="w-2 h-2 rounded-full bg-white" />
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
+                          <Icon className="w-4 h-4 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-900 flex-1">
+                            {option.label}
+                          </span>
+                          {mfaType === option.value && (
+                            <Check className="w-4 h-4 text-[#4F6F52]" />
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <hr className="border-gray-100" />
+                <div className="border-t border-gray-100" />
 
-              {/* Close Account */}
-              <div className="pt-2">
-                <Button
-                  variant="ghost"
-                  className="w-full h-10 text-red-600 hover:text-red-700 hover:bg-red-50 justify-start px-2"
-                  disabled={closingAccount}
-                  onClick={() => setCloseConfirmOpen(true)}
-                  type="button"
-                >
-                  Deactivate Account
-                </Button>
+                {/* Danger Zone */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Danger Zone
+                    </h4>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full h-10 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 hover:border-red-300 transition-all"
+                    disabled={closingAccount}
+                    onClick={() => setCloseConfirmOpen(true)}
+                    type="button"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Deactivate Account
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Password Reset Dialog */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent className="bg-white sm:max-w-md">
+        <DialogContent className="bg-white sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-[#4F6F52]">
+            <DialogTitle className="text-2xl font-bold text-[#4F6F52] flex items-center gap-2">
+              <Lock className="w-6 h-6" />
               Change Password
             </DialogTitle>
-            <DialogDescription>
-              We'll send a code to your email to verify it's you.
+            <DialogDescription className="text-gray-600">
+              We'll send a verification code to your email address
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            {/* Email Display & Send Code */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-sm">
-                <p className="text-gray-500 text-xs uppercase font-bold">
-                  Send code to:
-                </p>
-                <p className="font-medium text-gray-900">
-                  {emailShown || user?.email}
-                </p>
+          <div className="space-y-5 py-2">
+            {/* Email Display */}
+            <div className="p-4 bg-gradient-to-r from-[#4F6F52]/10 to-[#3A523D]/10 rounded-xl border border-[#4F6F52]/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-[#4F6F52]" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Send code to
+                    </p>
+                    <p className="font-medium text-gray-900 mt-0.5">
+                      {emailShown || user?.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-[#4F6F52] hover:bg-[#3A523D] text-white h-9 px-4"
+                  disabled={sendingReset}
+                  onClick={handlePasswordResetRequest}
+                  type="button"
+                >
+                  {sendingReset ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : resetSent ? (
+                    "Resend"
+                  ) : (
+                    "Send Code"
+                  )}
+                </Button>
               </div>
-              <Button
-                size="sm"
-                className="bg-[#4F6F52] hover:bg-[#3A523D] text-white text-xs h-8"
-                disabled={sendingReset}
-                onClick={handlePasswordResetRequest}
-                type="button"
-              >
-                {sendingReset
-                  ? "Sending..."
-                  : resetSent
-                    ? "Resend"
-                    : "Send Code"}
-              </Button>
             </div>
 
-            {/* Verification Code Input */}
-            <div className="space-y-1">
-              <label
-                htmlFor="reset-code-input"
-                className="text-xs font-semibold text-gray-600"
-              >
+            {/* Verification Code */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700">
                 Verification Code
               </label>
               <Input
-                id="reset-code-input"
                 placeholder="000000"
                 maxLength={6}
-                className="text-center tracking-[0.5em] font-mono text-lg border-gray-200 focus-visible:border-[#4F6F52] text-[#4F6F52]"
+                className="text-center tracking-[0.5em] font-mono text-xl h-14 border-2 border-gray-200 focus-visible:border-[#4F6F52] focus-visible:ring-2 focus-visible:ring-[#4F6F52]/20"
                 value={resetCode}
                 onChange={(e) =>
                   setResetCode(e.target.value.replace(/[^0-9]/g, ""))
                 }
-                aria-label="6-digit verification code"
               />
             </div>
 
             {/* Password Inputs */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label
-                  htmlFor="new-password-input"
-                  className="text-xs font-semibold text-gray-600"
-                >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">
                   New Password
                 </label>
                 <div className="relative">
                   <Input
-                    id="new-password-input"
                     type={showNewPassword ? "text" : "password"}
-                    className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
+                    className="h-11 pr-10 border-2 border-gray-200 focus-visible:border-[#4F6F52]"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    aria-label="New password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52]"
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52] transition-colors"
                     tabIndex={-1}
-                    aria-label={
-                      showNewPassword ? "Hide password" : "Show password"
-                    }
                   >
                     {showNewPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -1241,30 +1346,22 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label
-                  htmlFor="confirm-password-input"
-                  className="text-xs font-semibold text-gray-600"
-                >
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">
                   Confirm
                 </label>
                 <div className="relative">
                   <Input
-                    id="confirm-password-input"
                     type={showConfirmPassword ? "text" : "password"}
-                    className="border-gray-200 focus-visible:border-[#4F6F52] pr-10"
+                    className="h-11 pr-10 border-2 border-gray-200 focus-visible:border-[#4F6F52]"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    aria-label="Confirm password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52]"
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#4F6F52] transition-colors"
                     tabIndex={-1}
-                    aria-label={
-                      showConfirmPassword ? "Hide password" : "Show password"
-                    }
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -1276,45 +1373,40 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Password Requirements Checklist */}
+            {/* Password Requirements */}
             {newPassword && (
-              <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <p className="text-xs font-semibold text-gray-700 mb-2">
-                  Password must contain:
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                <p className="text-xs font-semibold text-gray-700 mb-3">
+                  Password Requirements:
                 </p>
-                <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { key: "minLength", label: "8-20 characters" },
-                    { key: "hasUppercase", label: "One uppercase letter" },
-                    { key: "hasLowercase", label: "One lowercase letter" },
-                    { key: "hasNumber", label: "One number" },
-                    { key: "hasSpecial", label: "One special character" },
-                    { key: "match", label: "Passwords match" },
+                    { key: "hasUppercase", label: "Uppercase" },
+                    { key: "hasLowercase", label: "Lowercase" },
+                    { key: "hasNumber", label: "Number" },
+                    { key: "hasSpecial", label: "Special char" },
+                    { key: "match", label: "Match" },
                   ].map((req) => (
                     <div
                       key={req.key}
                       className="flex items-center gap-2 text-xs"
                     >
                       <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                        className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
                           passwordChecks[req.key]
                             ? "bg-green-500"
                             : "bg-gray-300"
                         }`}
-                        aria-label={
-                          passwordChecks[req.key]
-                            ? "Requirement met"
-                            : "Requirement not met"
-                        }
                       >
                         {passwordChecks[req.key] && (
-                          <span className="text-white text-[10px]">✓</span>
+                          <Check className="w-2.5 h-2.5 text-white" />
                         )}
                       </div>
                       <span
                         className={
                           passwordChecks[req.key]
-                            ? "text-green-700"
+                            ? "text-green-700 font-medium"
                             : "text-gray-600"
                         }
                       >
@@ -1330,7 +1422,7 @@ export default function Settings() {
           <DialogFooter>
             <Button
               type="button"
-              className="w-full bg-[#4F6F52] hover:bg-[#3A523D] disabled:opacity-50"
+              className="w-full h-12 bg-gradient-to-r from-[#4F6F52] to-[#3A523D] hover:from-[#3A523D] hover:to-[#2A3D29] text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
               disabled={
                 resetSubmitting ||
                 !codeFormatValid ||
@@ -1338,42 +1430,64 @@ export default function Settings() {
               }
               onClick={handlePasswordResetSubmit}
             >
-              {resetSubmitting ? "Updating..." : "Update Password"}
+              {resetSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating Password...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Update Password
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Account Closure Confirmation Dialog */}
+      {/* Account Closure Dialog */}
       <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
         <DialogContent className="bg-white sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" /> Deactivate Account
+            <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6" />
+              Deactivate Account
             </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to deactivate your account? You will be
-              logged out immediately and your account will be marked as
-              inactive.
+            <DialogDescription className="text-gray-600 leading-relaxed">
+              This action will deactivate your account and log you out
+              immediately. Your data will be retained but your account will be
+              marked as inactive.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => setCloseConfirmOpen(false)}
               disabled={closingAccount}
               type="button"
+              className="flex-1 h-11 border-2"
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
-              className="bg-red-600 hover:bg-red-700"
+              className="flex-1 h-11 bg-red-600 hover:bg-red-700 shadow-md hover:shadow-lg transition-all"
               onClick={handleCloseAccount}
               disabled={closingAccount}
               type="button"
             >
-              {closingAccount ? "Deactivating..." : "Yes, Deactivate"}
+              {closingAccount ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Deactivate
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

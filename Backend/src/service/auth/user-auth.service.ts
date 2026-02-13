@@ -386,7 +386,7 @@ export class UserAuthService {
       );
 
       // Send verification email
-      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}verify-mfa?token=${mfaToken}&customerId=${user.customer_id}`;
+      const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-mfa?token=${mfaToken}&customerId=${user.customer_id}`;
 
       try {
         await this.mailer.sendMfaVerificationEmail(
