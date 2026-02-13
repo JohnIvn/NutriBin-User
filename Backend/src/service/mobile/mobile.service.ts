@@ -138,13 +138,20 @@ export class MobileService {
 
       const result = await client.query<MachineRow>(
         `
-	  SELECT nitrogen, phosphorus, potassium, 
-	  		 temperature, ph, humidity, moisture, weight_kg, reed_switch,
-			 methane, air_quality, carbon_monoxide, combustible_gases
-	  FROM fertilizer_analytics
-	  WHERE machine_id = $1
-	  AND user_id = $2
-	  `,
+  SELECT nitrogen, phosphorus, potassium, 
+         temperature, ph, humidity, moisture, weight_kg, reed_switch,
+         methane, air_quality, carbon_monoxide, combustible_gases
+  FROM fertilizer_analytics fa
+  WHERE fa.machine_id = $1 
+    AND EXISTS (
+      SELECT 1 
+      FROM machine_customers mc
+      WHERE mc.machine_id = $1
+        AND mc.customer_id = $2
+    )
+  ORDER BY fa.created_at DESC
+  LIMIT 1
+  `,
         [machineId, customerId],
       );
 
