@@ -186,7 +186,6 @@ const NotificationButton = ({ notificationMenuRef }) => {
 
     socket.on("connect", () => {
       console.log("Connected to WebSocket server");
-      socket.emit("joinMachine", machineId);
       socket.emit("getNotifications", machineId, (data) => {
         console.log("Received notifications via ACK:", data);
         if (Array.isArray(data)) {
