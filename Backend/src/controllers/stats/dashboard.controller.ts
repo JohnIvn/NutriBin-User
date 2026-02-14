@@ -55,6 +55,20 @@ export class DashboardController {
     const client = this.databaseService.getClient();
 
     try {
+      const machineResult = await client.query<MachineRow>(
+        `
+        SELECT m.machine_id
+        FROM machines m
+        JOIN machine_customers mc ON mc.machine_id = m.machine_id
+        WHERE mc.customer_id = $1
+          AND m.is_active = true
+        LIMIT 1
+        `,
+        [customerId],
+      );
+
+      const machineId = machineResult.rows[0]?.machine_id;
+
       const announcement = await client.query<AnnouncementRow>(
         `
         SELECT
@@ -87,26 +101,13 @@ export class DashboardController {
           ph,
           date_created
         FROM fertilizer_analytics
-        WHERE user_id = $1
+        WHERE machine_id = $1
         ORDER BY date_created DESC
         LIMIT 1
         `,
-        [customerId],
+        [machineId],
       );
 
-      const machineResult = await client.query<MachineRow>(
-        `
-        SELECT m.machine_id
-        FROM machines m
-        JOIN machine_customers mc ON mc.machine_id = m.machine_id
-        WHERE mc.customer_id = $1
-          AND m.is_active = true
-        LIMIT 1
-        `,
-        [customerId],
-      );
-
-      const machineId = machineResult.rows[0]?.machine_id;
       let trashLogs: TrashLogRow[] = [];
 
       if (machineId) {
