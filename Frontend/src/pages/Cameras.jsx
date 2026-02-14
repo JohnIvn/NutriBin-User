@@ -142,6 +142,7 @@ export default function Cameras() {
 
         if (res.data?.ok) {
           setData(res.data.logs || []);
+          console.log(res.data.logs)
         } else {
           throw new Error("Failed to load camera logs");
         }
@@ -259,7 +260,7 @@ export default function Cameras() {
                         Time
                       </TableHead>
                       <TableHead className="text-[#ECE3CE] font-bold">
-                        Status
+                        Details
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -305,10 +306,10 @@ export default function Cameras() {
                             </TableCell>
 
                             <TableCell>
-                              {log.classification ? (
+                              {log.details ? (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
                                   <AlertCircle className="w-3 h-3" />
-                                  {log.classification}
+                                  {log.details}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-100">
