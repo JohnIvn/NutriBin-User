@@ -4,10 +4,14 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
-import { MachineNotificationsService } from './machine-notifications.service';
-import { MachineNotification } from './machine-notifications.interface';
+import { Server, Socket } from 'socket.io';
+import {
+  NotificationsRealtimeService,
+  MachineNotification,
+} from './notification-realtime.service';
+import { forwardRef, Inject } from '@nestjs/common';
 
 @WebSocketGateway({ cors: true })
 export class MachineNotificationsGateway {
@@ -15,24 +19,46 @@ export class MachineNotificationsGateway {
   server: Server;
 
   constructor(
-    private readonly notificationsService: MachineNotificationsService,
+    @Inject(forwardRef(() => NotificationsRealtimeService))
+    private readonly realtimeService: NotificationsRealtimeService,
   ) {}
 
-  // Listen for clients requesting notifications for a specific machine
+  /**
+   * Client joins a specific machine room to receive notifications
+   */
+  @SubscribeMessage('joinMachine')
+  handleJoinMachine(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() machine_id: string,
+  ) {
+    if (!machine_id) return;
+    client.join(machine_id);
+    console.log(`Client ${client.id} joined machine room: ${machine_id}`);
+  }
+
+  /**
+   * Client requests current notifications for a machine
+   */
   @SubscribeMessage('getNotifications')
   async handleGetNotifications(
+    @ConnectedSocket() client: Socket,
     @MessageBody() machine_id: string,
   ): Promise<MachineNotification[] | { error: string }> {
-    console.log('Received getNotifications for machine:', machine_id);
     try {
-      const notifications: MachineNotification[] =
-        await this.notificationsService.getNotificationsByMachine(machine_id);
-      console.log('Returning notifications:', notifications);
-
+      const notifications =
+        await this.realtimeService.getNotificationsByMachine(machine_id);
       return notifications;
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
       return { error: 'Failed to fetch notifications' };
     }
+  }
+
+  /**
+   * Emit a notification to all clients in a machine room
+   */
+  emitNotification(machineId: string, notification: MachineNotification) {
+    this.server.to(machineId).emit('notification', notification);
+    console.log(`Emitted notification to machine ${machineId}`, notification);
   }
 }

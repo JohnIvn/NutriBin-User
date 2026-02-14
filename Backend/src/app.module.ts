@@ -24,6 +24,7 @@ import { MachineService } from './service/machine/machine.service';
 import { MobileController } from './controllers/mobile/mobile.controller';
 import { MobileService } from './service/mobile/mobile.service';
 import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
+import { DataScienceController } from './controllers/stats/data-science.controller';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { MachineNotificationsModule } from './service/notification/machine-notif
     AnnouncementsController,
     MachineController,
     MobileController,
+    DataScienceController,
   ],
   providers: [
     {

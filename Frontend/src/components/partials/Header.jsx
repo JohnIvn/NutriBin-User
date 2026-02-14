@@ -27,6 +27,7 @@ const NAVIGATION = {
       { name: "Dashboard", href: "/dashboard" },
       { name: "Cameras", href: "/cameras" },
       { name: "Fertilizer", href: "/fertilizer" },
+      { name: "Data Science", href: "/data" }
     ],
     right: [
       { name: "Modules", href: "/modules" },
@@ -94,71 +95,6 @@ const NavLink = ({ to, children, currentPath }) => {
                  group-hover:opacity-100 transition-all duration-300"
       />
     </Link>
-  );
-};
-
-const MachineSelector = ({
-  user,
-  selectedMachine,
-  setSelectedMachine,
-  onAdd,
-}) => {
-  const handleMachineChange = useCallback(
-    (e) => {
-      const machine = user.machines.find(
-        (m) => m.machine_id === e.target.value,
-      );
-      if (machine) {
-        setSelectedMachine(machine);
-        localStorage.setItem("selectedMachine", JSON.stringify(machine));
-        window.location.reload();
-      }
-    },
-    [user.machines, setSelectedMachine],
-  );
-
-  if (!user?.machines?.length) {
-    return (
-      <Motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onAdd}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-xl
-                 bg-[#3A4D39] text-[#ECE3CE] font-bold text-xs
-                 hover:bg-[#4F6F52] transition-colors"
-      >
-        <PlusIcon className="w-4 h-4" />
-        Add Machine
-      </Motion.button>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <select
-        value={selectedMachine?.machine_id || ""}
-        onChange={handleMachineChange}
-        className="px-3 py-1.5 rounded-xl bg-white border border-[#3A4D39]/20
-                 text-[#3A4D39] font-bold text-xs
-                 focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30"
-      >
-        {user.machines.map((machine) => (
-          <option key={machine.machine_id} value={machine.machine_id}>
-            {machine.machine_name || machine.machine_id}
-          </option>
-        ))}
-      </select>
-
-      <Motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={onAdd}
-        className="p-1.5 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
-        title="Add Machine"
-      >
-        <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
-      </Motion.button>
-    </div>
   );
 };
 
@@ -241,36 +177,33 @@ const NotificationButton = ({ notificationMenuRef }) => {
     }
   };
 
-  // -----------------------------
   // WebSocket connection
-  // -----------------------------
   useEffect(() => {
     if (!machineId) return;
 
     const baseUrl = getBaseUrl();
-
-    const socket = io(baseUrl); // change if needed
+    const socket = io(baseUrl);
 
     socket.on("connect", () => {
       console.log("Connected to WebSocket server");
-
-      // Emit and receive data via ACK callback
+      socket.emit("joinMachine", machineId);
       socket.emit("getNotifications", machineId, (data) => {
-        console.log("Received notifications via ACK:", data); // <- will log your array
-        setNotifications(
-          data.map((n) => ({
-            id: n.notification_id,
-            title: n.header,
-            message: n.description || n.subheader || "",
-            timestamp: new Date(n.date_created),
-            read: n.resolved || false,
-            type: n.type,
-          })),
-        );
+        console.log("Received notifications via ACK:", data);
+        if (Array.isArray(data)) {
+          setNotifications(
+            data.map((n) => ({
+              id: n.notification_id,
+              title: n.header,
+              message: n.description || n.subheader || "",
+              timestamp: new Date(n.date_created),
+              read: n.resolved || false,
+              type: n.type,
+            })),
+          );
+        }
       });
     });
 
-    // Optional: listen for new notifications pushed from backend
     socket.on("notification", (n) => {
       setNotifications((prev) => [
         {
@@ -290,6 +223,24 @@ const NotificationButton = ({ notificationMenuRef }) => {
     };
   }, [machineId]);
 
+  // Close notification menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        notificationMenuRef.current &&
+        !notificationMenuRef.current.contains(event.target)
+      ) {
+        setNotificationOpen(false);
+      }
+    };
+
+    if (notificationOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [notificationOpen, notificationMenuRef]);
+
   return (
     <div className="relative" ref={notificationMenuRef}>
       <Motion.button
@@ -298,6 +249,7 @@ const NotificationButton = ({ notificationMenuRef }) => {
         onClick={() => setNotificationOpen((v) => !v)}
         className="relative p-2.5 rounded-xl bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
                  transition-all duration-200 group"
+        aria-label="Notifications"
       >
         <BellIcon className="w-5 h-5 text-[#3A4D39]" />
         {unreadCount > 0 && (
@@ -402,6 +354,7 @@ const NotificationButton = ({ notificationMenuRef }) => {
                             clearNotification(notification.id);
                           }}
                           className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors flex-shrink-0"
+                          aria-label="Clear notification"
                         >
                           <XMarkIcon className="w-4 h-4 text-[#3A4D39]/40" />
                         </Motion.button>
@@ -440,147 +393,171 @@ const AddMachineModal = ({
   isSubmitting,
   error,
   success,
-}) => (
-  <AnimatePresence>
-    {isOpen && (
-      <>
-        <Motion.div
-          {...ANIMATION_VARIANTS.modal.overlay}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
-        />
+}) => {
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
 
-        <Motion.div
-          {...ANIMATION_VARIANTS.modal.content}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                   w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[61] overflow-hidden"
-        >
-          {/* Modal Header */}
-          <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-[#3A4D39]">Add Machine</h2>
-              <Motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="p-1.5 hover:bg-[#3A4D39]/10 rounded-lg transition-colors"
-              >
-                <XMarkIcon className="w-5 h-5 text-[#3A4D39]" />
-              </Motion.button>
-            </div>
-            <p className="text-sm text-[#3A4D39]/70 mt-1">
-              Enter your machine's serial number to add it to your account
-            </p>
-          </div>
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isOpen, onClose]);
 
-          {/* Modal Body */}
-          <form onSubmit={onSubmit} className="px-6 py-6">
-            <div className="mb-4">
-              <label
-                htmlFor="machine-serial"
-                className="block text-sm font-semibold text-[#3A4D39] mb-2"
-              >
-                Machine Serial Number
-              </label>
-              <input
-                id="machine-serial"
-                type="text"
-                value={machineSerial}
-                onChange={(e) => setMachineSerial(e.target.value)}
-                placeholder="e.g., NB-2024-001"
-                className="w-full px-4 py-3 rounded-xl border-2 border-[#3A4D39]/20 
-                         text-[#3A4D39] font-medium
-                         focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30 focus:border-[#3A4D39]/40
-                         placeholder:text-[#3A4D39]/40 transition-all"
-                required
-                disabled={isSubmitting}
-              />
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.overlay}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
+          />
+
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.content}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                     w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[61] overflow-hidden"
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-[#3A4D39]">
+                  Add Machine
+                </h2>
+                <Motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-[#3A4D39]/10 rounded-lg transition-colors"
+                  aria-label="Close modal"
+                >
+                  <XMarkIcon className="w-5 h-5 text-[#3A4D39]" />
+                </Motion.button>
+              </div>
+              <p className="text-sm text-[#3A4D39]/70 mt-1">
+                Enter your machine's serial number to add it to your account
+              </p>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <Motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl"
-              >
-                <p className="text-sm text-red-700 font-medium">{error}</p>
-              </Motion.div>
-            )}
+            {/* Modal Body */}
+            <form onSubmit={onSubmit} className="px-6 py-6">
+              <div className="mb-4">
+                <label
+                  htmlFor="machine-serial"
+                  className="block text-sm font-semibold text-[#3A4D39] mb-2"
+                >
+                  Machine Serial Number
+                </label>
+                <input
+                  id="machine-serial"
+                  type="text"
+                  value={machineSerial}
+                  onChange={(e) => setMachineSerial(e.target.value)}
+                  placeholder="e.g., NB-2024-001"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[#3A4D39]/20 
+                           text-[#3A4D39] font-medium
+                           focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30 focus:border-[#3A4D39]/40
+                           placeholder:text-[#3A4D39]/40 transition-all"
+                  required
+                  disabled={isSubmitting}
+                  autoFocus
+                />
+              </div>
 
-            {/* Success Message */}
-            {success && (
-              <Motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl"
-              >
-                <p className="text-sm text-green-700 font-medium">{success}</p>
-              </Motion.div>
-            )}
+              {/* Error Message */}
+              {error && (
+                <Motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl"
+                  role="alert"
+                >
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </Motion.div>
+              )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
-                         bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
-                         transition-colors disabled:opacity-50"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </button>
-              <Motion.button
-                whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-                whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-                type="submit"
-                className="flex-1 px-4 py-3 rounded-xl font-bold text-[#ECE3CE] 
-                         bg-[#3A4D39] hover:bg-[#4F6F52] 
-                         shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:shadow-[#3A4D39]/30
-                         transition-all disabled:opacity-50 disabled:cursor-not-allowed
-                         flex items-center justify-center gap-2"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <PlusIcon className="w-5 h-5" />
-                    Add Machine
-                  </>
-                )}
-              </Motion.button>
-            </div>
-          </form>
-        </Motion.div>
-      </>
-    )}
-  </AnimatePresence>
-);
+              {/* Success Message */}
+              {success && (
+                <Motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl"
+                  role="alert"
+                >
+                  <p className="text-sm text-green-700 font-medium">
+                    {success}
+                  </p>
+                </Motion.div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
+                           bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
+                           transition-colors disabled:opacity-50"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <Motion.button
+                  whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                  whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                  type="submit"
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-[#ECE3CE] 
+                           bg-[#3A4D39] hover:bg-[#4F6F52] 
+                           shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:shadow-[#3A4D39]/30
+                           transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                           flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <PlusIcon className="w-5 h-5" />
+                      Add Machine
+                    </>
+                  )}
+                </Motion.button>
+              </div>
+            </form>
+          </Motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
 const UserMenu = ({
   user,
@@ -616,6 +593,8 @@ const UserMenu = ({
         className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl
                  bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
                  transition-all duration-200 group"
+        aria-label="User menu"
+        aria-expanded={userMenuOpen}
       >
         <span className="hidden xl:block text-sm font-bold text-[#3A4D39] uppercase tracking-wide">
           {user.first_name}
@@ -663,6 +642,7 @@ const UserMenu = ({
                     }}
                     className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
                     title="Add Machine"
+                    aria-label="Add Machine"
                   >
                     <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
                   </Motion.button>
@@ -787,6 +767,18 @@ export default function Header() {
     }
   }, [userMenuOpen]);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
   const handleLogout = useCallback(() => {
     logout();
     setMobileMenuOpen(false);
@@ -806,7 +798,7 @@ export default function Header() {
           url: "/machine/add-machine",
           method: "POST",
           data: {
-            machineSerial: machineSerial,
+            machineSerial: machineSerial.trim(),
             customerId: user.id || user.customer_id || user.userId,
           },
         });
@@ -822,7 +814,7 @@ export default function Header() {
         setTimeout(() => {
           setAddMachineOpen(false);
           setSuccess("");
-        }, 1000);
+        }, 1500);
       } catch (err) {
         setError(err.message || "Failed to add machine. Please try again.");
       } finally {
@@ -938,15 +930,22 @@ export default function Header() {
               )}
             </nav>
 
-            {/* Mobile Menu Button */}
-            <Motion.button
-              whileTap={{ scale: 0.9 }}
-              className="lg:hidden text-[#3A4D39] p-2 hover:bg-[#3A4D39]/10 
-                       rounded-xl transition-colors"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Bars3Icon className="w-7 h-7" />
-            </Motion.button>
+            {/* Mobile Actions */}
+            <div className="flex items-center gap-2 lg:hidden">
+              {user && !loading && (
+                <NotificationButton notificationMenuRef={notificationMenuRef} />
+              )}
+
+              <Motion.button
+                whileTap={{ scale: 0.9 }}
+                className="text-[#3A4D39] p-2 hover:bg-[#3A4D39]/10 
+             rounded-xl transition-colors"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <Bars3Icon className="w-7 h-7" />
+              </Motion.button>
+            </div>
           </div>
         </div>
       </Motion.header>
@@ -954,7 +953,12 @@ export default function Header() {
       {/* Add Machine Modal */}
       <AddMachineModal
         isOpen={addMachineOpen}
-        onClose={() => setAddMachineOpen(false)}
+        onClose={() => {
+          setAddMachineOpen(false);
+          setError("");
+          setSuccess("");
+          setMachineSerial("");
+        }}
         machineSerial={machineSerial}
         setMachineSerial={setMachineSerial}
         onSubmit={handleAddMachine}
@@ -963,7 +967,7 @@ export default function Header() {
         success={success}
       />
 
-      {/* Mobile Drawer - keeping original for brevity, but could be extracted similarly */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
@@ -977,7 +981,7 @@ export default function Header() {
               {...ANIMATION_VARIANTS.drawer.content}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed top-0 right-0 h-full w-[85%] max-w-sm bg-white 
-                       shadow-2xl z-50 flex flex-col lg:hidden"
+                       shadow-2xl z-50 flex flex-col lg:hidden overflow-y-auto"
             >
               {/* Header */}
               <div className="flex justify-between items-center p-6 border-b border-[#3A4D39]/10 bg-[#ECE3CE]">
@@ -988,6 +992,7 @@ export default function Header() {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 hover:bg-[#3A4D39]/10 rounded-xl transition-colors"
+                  aria-label="Close menu"
                 >
                   <XMarkIcon className="w-6 h-6 text-[#3A4D39]" />
                 </Motion.button>
@@ -1074,6 +1079,7 @@ export default function Header() {
                             }}
                             className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
                             title="Add Machine"
+                            aria-label="Add Machine"
                           >
                             <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
                           </Motion.button>
@@ -1084,12 +1090,14 @@ export default function Header() {
                             const machine = user.machines.find(
                               (m) => m.machine_id === e.target.value,
                             );
-                            setSelectedMachine(machine);
-                            localStorage.setItem(
-                              "selectedMachine",
-                              JSON.stringify(machine),
-                            );
-                            window.location.reload();
+                            if (machine) {
+                              setSelectedMachine(machine);
+                              localStorage.setItem(
+                                "selectedMachine",
+                                JSON.stringify(machine),
+                              );
+                              window.location.reload();
+                            }
                           }}
                           className="w-full px-4 py-3 rounded-xl bg-white border border-[#3A4D39]/20
                                    text-[#3A4D39] font-medium text-sm

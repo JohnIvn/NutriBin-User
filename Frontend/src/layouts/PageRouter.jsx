@@ -23,6 +23,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import EmailVerification from "@/pages/EmailVerification";
 import { ChangePassword } from "@/pages/ChangePassword";
 import { useUser } from "@/contexts/UserContextHook";
+import DataScience from "@/pages/DataScience";
 
 function FallbackRoute() {
   const { user } = useUser();
@@ -33,7 +34,7 @@ export default function PageRouter() {
   return (
     <Routes>
       <Route path="*" element={<FallbackRoute />} />
-      <Route path="/" element={<Navigate replace to={"/home"} />} />
+      <Route path="/" element={<FallbackRoute />} />
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -71,6 +72,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <Cameras />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/data"
+        element={
+          <ProtectedRoute>
+            <DataScience />
           </ProtectedRoute>
         }
       />

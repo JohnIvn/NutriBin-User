@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { MachineNotification } from './machine-notifications.interface';
+import { MachineNotificationsGateway } from './machine-notifications.gateway';
 
 @Injectable()
 export class MachineNotificationsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly gateway: MachineNotificationsGateway,
+  ) {}
 
   async getNotificationsByMachine(
     machine_id: string,
