@@ -141,14 +141,14 @@ export default function Modules() {
               <ModuleCard
                 title="ESP32 Grinder"
                 icon={Cpu}
-                offline={modules?.esp32_grinder}
+                offline={modules?.esp32_sensors}
                 subtext="Processing Unit"
                 onClick={requestRepair}
               />
               <ModuleCard
                 title="ESP32 Exhaust"
                 icon={Cpu}
-                offline={modules?.esp32_exhaust}
+                offline={modules?.esp32_servo}
                 subtext="Ventilation Control"
                 onClick={requestRepair}
               />
@@ -185,8 +185,8 @@ export default function Modules() {
               <ModuleCard
                 title="Servo Diverter"
                 icon={Cog}
-                offline={modules?.servo_diverter}
-                subtext="Material Routing"
+                offline={modules?.servo_mixer}
+                subtext="Mixing of materials"
                 onClick={requestRepair}
               />
               <ModuleCard
@@ -199,22 +199,15 @@ export default function Modules() {
               <ModuleCard
                 title="Mixer Motor"
                 icon={Cog}
-                offline={modules?.mixer}
+                offline={modules?.servo_mixer}
                 subtext="Mixing System"
-                onClick={requestRepair}
-              />
-              <ModuleCard
-                title="Exhaust Fan (In)"
-                icon={Fan}
-                offline={modules?.exhaust_fan_in}
-                subtext="Air Intake"
                 onClick={requestRepair}
               />
               <ModuleCard
                 title="Exhaust Fan (Out)"
                 icon={Fan}
-                offline={modules?.exhaust_fan_out}
-                subtext="Air Exhaust"
+                offline={modules?.exhaust}
+                subtext="Air Out"
                 onClick={requestRepair}
               />
             </div>
@@ -236,15 +229,8 @@ export default function Modules() {
               <ModuleCard
                 title="Camera 1"
                 icon={Eye}
-                offline={modules?.camera_1}
+                offline={modules?.camera}
                 subtext="Input Monitoring"
-                onClick={requestRepair}
-              />
-              <ModuleCard
-                title="Camera 2"
-                icon={Eye}
-                offline={modules?.camera_2}
-                subtext="Processing View"
                 onClick={requestRepair}
               />
               <ModuleCard
@@ -255,13 +241,6 @@ export default function Modules() {
                 onClick={requestRepair}
               />
               <ModuleCard
-                title="Temperature Sensor"
-                icon={Thermometer}
-                offline={modules?.temperature}
-                subtext="Internal Probe"
-                onClick={requestRepair}
-              />
-              <ModuleCard
                 title="Methane Sensor"
                 icon={Wind}
                 offline={modules?.methane}
@@ -269,24 +248,31 @@ export default function Modules() {
                 onClick={requestRepair}
               />
               <ModuleCard
-                title="Nitrogen Sensor"
-                icon={Activity}
-                offline={modules?.nitrogen}
-                subtext="Soil Analysis"
+                title="Carbon Monoxide Sensor"
+                icon={AlertTriangle}
+                offline={modules?.carbon_monoxide}
+                subtext="MQ-7 CO Sensor"
                 onClick={requestRepair}
               />
               <ModuleCard
-                title="Water Level"
-                icon={Droplets}
-                offline={modules?.water}
-                subtext="Tank Monitoring"
+                title="Air Quality Sensor"
+                icon={Wind}
+                offline={modules?.air_quality}
+                subtext="MQ-135"
+                onClick={requestRepair}
+              />
+              <ModuleCard
+                title="Combustible Gas Sensor"
+                icon={Zap}
+                offline={modules?.combustible_gasses}
+                subtext="MQ-2 Sensor"
                 onClick={requestRepair}
               />
               <ModuleCard
                 title="NPK Sensor"
                 icon={Activity}
                 offline={modules?.npk}
-                subtext="Nutrient Detection"
+                subtext="Soil Analysis"
                 onClick={requestRepair}
               />
               <ModuleCard
@@ -294,6 +280,27 @@ export default function Modules() {
                 icon={Droplets}
                 offline={modules?.moisture}
                 subtext="Capacitive Probe"
+                onClick={requestRepair}
+              />
+              <ModuleCard
+                title="Reed Switch Sensor"
+                icon={CheckCircle2}
+                offline={modules?.reed}
+                subtext="Door / Lid Detection"
+                onClick={requestRepair}
+              />
+              <ModuleCard
+                title="Ultrasonic Sensor"
+                icon={Activity}
+                offline={modules?.ultrasonic}
+                subtext="Distance Measurement"
+                onClick={requestRepair}
+              />
+              <ModuleCard
+                title="Weight Sensor"
+                icon={Activity}
+                offline={modules?.weight}
+                subtext="Load Cell"
                 onClick={requestRepair}
               />
             </div>

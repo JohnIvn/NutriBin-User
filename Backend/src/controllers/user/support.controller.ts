@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
@@ -5,8 +6,6 @@ import {
   Param,
   Body,
   BadRequestException,
-  UseGuards,
-  Req,
 } from '@nestjs/common';
 import { SupportService } from '../../service/support/support.service';
 
