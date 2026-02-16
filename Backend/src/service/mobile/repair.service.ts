@@ -28,4 +28,26 @@ export class RepairService {
       throw new InternalServerErrorException('Failed to create repair request');
     }
   }
+
+  async getRepairRequests(userId: string) {
+    const client = this.databaseService.getClient();
+    try {
+      const result = await client.query(
+        `SELECT r.*, ms.serial_number 
+         FROM repair r
+         LEFT JOIN machine_serial ms ON r.machine_id = ms.machine_serial_id
+         WHERE r.user_id = $1 
+         ORDER BY r.date_created DESC`,
+        [userId],
+      );
+      return {
+        ok: true,
+        data: result.rows,
+        message: 'Successfully fetched repair requests',
+      };
+    } catch (error) {
+      console.error('Error fetching repair requests:', error);
+      throw new InternalServerErrorException('Failed to fetch repair requests');
+    }
+  }
 }

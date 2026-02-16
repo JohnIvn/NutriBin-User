@@ -1,4 +1,11 @@
-import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  BadRequestException,
+  Get,
+  Param,
+} from '@nestjs/common';
 import { RepairService } from '../../service/mobile/repair.service';
 
 @Controller('mobile/repair')
@@ -21,5 +28,13 @@ export class RepairController {
       userId,
       description,
     );
+  }
+
+  @Get(':userId')
+  async getRepairRequests(@Param('userId') userId: string) {
+    if (!userId) {
+      throw new BadRequestException('userId is required');
+    }
+    return this.repairService.getRepairRequests(userId);
   }
 }
