@@ -28,6 +28,7 @@ import { MachineNotificationsModule } from './service/notification/machine-notif
 import { DataScienceController } from './controllers/stats/data-science.controller';
 import { SupportController } from './controllers/user/support.controller';
 import { HardwareController } from './controllers/mobile/hardware.controller';
+import { RecommendedCropsController } from './controllers/mobile/recommended-crops.controller';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { HardwareController } from './controllers/mobile/hardware.controller';
     DataScienceController,
     SupportController,
     HardwareController,
+    RecommendedCropsController,
   ],
   providers: [
     {
