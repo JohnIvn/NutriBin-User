@@ -23,8 +23,10 @@ import { MachineController } from './controllers/machine/machine.controller';
 import { MachineService } from './service/machine/machine.service';
 import { MobileController } from './controllers/mobile/mobile.controller';
 import { MobileService } from './service/mobile/mobile.service';
+import { SupportService } from './service/support/support.service';
 import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
 import { DataScienceController } from './controllers/stats/data-science.controller';
+import { SupportController } from './controllers/user/support.controller';
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { DataScienceController } from './controllers/stats/data-science.controll
     MachineController,
     MobileController,
     DataScienceController,
+    SupportController,
   ],
   providers: [
     {
@@ -67,6 +70,7 @@ import { DataScienceController } from './controllers/stats/data-science.controll
     VideoStreamGateway,
     MachineService,
     MobileService,
+    SupportService,
   ],
 })
 export class AppModule {}

@@ -27,11 +27,12 @@ const NAVIGATION = {
       { name: "Dashboard", href: "/dashboard" },
       { name: "Cameras", href: "/cameras" },
       { name: "Fertilizer", href: "/fertilizer" },
-      { name: "Data Science", href: "/data" }
+      { name: "Data Science", href: "/data" },
     ],
     right: [
       { name: "Modules", href: "/modules" },
       { name: "Logs", href: "/logs" },
+      { name: "Support", href: "/support" },
       { name: "Guide", href: "/guide" },
     ],
   },

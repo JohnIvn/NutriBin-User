@@ -24,6 +24,7 @@ import EmailVerification from "@/pages/EmailVerification";
 import { ChangePassword } from "@/pages/ChangePassword";
 import { useUser } from "@/contexts/UserContextHook";
 import DataScience from "@/pages/DataScience";
+import Support from "@/pages/Support";
 
 function FallbackRoute() {
   const { user } = useUser();
@@ -104,6 +105,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <Logs />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/support"
+        element={
+          <ProtectedRoute>
+            <Support />
           </ProtectedRoute>
         }
       />
