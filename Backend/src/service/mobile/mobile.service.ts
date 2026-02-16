@@ -160,6 +160,24 @@ export class MobileService {
       }
 
       const machineData = result.rows[0];
+
+      // Invert reed_switch logic: true/1/t means CLOSED/SECURE (Online), false/0/f means OPEN/WARNING (Offline)
+      // Actually, based on previous prompt: if db is true then false (Offline), if db is false then true (Online)
+      const invertValue = (val: any) => {
+        if (val === null || val === undefined) return null;
+        const isTruthy =
+          val === true ||
+          val === 1 ||
+          String(val).toLowerCase() === 'true' ||
+          String(val).toLowerCase() === '1' ||
+          String(val).toLowerCase() === 't';
+        return !isTruthy;
+      };
+
+      if (machineData) {
+        machineData.reed_switch = invertValue(machineData.reed_switch);
+      }
+
       return {
         ok: true,
         data: machineData,

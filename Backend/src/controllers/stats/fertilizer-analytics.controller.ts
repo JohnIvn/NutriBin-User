@@ -28,6 +28,17 @@ type FertilizerAnalyticsRow = {
 };
 
 function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
+  const invertValue = (val: any) => {
+    if (val === null || val === undefined) return null;
+    const isTruthy =
+      val === true ||
+      val === 1 ||
+      String(val).toLowerCase() === 'true' ||
+      String(val).toLowerCase() === '1' ||
+      String(val).toLowerCase() === 't';
+    return !isTruthy;
+  };
+
   return {
     id: row.fertilizer_analytics_id,
     nitrogen: row.nitrogen,
@@ -42,7 +53,7 @@ function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
     carbon_monoxide: row.carbon_monoxide,
     combustible_gases: row.combustible_gases,
     weight_kg: row.weight_kg,
-    reed_switch: row.reed_switch,
+    reed_switch: invertValue(row.reed_switch),
     date_created: row.date_created,
   };
 }
