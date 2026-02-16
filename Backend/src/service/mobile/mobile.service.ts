@@ -20,6 +20,31 @@ type MachineRow = {
   date_created: string;
 };
 
+type FertilizerAnalyticsRow = {
+  nitrogen: string | null;
+  phosphorus: string | null;
+  potassium: string | null;
+  temperature: string | null;
+  ph: string | null;
+  humidity: string | null;
+  moisture: string | null;
+  weight_kg: string | null;
+  reed_switch: any;
+  methane: string | null;
+  air_quality: string | null;
+  carbon_monoxide: string | null;
+  combustible_gases: string | null;
+};
+
+type NotificationRow = {
+  header: string;
+  subheader: string;
+  type: string;
+  description: string;
+  date: string;
+  resolved: boolean;
+};
+
 @Injectable()
 export class MobileService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -136,7 +161,7 @@ export class MobileService {
         return { ok: false, message: 'Customer ID is required' };
       }
 
-      const result = await client.query<MachineRow>(
+      const result = await client.query<FertilizerAnalyticsRow>(
         `
   SELECT nitrogen, phosphorus, potassium, 
          temperature, ph, humidity, moisture, weight_kg, reed_switch,
@@ -203,7 +228,7 @@ export class MobileService {
         return { ok: false, message: 'Customer ID is required' };
       }
 
-      const result = await client.query<MachineRow>(
+      const result = await client.query<NotificationRow>(
         `
   SELECT header, subheader, type, description, date, resolved
   FROM machine_notifications mn
