@@ -36,29 +36,43 @@ type MachineAnalyticsRow = {
 };
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
+  const invert = (val: any) => {
+    if (val === null || val === undefined) return null;
+    // Returns true if the value represents a logical false (meaning the module is Online)
+    // Returns false if the value represents a logical true (meaning the module is Offline)
+    const isTruthy =
+      val === true ||
+      val === 1 ||
+      String(val).toLowerCase() === 'true' ||
+      String(val).toLowerCase() === 't' ||
+      String(val).toLowerCase() === '1';
+
+    return !isTruthy;
+  };
+
   return {
     id: row.machine_id,
     modules: {
-      arduino_q: row.c1 === null ? null : !row.c1,
-      esp32_filter: row.c2 === null ? null : !row.c2,
-      esp32_sensors: row.c3 === null ? null : !row.c3,
-      esp32_servo: row.c4 === null ? null : !row.c4,
-      camera: row.s1 === null ? null : !row.s1,
-      humidity: row.s2 === null ? null : !row.s2,
-      methane: row.s3 === null ? null : !row.s3,
-      carbon_monoxide: row.s4 === null ? null : !row.s4,
-      air_quality: row.s5 === null ? null : !row.s5,
-      combustible_gasses: row.s6 === null ? null : !row.s6,
-      npk: row.s7 === null ? null : !row.s7,
-      moisture: row.s8 === null ? null : !row.s8,
-      reed: row.s9 === null ? null : !row.s9,
-      ultrasonic: row.s10 === null ? null : !row.s10,
-      weight: row.s11 === null ? null : !row.s11,
-      servo_a: row.m1 === null ? null : !row.m1,
-      servo_b: row.m2 === null ? null : !row.m2,
-      servo_mixer: row.m3 === null ? null : !row.m3,
-      grinder: row.m4 === null ? null : !row.m4,
-      exhaust: row.m5 === null ? null : !row.m5,
+      arduino_q: invert(row.c1),
+      esp32_filter: invert(row.c2),
+      esp32_sensors: invert(row.c3),
+      esp32_servo: invert(row.c4),
+      camera: invert(row.s1),
+      humidity: invert(row.s2),
+      methane: invert(row.s3),
+      carbon_monoxide: invert(row.s4),
+      air_quality: invert(row.s5),
+      combustible_gasses: invert(row.s6),
+      npk: invert(row.s7),
+      moisture: invert(row.s8),
+      reed: invert(row.s9),
+      ultrasonic: invert(row.s10),
+      weight: invert(row.s11),
+      servo_a: invert(row.m1),
+      servo_b: invert(row.m2),
+      servo_mixer: invert(row.m3),
+      grinder: invert(row.m4),
+      exhaust: invert(row.m5),
     },
     date_created: row.date_created,
   };
