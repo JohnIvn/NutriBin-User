@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -17,17 +17,17 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --radius: 0.625rem;
-  --background: #FFA630;
-  --foreground: #CD5C08;
+  --background: #faf9f6;
+  --foreground: #3a4d39;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.97 0 0);
-  --primary-foreground: oklch(100% 0.00011 271.152);
-  --secondary: #CD5C08;
-  --secondary-foreground: #FFA630;
-  --muted: oklch(0.97 0 0);
+  --primary: #4f6f52;
+  --primary-foreground: #faf9f6;
+  --secondary: #739072;
+  --secondary-foreground: #faf9f6;
+  --muted: #f3f4f6;
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
