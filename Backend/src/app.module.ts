@@ -23,6 +23,7 @@ import { MachineController } from './controllers/machine/machine.controller';
 import { MachineService } from './service/machine/machine.service';
 import { MobileController } from './controllers/mobile/mobile.controller';
 import { MobileService } from './service/mobile/mobile.service';
+import { RepairService } from './service/mobile/repair.service';
 import { SupportService } from './service/support/support.service';
 import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
 import { DataScienceService } from './service/data-science/data-science.service';
@@ -30,6 +31,7 @@ import { DataScienceController } from './controllers/stats/data-science.controll
 import { SupportController } from './controllers/user/support.controller';
 import { HardwareController } from './controllers/mobile/hardware.controller';
 import { RecommendedCropsController } from './controllers/mobile/recommended-crops.controller';
+import { RepairController } from './controllers/mobile/repair.controller';
 
 @Module({
   imports: [
@@ -61,6 +63,7 @@ import { RecommendedCropsController } from './controllers/mobile/recommended-cro
     SupportController,
     HardwareController,
     RecommendedCropsController,
+    RepairController,
   ],
   providers: [
     {
@@ -75,6 +78,7 @@ import { RecommendedCropsController } from './controllers/mobile/recommended-cro
     VideoStreamGateway,
     MachineService,
     MobileService,
+    RepairService,
     SupportService,
     DataScienceService,
   ],
