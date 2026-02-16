@@ -180,7 +180,7 @@ export default function Support() {
         );
       case "in-progress":
         return (
-          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+          <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100">
             Under Review
           </Badge>
         );
@@ -198,7 +198,7 @@ export default function Support() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex w-full h-[calc(100vh-80px)] overflow-hidden bg-white">
       {/* LEFT SIDEBAR - MY TICKETS */}
       <div className="w-[350px] border-r border-gray-100 flex flex-col bg-slate-50/30">
         <div className="p-4 border-b border-gray-100 space-y-4 bg-white">
@@ -213,11 +213,17 @@ export default function Support() {
                   <Plus className="w-4 h-4 mr-1" /> New Ticket
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[500px] bg-white border-0 shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle>Need help?</DialogTitle>
-                  <DialogDescription>
-                    Submit a ticket and our team will get back to you.
+                  <div className="w-12 h-12 rounded-2xl bg-[#4F6F52]/10 flex items-center justify-center text-[#4F6F52] mb-4">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <DialogTitle className="text-2xl font-black text-[#3A4D39]">
+                    Need some help?
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-500 font-medium">
+                    Our support team is ready to assist you. Fill out the
+                    details below and we'll get back to you shortly.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -370,7 +376,7 @@ export default function Support() {
             </div>
 
             <div
-              className="flex-1 bg-[#FDFCF9] overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar"
+              className="flex-1 bg-slate-50/50 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar"
               ref={scrollRef}
             >
               {/* ORIGINAL DESCRIPTION */}
