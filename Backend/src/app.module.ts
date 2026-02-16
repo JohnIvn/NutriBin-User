@@ -25,6 +25,7 @@ import { MobileController } from './controllers/mobile/mobile.controller';
 import { MobileService } from './service/mobile/mobile.service';
 import { SupportService } from './service/support/support.service';
 import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
+import { DataScienceService } from './service/data-science/data-science.service';
 import { DataScienceController } from './controllers/stats/data-science.controller';
 import { SupportController } from './controllers/user/support.controller';
 import { HardwareController } from './controllers/mobile/hardware.controller';
@@ -75,6 +76,7 @@ import { RecommendedCropsController } from './controllers/mobile/recommended-cro
     MachineService,
     MobileService,
     SupportService,
+    DataScienceService,
   ],
 })
 export class AppModule {}

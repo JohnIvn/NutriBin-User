@@ -4,47 +4,33 @@ import {
   InternalServerErrorException,
   Param,
 } from '@nestjs/common';
-import { DatabaseService } from 'src/service/database/database.service';
+import { DatabaseService } from '../../service/database/database.service';
+import { DataScienceService } from '../../service/data-science/data-science.service';
 
 @Controller('mobile/recommendations')
 export class RecommendedCropsController {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly dataScienceService: DataScienceService,
+  ) {}
 
   @Get(':machineId')
   async getRecommendations(@Param('machineId') machineId: string) {
-    const client = this.databaseService.getClient();
     try {
-      const result = await client.query(
-        `
-        SELECT 
-          recommended_plants_1,
-          recommended_plants_2,
-          recommended_plants_3,
-          recommended_plants_4,
-          recommended_plants_5
-        FROM data_science 
-        WHERE machine_id = $1 
-        ORDER BY date_created DESC 
-        LIMIT 1
-      `,
-        [machineId],
-      );
-
-      if (result.rows.length === 0) {
-        return {
-          ok: true,
-          recommendations: [],
-        };
+      if (!machineId) {
+        return { ok: false, message: 'Machine ID is required' };
       }
 
-      const row = result.rows[0];
-      const recommendations = [
-        row.recommended_plants_1,
-        row.recommended_plants_2,
-        row.recommended_plants_3,
-        row.recommended_plants_4,
-        row.recommended_plants_5,
-      ].filter((plant) => plant !== null);
+      // Always calculate on the fly to ensure data is "changing" with sensors
+      // We can still try to get from data_science table first if you want,
+      // but calculating from latest fertilizer_analytics is more "live".
+      const recommendations =
+        await this.dataScienceService.calculateRecommendations(machineId);
+
+      // Optionally update the data_science table here to keep it in sync
+      if (recommendations.length > 0) {
+        // ... could add logic to save to data_science table here if wanted ...
+      }
 
       return {
         ok: true,
@@ -52,7 +38,11 @@ export class RecommendedCropsController {
       };
     } catch (error) {
       console.error('Error fetching mobile recommendations:', error);
-      throw new InternalServerErrorException('Failed to fetch recommendations');
+      return {
+        ok: false,
+        recommendations: [],
+        message: 'Failed to fetch recommendations',
+      };
     }
   }
 }

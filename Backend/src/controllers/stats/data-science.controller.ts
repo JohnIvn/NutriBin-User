@@ -6,6 +6,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { DatabaseService } from 'src/service/database/database.service';
+import { DataScienceService } from 'src/service/data-science/data-science.service';
 
 interface MetadataRow {
   total_machines: string;
@@ -39,7 +40,10 @@ interface AverageFertilizerRow {
 
 @Controller('data-science')
 export class DataScienceController {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly dataScienceService: DataScienceService,
+  ) {}
 
   @Get('machines/:customerId')
   async getMachines(@Param('customerId') customerId: string) {
