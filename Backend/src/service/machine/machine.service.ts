@@ -98,8 +98,51 @@ export class MachineService {
       console.error(err);
       return {
         ok: false,
-        error: 'Internal server error',
+        error: 'Failed to add machine',
       };
     }
+  }
+
+  async getHardwareStatus(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query(
+        `
+        SELECT
+          c1, c2, c3, c4, c5,
+          s1, s2, s3, s4, s5, s6, s7, s8, s9,
+          m1, m2, m3, m4, m5, m6, m7
+        FROM machines
+        WHERE machine_id = $1
+        ORDER BY date_created DESC
+        LIMIT 1
+        `,
+        [machineId],
+      );
+
+      if (!result.rowCount) {
+        return { ok: false, message: 'Machine not found' };
+      }
+
+      return {
+        ok: true,
+        data: result.rows[0],
+      };
+    } catch (err) {
+      console.error('Error fetching hardware status:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
+  async restartMachine(machineId: string) {
+    // In a real scenario, this would send a command to the machine via MQTT or similar
+    // For now, we'll simulate success and maybe log it
+    console.log(`Restart command initiated for machine: ${machineId}`);
+
+    return {
+      ok: true,
+      message: 'Restart command initiated successfully',
+    };
   }
 }

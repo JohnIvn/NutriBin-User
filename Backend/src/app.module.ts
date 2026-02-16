@@ -27,6 +27,7 @@ import { SupportService } from './service/support/support.service';
 import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
 import { DataScienceController } from './controllers/stats/data-science.controller';
 import { SupportController } from './controllers/user/support.controller';
+import { HardwareController } from './controllers/hardware/hardware.controller';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { SupportController } from './controllers/user/support.controller';
     MobileController,
     DataScienceController,
     SupportController,
+    HardwareController,
   ],
   providers: [
     {
