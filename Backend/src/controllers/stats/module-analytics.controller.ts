@@ -17,7 +17,6 @@ type MachineAnalyticsRow = {
   c2: boolean | null;
   c3: boolean | null;
   c4: boolean | null;
-  c5: boolean | null;
   s1: boolean | null;
   s2: boolean | null;
   s3: boolean | null;
@@ -27,13 +26,13 @@ type MachineAnalyticsRow = {
   s7: boolean | null;
   s8: boolean | null;
   s9: boolean | null;
+  s10: boolean | null;
+  s11: boolean | null;
   m1: boolean | null;
   m2: boolean | null;
   m3: boolean | null;
   m4: boolean | null;
   m5: boolean | null;
-  m6: boolean | null;
-  m7: boolean | null;
   date_created: string;
 };
 
@@ -43,24 +42,24 @@ function mapMachineAnalytics(row: MachineAnalyticsRow) {
     modules: {
       arduino_q: row.c1,
       esp32_filter: row.c2,
-      esp32_grinder: row.c4,
-      esp32_exhaust: row.c5,
-      camera_1: row.s1,
-      camera_2: row.s2,
-      humidity: row.s3,
-      temperature: row.s4,
-      methane: row.s5,
-      nitrogen: row.s6,
-      water: row.s7,
-      npk: row.s8,
-      moisture: row.s9,
+      esp32_sensors: row.c3,
+      esp32_servo: row.c4,
+      camera: row.s1,
+      humidity: row.s2,
+      methane: row.s3,
+      carbon_monoxide: row.s4,
+      air_quality: row.s5,
+      combustible_gasses: row.s6,
+      npk: row.s7,
+      moisture: row.s8,
+      reed: row.s9,
+      ultrasonic: row.s10,
+      weight: row.s11,
       servo_a: row.m1,
       servo_b: row.m2,
-      servo_diverter: row.m3,
+      servo_mixer: row.m3,
       grinder: row.m4,
-      mixer: row.m5,
-      exhaust_fan_in: row.m6,
-      exhaust_fan_out: row.m7,
+      exhaust: row.m5,
     },
     date_created: row.date_created,
   };
@@ -96,14 +95,14 @@ export class ModuleAnalyticsController {
           ma.s7,
           ma.s8,
           ma.s9,
+          ma.s10,
+          ma.s11,
           ma.m1,
           ma.m1,
           ma.m2,
           ma.m3,
           ma.m4,
           ma.m5,
-          ma.m6,
-          ma.m7,
           ma.date_created
         FROM machines ma
         WHERE ma.machine_id = $1

@@ -379,6 +379,12 @@ export default function Support() {
               className="flex-1 bg-slate-50/50 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar"
               ref={scrollRef}
             >
+              {messagesLoading && (
+                <div className="text-center text-sm text-gray-400">
+                  Loading messages...
+                </div>
+              )}
+
               {/* ORIGINAL DESCRIPTION */}
               <div className="flex gap-3 justify-start max-w-[85%]">
                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -398,6 +404,7 @@ export default function Support() {
 
               {messages.map((msg, idx) => {
                 const isMe = msg.sender_type === "customer";
+
                 return (
                   <div
                     key={msg.message_id || idx}

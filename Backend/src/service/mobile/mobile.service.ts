@@ -58,7 +58,7 @@ export class MobileService {
       throw err;
     }
   }
-  
+
   async registerMachine(machineSerial: string, customerId: string) {
     try {
       const serial = machineSerial.trim();
