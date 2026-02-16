@@ -36,29 +36,43 @@ type MachineAnalyticsRow = {
 };
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
+  const invertStatus = (val: any) => {
+    if (val === null || val === undefined) return null;
+    // Database value true means there is a fault/issue -> App should show Offline (false)
+    // Database value false means everything is OK -> App should show Online (true)
+    const isTruthy =
+      val === true ||
+      val === 1 ||
+      String(val).toLowerCase() === 'true' ||
+      String(val).toLowerCase() === '1' ||
+      String(val).toLowerCase() === 't';
+
+    return !isTruthy;
+  };
+
   return {
     id: row.machine_id,
     modules: {
-      arduino_q: row.c1,
-      esp32_filter: row.c2,
-      esp32_sensors: row.c3,
-      esp32_servo: row.c4,
-      camera: row.s1,
-      humidity: row.s2,
-      methane: row.s3,
-      carbon_monoxide: row.s4,
-      air_quality: row.s5,
-      combustible_gasses: row.s6,
-      npk: row.s7,
-      moisture: row.s8,
-      reed: row.s9,
-      ultrasonic: row.s10,
-      weight: row.s11,
-      servo_a: row.m1,
-      servo_b: row.m2,
-      servo_mixer: row.m3,
-      grinder: row.m4,
-      exhaust: row.m5,
+      arduino_q: invertStatus(row.c1),
+      esp32_filter: invertStatus(row.c2),
+      esp32_sensors: invertStatus(row.c3),
+      esp32_servo: invertStatus(row.c4),
+      camera: invertStatus(row.s1),
+      humidity: invertStatus(row.s2),
+      methane: invertStatus(row.s3),
+      carbon_monoxide: invertStatus(row.s4),
+      air_quality: invertStatus(row.s5),
+      combustible_gasses: invertStatus(row.s6),
+      npk: invertStatus(row.s7),
+      moisture: invertStatus(row.s8),
+      reed: invertStatus(row.s9),
+      ultrasonic: invertStatus(row.s10),
+      weight: invertStatus(row.s11),
+      servo_a: invertStatus(row.m1),
+      servo_b: invertStatus(row.m2),
+      servo_mixer: invertStatus(row.m3),
+      grinder: invertStatus(row.m4),
+      exhaust: invertStatus(row.m5),
     },
     date_created: row.date_created,
   };
