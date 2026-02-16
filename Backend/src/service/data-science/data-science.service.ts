@@ -68,8 +68,7 @@ export class DataScienceService {
         };
       })
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map((r) => r.name);
+      .slice(0, 5);
 
     return recommendations;
   }
