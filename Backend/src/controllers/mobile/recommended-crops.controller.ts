@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  InternalServerErrorException,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { DatabaseService } from '../../service/database/database.service';
 import { DataScienceService } from '../../service/data-science/data-science.service';
 

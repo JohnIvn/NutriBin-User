@@ -28,7 +28,7 @@ import Support from "@/pages/Support";
 
 function FallbackRoute() {
   const { user } = useUser();
-  return <Navigate replace to={user ? "/dashboard" : "/login"} />;
+  return <Navigate replace to={user ? "/dashboard" : "/home"} />;
 }
 
 export default function PageRouter() {

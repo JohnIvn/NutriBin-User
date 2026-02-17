@@ -25,17 +25,18 @@ import { MobileController } from './controllers/mobile/mobile.controller';
 import { MobileService } from './service/mobile/mobile.service';
 import { RepairService } from './service/mobile/repair.service';
 import { SupportService } from './service/support/support.service';
-import { MachineNotificationsModule } from './service/notification/machine-notifications.module';
 import { DataScienceService } from './service/data-science/data-science.service';
 import { DataScienceController } from './controllers/stats/data-science.controller';
 import { SupportController } from './controllers/user/support.controller';
 import { HardwareController } from './controllers/mobile/hardware.controller';
 import { RecommendedCropsController } from './controllers/mobile/recommended-crops.controller';
 import { RepairController } from './controllers/mobile/repair.controller';
+import { MachineNotificationsGateway } from './service/notification/machine-notifications.gateway';
+import { MachineNotificationsController } from './controllers/stats/machine-notifications.controller';
+import { SupportGateway } from './service/support/support.gateway';
 
 @Module({
   imports: [
-    MachineNotificationsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -64,6 +65,7 @@ import { RepairController } from './controllers/mobile/repair.controller';
     HardwareController,
     RecommendedCropsController,
     RepairController,
+    MachineNotificationsController,
   ],
   providers: [
     {
@@ -76,6 +78,8 @@ import { RepairController } from './controllers/mobile/repair.controller';
     BrevoService,
     IprogSmsService,
     VideoStreamGateway,
+    MachineNotificationsGateway,
+    SupportGateway,
     MachineService,
     MobileService,
     RepairService,

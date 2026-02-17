@@ -5,6 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import {
+  SupportMessage,
+  SupportTicket,
+} from 'src/controllers/user/support.controller';
 
 @Injectable()
 export class SupportService {
@@ -15,7 +19,7 @@ export class SupportService {
     subject: string,
     description: string,
     priority: string = 'medium',
-  ) {
+  ): Promise<SupportTicket> {
     const client = this.databaseService.getClient();
     try {
       const result = await client.query(
@@ -31,7 +35,7 @@ export class SupportService {
     }
   }
 
-  async getTicketsByCustomer(customerId: string) {
+  async getTicketsByCustomer(customerId: string): Promise<SupportTicket[]> {
     const client = this.databaseService.getClient();
     try {
       const result = await client.query(
@@ -45,7 +49,10 @@ export class SupportService {
     }
   }
 
-  async getTicketById(ticketId: string, customerId: string) {
+  async getTicketById(
+    ticketId: string,
+    customerId: string,
+  ): Promise<SupportTicket | null> {
     const client = this.databaseService.getClient();
     try {
       const result = await client.query(
@@ -62,7 +69,11 @@ export class SupportService {
     }
   }
 
-  async addMessage(ticketId: string, senderId: string, message: string) {
+  async addMessage(
+    ticketId: string,
+    senderId: string,
+    message: string,
+  ): Promise<SupportMessage> {
     const client = this.databaseService.getClient();
     try {
       // First verify ticket ownership
@@ -93,7 +104,10 @@ export class SupportService {
     }
   }
 
-  async getMessages(ticketId: string, customerId: string) {
+  async getMessages(
+    ticketId: string,
+    customerId: string,
+  ): Promise<SupportMessage[]> {
     const client = this.databaseService.getClient();
     try {
       // Verify access

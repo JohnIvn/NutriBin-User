@@ -1,30 +1,17 @@
 import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 import {
   MessageSquare,
   Plus,
   Send,
   Shield,
   History,
-  ChevronRight,
   Sparkles,
   Clock,
-  AlertTriangle,
   CheckCircle,
   XCircle,
-  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Textarea";
-import { Badge } from "@/components/ui/Badge";
 import {
   Dialog,
   DialogTrigger,
@@ -32,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/Dialog";
 import {
   Select,
@@ -43,52 +29,59 @@ import {
 } from "@/components/ui/Select";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
+import getBaseUrl from "@/utils/GetBaseUrl";
+
+// ── Palette (all derived from #fbf1df) ──────────────────────────────
+// bg:        #fbf1df  (main warm cream)
+// surface:   #f5e8cc  (slightly deeper parchment — sidebar)
+// border:    #e8d9be  (warm tan divider)
+// muted:     #c4aa82  (mid-tone warm brown)
+// subtle:    #a8906a  (deeper warm text)
+// strong:    #5c3d1e  (dark walnut — headings, selected)
+// accent:    #7c5c38  (warm brown — buttons, active)
+// accent-lt: #e8d4b0  (light accent fill)
 
 const statusConfig = {
   open: {
     label: "Open",
-    icon: Clock,
-    className: "bg-sky-50 text-sky-600 border border-sky-100",
-    dot: "bg-sky-400",
+    className: "bg-amber-100 text-amber-700 border border-amber-200",
+    dot: "bg-amber-500",
   },
   "in-progress": {
     label: "In Review",
-    icon: Sparkles,
-    className: "bg-violet-50 text-violet-600 border border-violet-100",
-    dot: "bg-violet-400",
+    className: "bg-violet-100 text-violet-700 border border-violet-200",
+    dot: "bg-violet-500",
   },
   resolved: {
     label: "Resolved",
-    icon: CheckCircle,
-    className: "bg-emerald-50 text-emerald-600 border border-emerald-100",
-    dot: "bg-emerald-400",
+    className: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    dot: "bg-emerald-500",
   },
   closed: {
     label: "Closed",
-    icon: XCircle,
-    className: "bg-gray-100 text-gray-500 border border-gray-200",
-    dot: "bg-gray-400",
+    className: "bg-stone-200 text-stone-500 border border-stone-300",
+    dot: "bg-stone-400",
   },
 };
 
 const priorityConfig = {
-  low: { label: "Low", color: "text-slate-500", bar: "bg-slate-300" },
-  medium: { label: "Medium", color: "text-amber-600", bar: "bg-amber-400" },
-  high: { label: "High", color: "text-orange-600", bar: "bg-orange-400" },
-  urgent: { label: "Urgent", color: "text-red-600", bar: "bg-red-500" },
+  low: { label: "Low", color: "text-stone-400" },
+  medium: { label: "Medium", color: "text-amber-600" },
+  high: { label: "High", color: "text-orange-600" },
+  urgent: { label: "Urgent", color: "text-red-600" },
 };
 
 function StatusBadge({ status }) {
   const cfg = statusConfig[status] || {
     label: status,
-    className: "bg-gray-100 text-gray-500",
-    dot: "bg-gray-400",
+    className: "bg-stone-100 text-stone-500 border border-stone-200",
+    dot: "bg-stone-400",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide ${cfg.className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-[10px] font-semibold tracking-wider uppercase ${cfg.className}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
       {cfg.label}
     </span>
   );
@@ -99,31 +92,35 @@ function TicketCard({ ticket, isSelected, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-3.5 border-b border-gray-50 transition-all duration-200 group relative ${
-        isSelected ? "bg-white" : "hover:bg-white/60"
+      className={`w-full text-left px-5 py-4 border-b border-[#e8d9be] transition-all duration-150 group relative ${
+        isSelected ? "bg-[#fbf1df]" : "hover:bg-[#f8edd4]"
       }`}
     >
       {isSelected && (
-        <span className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#4F6F52] to-[#6fa372] rounded-r-full" />
+        <span className="absolute left-0 top-0 h-full w-[3px] bg-[#7c5c38] rounded-r-sm" />
       )}
       <div className="flex items-start justify-between gap-2 mb-2">
         <p
-          className={`text-[13px] font-semibold leading-snug truncate pr-1 transition-colors ${isSelected ? "text-[#3A4D39]" : "text-gray-700 group-hover:text-gray-900"}`}
+          className={`text-[13px] font-semibold leading-snug truncate pr-1 transition-colors ${
+            isSelected
+              ? "text-[#5c3d1e]"
+              : "text-[#7c6248] group-hover:text-[#5c3d1e]"
+          }`}
         >
           {ticket.subject}
         </p>
         <StatusBadge status={ticket.status} />
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-gray-400 font-mono">
+        <span className="text-[10px] text-[#c4aa82] font-mono tracking-wider">
           #{ticket.ticket_id.slice(-6).toUpperCase()}
         </span>
         <div className="flex items-center gap-1.5">
-          <span className={`text-[11px] font-medium ${pri.color}`}>
+          <span className={`text-[10px] font-semibold ${pri.color}`}>
             {pri.label}
           </span>
-          <span className="text-[11px] text-gray-300">·</span>
-          <span className="text-[11px] text-gray-400">
+          <span className="text-[#dbc9a8]">·</span>
+          <span className="text-[10px] text-[#c4aa82]">
             {new Date(ticket.date_created).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -137,14 +134,11 @@ function TicketCard({ ticket, isSelected, onClick }) {
 
 function MessageBubble({ msg, user, isInitial }) {
   const isMe = isInitial || msg.sender_type === "customer";
-
   return (
     <div className={`flex gap-3 ${isMe ? "" : "flex-row-reverse"} items-end`}>
       <div
-        className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm ${
-          isMe
-            ? "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600"
-            : "bg-gradient-to-br from-[#4F6F52] to-[#3A5C3D] text-white"
+        className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+          isMe ? "bg-[#e8d9be] text-[#7c5c38]" : "bg-[#7c5c38] text-[#fbf1df]"
         }`}
       >
         {isMe ? (
@@ -154,22 +148,23 @@ function MessageBubble({ msg, user, isInitial }) {
         )}
       </div>
       <div
-        className={`max-w-[78%] space-y-1 ${!isMe ? "items-end flex flex-col" : ""}`}
+        className={`max-w-[76%] space-y-1 ${!isMe ? "items-end flex flex-col" : ""}`}
       >
         <div
           className={`px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap ${
             isMe
-              ? "bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-bl-sm shadow-sm"
-              : "bg-gradient-to-br from-[#4F6F52] to-[#3E5941] text-white rounded-2xl rounded-br-sm shadow-md shadow-[#4F6F52]/20"
+              ? "bg-white border border-[#e8d9be] text-[#5c3d1e] rounded-2xl rounded-bl-sm shadow-sm"
+              : "bg-[#7c5c38] text-[#fbf1df] rounded-2xl rounded-br-sm shadow-md shadow-[#7c5c38]/15"
           }`}
         >
           {isInitial ? msg.description : msg.message}
         </div>
-        <span className="text-[10px] text-gray-400 px-1">
+        <span className="text-[10px] text-[#c4aa82] px-1">
           {isMe ? (isInitial ? "Original inquiry" : "You") : "Support Team"}
           {!isInitial && msg.date_sent && (
             <>
-              {" · "}
+              {" "}
+              ·{" "}
               {new Date(msg.date_sent).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -198,19 +193,17 @@ export default function Support() {
   });
   const [createLoading, setCreateLoading] = useState(false);
   const scrollRef = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (user?.customer_id) fetchTickets();
   }, [user]);
-
   useEffect(() => {
     if (selectedTicket) fetchMessages(selectedTicket.ticket_id);
   }, [selectedTicket]);
-
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current)
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
   }, [messages]);
 
   async function fetchTickets() {
@@ -224,7 +217,7 @@ export default function Support() {
         if (res.data.length > 0 && !selectedTicket)
           setSelectedTicket(res.data[0]);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load tickets");
     } finally {
       setLoading(false);
@@ -239,7 +232,7 @@ export default function Support() {
       });
       if (res?.data) setMessages(res.data);
     } catch (err) {
-      console.error("Failed to load messages", err);
+      console.error(err);
     } finally {
       setMessagesLoading(false);
     }
@@ -261,41 +254,105 @@ export default function Support() {
         setNewTicket({ subject: "", description: "", priority: "medium" });
         fetchTickets();
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to create ticket");
     } finally {
       setCreateLoading(false);
     }
   };
 
+  // 3. Initialize Socket Connection
+  useEffect(() => {
+    // Replace with your NestJS server URL
+    const baseUrl = getBaseUrl();
+
+    socketRef.current = io(baseUrl, {
+      transports: ["websocket"],
+    });
+
+    socketRef.current.on("connect", () =>
+      console.log("Connected to Support WS"),
+    );
+
+    // 4. Listen for Real-time Messages
+    socketRef.current.on("new_message_received", (newMessage) => {
+      // Only append if it's not from the current user (to avoid duplicates with optimistic UI)
+      // or if it's a message from the Support Team
+      setMessages((prev) => {
+        const exists = prev.find((m) => m.message_id === newMessage.message_id);
+        if (exists) return prev;
+        return [...prev, newMessage];
+      });
+    });
+
+    // 5. Listen for Ticket Status Updates (e.g., agent closes the ticket)
+    socketRef.current.on("ticket_status_updated", (updatedTicket) => {
+      // Update the ticket in the sidebar list
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.ticket_id === updatedTicket.ticket_id ? updatedTicket : t,
+        ),
+      );
+      // Update the selected ticket header if it's the one we are looking at
+      setSelectedTicket((current) =>
+        current?.ticket_id === updatedTicket.ticket_id
+          ? updatedTicket
+          : current,
+      );
+
+      if (updatedTicket.status === "closed") {
+        toast.info("This ticket has been marked as closed.");
+      }
+    });
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+    };
+  }, []);
+
+  // 6. Join the specific Ticket Room whenever the selection changes
+  useEffect(() => {
+    if (selectedTicket && socketRef.current) {
+      socketRef.current.emit("joinTicket", {
+        ticketId: selectedTicket.ticket_id,
+      });
+      fetchMessages(selectedTicket.ticket_id);
+    }
+  }, [selectedTicket]);
+
+  // ... (Keep your fetchTickets, fetchMessages, handleCreateTicket)
+
   const handleSendMessage = async () => {
     if (!replyText.trim() || !selectedTicket) return;
+
+    // Optimistic UI update
+    const optimisticId = `temp-${Date.now()}`;
     const optimistic = {
-      message_id: `temp-${Date.now()}`,
+      message_id: optimisticId,
       sender_type: "customer",
       message: replyText,
       date_sent: new Date().toISOString(),
     };
+
     setMessages((prev) => [...prev, optimistic]);
     setReplyText("");
+
     try {
       const res = await Requests({
         url: `/support/tickets/${selectedTicket.ticket_id}/messages`,
         method: "POST",
         data: { senderId: user.customer_id, message: optimistic.message },
       });
+
+      // Replace optimistic message with real DB message
       if (res?.data) {
         setMessages((prev) =>
-          prev.map((m) =>
-            m.message_id === optimistic.message_id ? res.data : m,
-          ),
+          prev.map((m) => (m.message_id === optimisticId ? res.data : m)),
         );
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to send message");
-      setMessages((prev) =>
-        prev.filter((m) => m.message_id !== optimistic.message_id),
-      );
+      setMessages((prev) => prev.filter((m) => m.message_id !== optimisticId));
     }
   };
 
@@ -304,32 +361,59 @@ export default function Support() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
-        .support-root { font-family: 'DM Sans', sans-serif; }
-        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+        .support-root * { font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .mono         { font-family: 'Geist Mono', ui-monospace, monospace !important; }
+
+        .scrollbar-warm::-webkit-scrollbar       { width: 4px; }
+        .scrollbar-warm::-webkit-scrollbar-track  { background: transparent; }
+        .scrollbar-warm::-webkit-scrollbar-thumb  { background: #dbc9a8; border-radius: 99px; }
+        .scrollbar-warm::-webkit-scrollbar-thumb:hover { background: #c4aa82; }
+
+        .chat-input { caret-color: #7c5c38; }
         .chat-input:focus { outline: none; }
+
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .msg-enter { animation: fadeUp 0.2s ease forwards; }
+        .msg-enter { animation: fadeUp 0.22s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+        @keyframes pulse-warm {
+          0%, 100% { opacity: 0.4; transform: translateY(0); }
+          50%       { opacity: 1;   transform: translateY(-3px); }
+        }
+        .dot-bounce { animation: pulse-warm 1.1s ease-in-out infinite; }
+
+        .skel { background: linear-gradient(90deg, #e8d9be 0%, #f0e4cc 50%, #e8d9be 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Dialog overlay */
+        [data-radix-dialog-overlay] { background: rgba(92,61,30,0.25) !important; backdrop-filter: blur(3px); }
       `}</style>
 
-      <div className="support-root flex w-full h-[calc(100vh-80px)] overflow-hidden bg-gray-50/50">
-        {/* ── LEFT SIDEBAR ── */}
-        <div className="w-[320px] flex-shrink-0 border-r border-gray-100 flex flex-col bg-white">
+      <div
+        className="support-root flex w-full h-[calc(100vh-80px)] overflow-hidden"
+        style={{ background: "#fbf1df" }}
+      >
+        {/* ── SIDEBAR ─────────────────────────────────────────── */}
+        <div
+          className="w-[300px] flex-shrink-0 border-r border-[#e8d9be] flex flex-col"
+          style={{ background: "#f5e8cc" }}
+        >
           {/* Header */}
-          <div className="px-5 pt-5 pb-4 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-0.5">
+          <div className="px-5 pt-6 pb-5 border-b border-[#e8d9be]">
+            <div className="flex items-start justify-between">
               <div>
-                <h1 className="support-serif text-[22px] text-gray-900 leading-tight">
-                  Support
+                <p className="mono text-[10px] font-medium tracking-[0.18em] text-[#c4aa82] uppercase mb-1.5">
+                  Support Center
+                </p>
+                <h1 className="text-[22px] font-semibold text-[#5c3d1e] leading-tight tracking-tight">
+                  Your Tickets
                 </h1>
-                <p className="text-[12px] text-gray-400 font-light mt-0.5">
-                  {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}
+                <p className="text-[11px] text-[#a8906a] mt-1">
+                  {tickets.length} {tickets.length === 1 ? "thread" : "threads"}
                 </p>
               </div>
 
@@ -338,40 +422,41 @@ export default function Support() {
                 onOpenChange={setShowCreateDialog}
               >
                 <DialogTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3A4D39] hover:bg-[#2f3e2e] text-white text-[12px] font-medium transition-all duration-150 shadow-sm shadow-[#3A4D39]/20 active:scale-95">
+                  <button className="mt-1 flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#7c5c38] hover:bg-[#5c3d1e] text-[#fbf1df] text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-95 shadow-md shadow-[#7c5c38]/20">
                     <Plus className="w-3.5 h-3.5" />
                     New
                   </button>
                 </DialogTrigger>
 
-                <DialogContent className="sm:max-w-[480px] bg-white border-0 shadow-2xl rounded-2xl p-0 overflow-hidden">
-                  {/* Dialog gradient accent */}
-                  <div className="h-1 w-full bg-gradient-to-r from-[#4F6F52] via-[#6fa372] to-[#4F6F52]" />
+                {/* ── Create Dialog ── */}
+                <DialogContent
+                  className="sm:max-w-[460px] p-0 overflow-hidden border border-[#e8d9be] rounded-2xl shadow-2xl shadow-[#5c3d1e]/10"
+                  style={{ background: "#fbf1df" }}
+                >
+                  <div className="h-[3px] w-full bg-gradient-to-r from-[#a8906a] via-[#7c5c38] to-[#a8906a]" />
                   <div className="p-7">
-                    <DialogHeader className="mb-5">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#4F6F52]/10 flex items-center justify-center">
-                          <MessageSquare className="w-5 h-5 text-[#4F6F52]" />
-                        </div>
-                        <div>
-                          <DialogTitle className="support-serif text-xl text-gray-900 leading-tight">
-                            New support ticket
-                          </DialogTitle>
-                          <DialogDescription className="text-[12px] text-gray-400 font-light mt-0.5">
-                            We typically respond within 24 hours
-                          </DialogDescription>
-                        </div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-[#e8d9be] flex items-center justify-center">
+                        <MessageSquare className="w-5 h-5 text-[#7c5c38]" />
                       </div>
-                    </DialogHeader>
+                      <div>
+                        <DialogTitle className="text-[17px] font-semibold text-[#5c3d1e] leading-tight">
+                          New support ticket
+                        </DialogTitle>
+                        <DialogDescription className="text-[12px] text-[#a8906a] mt-0.5">
+                          We typically respond within 24 hours
+                        </DialogDescription>
+                      </div>
+                    </div>
 
                     <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-gray-600 uppercase tracking-wide">
+                        <label className="mono text-[10px] font-medium text-[#a8906a] uppercase tracking-[0.12em]">
                           Subject
                         </label>
-                        <Input
+                        <input
                           placeholder="Brief summary of your issue"
-                          className="rounded-xl border-gray-200 bg-gray-50 focus:bg-white text-[13px] transition-colors"
+                          className="w-full rounded-xl border border-[#e8d9be] bg-white focus:border-[#7c5c38] text-[13px] text-[#5c3d1e] placeholder:text-[#c4aa82] px-3.5 py-2.5 transition-all outline-none shadow-sm"
                           value={newTicket.subject}
                           onChange={(e) =>
                             setNewTicket({
@@ -383,13 +468,13 @@ export default function Support() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-gray-600 uppercase tracking-wide">
+                        <label className="mono text-[10px] font-medium text-[#a8906a] uppercase tracking-[0.12em]">
                           Description
                         </label>
-                        <Textarea
-                          placeholder="Describe your issue in detail..."
+                        <textarea
+                          placeholder="Describe your issue in detail…"
                           rows={4}
-                          className="rounded-xl border-gray-200 bg-gray-50 focus:bg-white text-[13px] resize-none transition-colors"
+                          className="w-full rounded-xl border border-[#e8d9be] bg-white focus:border-[#7c5c38] text-[13px] text-[#5c3d1e] placeholder:text-[#c4aa82] px-3.5 py-2.5 transition-all outline-none resize-none shadow-sm"
                           value={newTicket.description}
                           onChange={(e) =>
                             setNewTicket({
@@ -401,7 +486,7 @@ export default function Support() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-gray-600 uppercase tracking-wide">
+                        <label className="mono text-[10px] font-medium text-[#a8906a] uppercase tracking-[0.12em]">
                           Priority
                         </label>
                         <Select
@@ -410,20 +495,27 @@ export default function Support() {
                             setNewTicket({ ...newTicket, priority: v })
                           }
                         >
-                          <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50 text-[13px]">
+                          <SelectTrigger className="rounded-xl border-[#e8d9be] bg-white text-[13px] text-[#5c3d1e] shadow-sm">
                             <SelectValue placeholder="Select priority" />
                           </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl text-[13px]">
+                          <SelectContent
+                            className="rounded-xl border-[#e8d9be] shadow-xl text-[13px]"
+                            style={{ background: "#fbf1df" }}
+                          >
                             {Object.entries(priorityConfig).map(([key, p]) => (
-                              <SelectItem key={key} value={key}>
-                                <span className={`font-medium ${p.color}`}>
+                              <SelectItem
+                                key={key}
+                                value={key}
+                                className="focus:bg-[#f0e4cc]"
+                              >
+                                <span className={`font-semibold ${p.color}`}>
                                   {p.label}
                                 </span>
-                                <span className="text-gray-400 ml-1">
+                                <span className="text-[#a8906a] ml-1.5">
                                   —{" "}
                                   {
                                     {
-                                      low: "minor question or feedback",
+                                      low: "minor / feedback",
                                       medium: "general inquiry",
                                       high: "critical issue",
                                       urgent: "emergency",
@@ -437,21 +529,21 @@ export default function Support() {
                       </div>
                     </div>
 
-                    <DialogFooter className="mt-6 flex gap-2">
+                    <div className="mt-6 flex gap-2.5">
                       <button
-                        className="flex-1 py-2.5 rounded-xl border border-gray-200 text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="flex-1 py-2.5 rounded-xl border border-[#e8d9be] text-[12px] font-semibold text-[#a8906a] hover:bg-[#f0e4cc] transition-colors"
                         onClick={() => setShowCreateDialog(false)}
                       >
                         Cancel
                       </button>
                       <button
-                        className="flex-1 py-2.5 rounded-xl bg-[#3A4D39] hover:bg-[#2f3e2e] text-white text-[13px] font-medium transition-all shadow-sm shadow-[#3A4D39]/20 disabled:opacity-50 active:scale-[0.98]"
+                        className="flex-1 py-2.5 rounded-xl bg-[#7c5c38] hover:bg-[#5c3d1e] text-[#fbf1df] text-[12px] font-semibold tracking-wide transition-all shadow-md shadow-[#7c5c38]/20 disabled:opacity-50 active:scale-[0.98]"
                         onClick={handleCreateTicket}
                         disabled={createLoading}
                       >
                         {createLoading ? "Submitting…" : "Submit Ticket"}
                       </button>
-                    </DialogFooter>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -459,25 +551,25 @@ export default function Support() {
           </div>
 
           {/* Ticket list */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="flex-1 overflow-y-auto scrollbar-warm">
             {loading ? (
-              <div className="px-5 py-8 space-y-3">
+              <div className="px-5 py-6 space-y-5">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse space-y-2">
-                    <div className="h-3.5 bg-gray-100 rounded-full w-3/4" />
-                    <div className="h-3 bg-gray-100 rounded-full w-1/2" />
+                  <div key={i} className="space-y-2.5">
+                    <div className="skel h-3 w-3/4" />
+                    <div className="skel h-2.5 w-2/5" />
                   </div>
                 ))}
               </div>
             ) : tickets.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full pb-16 px-8 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
-                  <MessageSquare className="w-5 h-5 text-gray-300" />
+              <div className="flex flex-col items-center justify-center h-full pb-20 px-8 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-[#e8d9be] flex items-center justify-center mb-3">
+                  <MessageSquare className="w-5 h-5 text-[#c4aa82]" />
                 </div>
-                <p className="text-[13px] font-medium text-gray-500">
+                <p className="text-[14px] font-semibold text-[#7c6248]">
                   No tickets yet
                 </p>
-                <p className="text-[12px] text-gray-400 mt-0.5">
+                <p className="text-[12px] text-[#c4aa82] mt-0.5">
                   Create one to get started
                 </p>
               </div>
@@ -494,41 +586,42 @@ export default function Support() {
           </div>
         </div>
 
-        {/* ── RIGHT CHAT PANEL ── */}
+        {/* ── CHAT PANEL ──────────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {selectedTicket ? (
             <>
               {/* Chat header */}
-              <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-[#4F6F52]/10 flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-[#4F6F52]" />
+              <div
+                className="flex-shrink-0 flex items-center justify-between px-7 py-4 border-b border-[#e8d9be]"
+                style={{ background: "#f5e8cc" }}
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[#e8d9be] flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-[#7c5c38]" />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-[14px] font-semibold text-gray-900 truncate leading-tight">
+                    <h2 className="text-[15px] font-semibold text-[#5c3d1e] truncate leading-tight">
                       {selectedTicket.subject}
                     </h2>
                     <div className="flex items-center gap-2 mt-0.5">
                       <StatusBadge status={selectedTicket.status} />
-                      <span className="text-[11px] text-gray-300">·</span>
+                      <span className="text-[#dbc9a8]">·</span>
                       <span
-                        className={`text-[11px] font-medium ${priorityConfig[selectedTicket.priority]?.color}`}
+                        className={`mono text-[10px] font-medium tracking-wider uppercase ${priorityConfig[selectedTicket.priority]?.color}`}
                       >
-                        {priorityConfig[selectedTicket.priority]?.label}{" "}
-                        priority
+                        {priorityConfig[selectedTicket.priority]?.label}
                       </span>
-                      <span className="text-[11px] text-gray-300">·</span>
-                      <span className="text-[11px] text-gray-400 font-mono">
+                      <span className="text-[#dbc9a8]">·</span>
+                      <span className="mono text-[10px] text-[#c4aa82] tracking-wider">
                         #{selectedTicket.ticket_id.slice(-6).toUpperCase()}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="text-[11px] text-gray-400 flex-shrink-0 ml-4">
-                  Opened{" "}
+                <div className="mono text-[11px] text-[#c4aa82] flex-shrink-0 ml-4">
                   {new Date(selectedTicket.date_created).toLocaleDateString(
                     "en-US",
-                    { month: "short", day: "numeric", year: "numeric" },
+                    { month: "long", day: "numeric", year: "numeric" },
                   )}
                 </div>
               </div>
@@ -536,9 +629,9 @@ export default function Support() {
               {/* Messages */}
               <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto scrollbar-thin px-6 py-6 space-y-5 bg-gray-50/40"
+                className="flex-1 overflow-y-auto scrollbar-warm px-7 py-7 space-y-5"
+                style={{ background: "#fbf1df" }}
               >
-                {/* Original inquiry as first bubble */}
                 <div className="msg-enter">
                   <MessageBubble
                     msg={selectedTicket}
@@ -548,16 +641,14 @@ export default function Support() {
                 </div>
 
                 {messagesLoading ? (
-                  <div className="flex justify-center py-4">
-                    <div className="flex gap-1.5">
-                      {[0, 0.15, 0.3].map((d, i) => (
-                        <span
-                          key={i}
-                          className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"
-                          style={{ animationDelay: `${d}s` }}
-                        />
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-1.5 py-4 pl-11">
+                    {[0, 0.14, 0.28].map((d, i) => (
+                      <span
+                        key={i}
+                        className="w-2 h-2 bg-[#c4aa82] rounded-full dot-bounce"
+                        style={{ animationDelay: `${d}s` }}
+                      />
+                    ))}
                   </div>
                 ) : (
                   messages.map((msg, idx) => (
@@ -569,68 +660,66 @@ export default function Support() {
               </div>
 
               {/* Reply area */}
-              <div className="flex-shrink-0 px-6 py-4 bg-white border-t border-gray-100">
+              <div
+                className="flex-shrink-0 px-7 py-5 border-t border-[#e8d9be]"
+                style={{ background: "#f5e8cc" }}
+              >
                 {isClosed ? (
-                  <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-50 border border-gray-100">
-                    <XCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-[13px] text-gray-400 font-medium">
+                  <div className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#e8d9be] border border-[#dbc9a8]">
+                    <XCircle className="w-4 h-4 text-[#c4aa82]" />
+                    <span className="text-[12px] text-[#a8906a] font-medium">
                       This ticket has been closed
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-end gap-3 rounded-2xl border border-gray-200 bg-white px-4 pt-3 pb-3 shadow-sm focus-within:border-[#4F6F52]/40 focus-within:shadow-[0_0_0_3px_rgba(79,111,82,0.06)] transition-all duration-200">
-                    <Textarea
-                      placeholder="Write a message…"
-                      className="chat-input flex-1 border-none bg-transparent p-0 min-h-[60px] max-h-[140px] resize-none text-[13px] text-gray-800 placeholder:text-gray-400 focus-visible:ring-0 shadow-none"
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!replyText.trim()}
-                      className="flex-shrink-0 mb-0.5 w-9 h-9 rounded-xl bg-[#3A4D39] hover:bg-[#2f3e2e] disabled:bg-gray-200 disabled:cursor-not-allowed text-white flex items-center justify-center transition-all duration-150 active:scale-90 shadow-sm shadow-[#3A4D39]/20"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                {!isClosed && (
-                  <p className="text-center text-[11px] text-gray-400 mt-2">
-                    Press{" "}
-                    <kbd className="px-1 py-0.5 rounded border border-gray-200 bg-gray-50 font-mono text-[10px] text-gray-500">
-                      ↵ Enter
-                    </kbd>{" "}
-                    to send ·{" "}
-                    <kbd className="px-1 py-0.5 rounded border border-gray-200 bg-gray-50 font-mono text-[10px] text-gray-500">
-                      ⇧ Shift+Enter
-                    </kbd>{" "}
-                    for new line
-                  </p>
+                  <>
+                    <div className="flex items-end gap-3 rounded-xl border border-[#e8d9be] bg-white px-4 pt-3 pb-3 shadow-sm transition-all duration-200 focus-within:border-[#7c5c38] focus-within:shadow-[0_0_0_3px_rgba(124,92,56,0.08)]">
+                      <textarea
+                        placeholder="Write a message…"
+                        className="chat-input flex-1 border-none bg-transparent p-0 min-h-[56px] max-h-[130px] resize-none text-[13px] text-[#5c3d1e] placeholder:text-[#c4aa82] focus-visible:ring-0 shadow-none outline-none leading-relaxed"
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!replyText.trim()}
+                        className="flex-shrink-0 mb-0.5 w-9 h-9 rounded-xl bg-[#7c5c38] hover:bg-[#5c3d1e] disabled:bg-[#e8d9be] disabled:cursor-not-allowed text-[#fbf1df] disabled:text-[#c4aa82] flex items-center justify-center transition-all duration-150 active:scale-90 shadow-sm"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="mono text-center text-[10px] text-[#c4aa82] mt-2.5 tracking-wide">
+                      ↵ Enter to send · ⇧ Shift+Enter for new line
+                    </p>
+                  </>
                 )}
               </div>
             </>
           ) : (
             /* Empty state */
-            <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/40">
-              <div className="text-center max-w-[280px]">
-                <div className="w-16 h-16 rounded-3xl bg-white border border-gray-100 shadow-sm flex items-center justify-center mx-auto mb-5">
-                  <History className="w-7 h-7 text-gray-300" />
+            <div
+              className="flex-1 flex flex-col items-center justify-center"
+              style={{ background: "#fbf1df" }}
+            >
+              <div className="text-center max-w-[260px]">
+                <div className="w-16 h-16 rounded-3xl bg-[#f0e4cc] border border-[#e8d9be] flex items-center justify-center mx-auto mb-5 shadow-inner">
+                  <History className="w-6 h-6 text-[#c4aa82]" />
                 </div>
-                <h3 className="support-serif text-xl text-gray-800 mb-1.5">
-                  Select a ticket
+                <h3 className="text-[20px] font-semibold text-[#7c6248] mb-2 tracking-tight">
+                  No ticket selected
                 </h3>
-                <p className="text-[13px] text-gray-400 leading-relaxed">
-                  Choose a ticket from the sidebar to view your conversation
-                  with our support team.
+                <p className="text-[13px] text-[#a8906a] leading-relaxed">
+                  Choose a ticket from the sidebar, or open a new one to get
+                  help from our team.
                 </p>
                 <button
-                  className="mt-5 flex items-center gap-2 mx-auto px-4 py-2 rounded-xl bg-[#3A4D39] text-white text-[13px] font-medium shadow-sm hover:bg-[#2f3e2e] transition-colors"
+                  className="mt-5 flex items-center gap-2 mx-auto px-4 py-2.5 rounded-xl bg-[#7c5c38] text-[#fbf1df] text-[12px] font-semibold hover:bg-[#5c3d1e] transition-colors shadow-md shadow-[#7c5c38]/20 active:scale-95"
                   onClick={() => setShowCreateDialog(true)}
                 >
                   <Plus className="w-4 h-4" />

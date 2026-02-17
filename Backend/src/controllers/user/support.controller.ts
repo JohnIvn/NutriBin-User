@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
@@ -9,6 +8,22 @@ import {
 } from '@nestjs/common';
 import { SupportService } from '../../service/support/support.service';
 
+export interface SupportTicket {
+  id: string;
+  customerId: string;
+  subject: string;
+  description: string;
+  priority: string;
+  status: string;
+  createdAt: Date;
+}
+export interface SupportMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  message: string;
+  createdAt: Date;
+}
 @Controller('support')
 export class SupportController {
   constructor(private readonly supportService: SupportService) {}

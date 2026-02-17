@@ -1,25 +1,56 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { MachineNotification } from 'src/service/notification/machine-notifications.interface';
-import { MachineNotificationsService } from 'src/service/notification/machine-notifications.service';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+} from '@nestjs/common';
+import { DatabaseService } from 'src/service/database/database.service';
+interface MachineNotification {
+  notification_id: string;
+  machine_id: string;
+  header: string;
+  subheader?: string | null;
+  type: string;
+  description?: string | null;
+  date?: Date | null;
+  resolved?: boolean | null;
+  date_created?: Date | null;
+}
 
 @Controller('notifications')
 export class MachineNotificationsController {
-  constructor(
-    private readonly notificationsService: MachineNotificationsService,
-  ) {}
-
-  // GET /notifications/:machine_id
+  constructor(private readonly databaseService: DatabaseService) {}
   @Get(':machine_id')
-  async getNotifications(
-    @Param('machine_id') machine_id: string,
-  ): Promise<MachineNotification[] | { error: string }> {
+  async getNotifications(@Param('machine_id') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('machineId is required');
+    }
+
+    const client = this.databaseService.getClient();
+
     try {
-      const notifications =
-        await this.notificationsService.getNotificationsByMachine(machine_id);
-      return notifications;
+      const notifications = await client.query<MachineNotification>(
+        `
+      SELECT *
+      FROM machine_notifications
+      WHERE machine_id = $1 AND resolved = false
+      ORDER BY date_created DESC
+      `,
+        [machineId],
+      );
+
+      if (!notifications.rowCount) {
+        throw new NotFoundException('No notification found');
+      }
+
+      return {
+        ok: true,
+        data: notifications.rows,
+      };
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      return { error: 'Failed to fetch notifications' };
+      throw new BadRequestException('Failed to fetch notifications');
     }
   }
 }

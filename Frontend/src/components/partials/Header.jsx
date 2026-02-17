@@ -27,13 +27,13 @@ const NAVIGATION = {
       { name: "Dashboard", href: "/dashboard" },
       { name: "Cameras", href: "/cameras" },
       { name: "Fertilizer", href: "/fertilizer" },
-      { name: "Data Science", href: "/data" },
+      { name: "Analytics", href: "/data" },
+      { name: "Guide", href: "/guide" },
     ],
     right: [
       { name: "Modules", href: "/modules" },
       { name: "Logs", href: "/logs" },
       { name: "Support", href: "/support" },
-      { name: "Guide", href: "/guide" },
     ],
   },
 };
@@ -132,6 +132,36 @@ const NotificationButton = ({ notificationMenuRef }) => {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
+  useEffect(() => {
+    if (!machineId) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await Requests({
+          url: `/notifications/${machineId}`,
+          method: "GET",
+        });
+
+        const data = response.data.data;
+
+        setNotifications(
+          data.map((n) => ({
+            id: n.notification_id,
+            title: n.header,
+            message: n.description || n.subheader || "",
+            timestamp: new Date(n.date_created),
+            read: n.resolved || false,
+            type: n.type,
+          })),
+        );
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [machineId]);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Mark single notification as read
@@ -183,34 +213,25 @@ const NotificationButton = ({ notificationMenuRef }) => {
     if (!machineId) return;
 
     const baseUrl = getBaseUrl();
-    const socket = io(baseUrl);
-
-    socket.on("connect", () => {
-      console.log("Connected to WebSocket server");
-      socket.emit("getNotifications", machineId, (data) => {
-        console.log("Received notifications via ACK:", data);
-        if (Array.isArray(data)) {
-          setNotifications(
-            data.map((n) => ({
-              id: n.notification_id,
-              title: n.header,
-              message: n.description || n.subheader || "",
-              timestamp: new Date(n.date_created),
-              read: n.resolved || false,
-              type: n.type,
-            })),
-          );
-        }
-      });
+    const socket = io(baseUrl, {
+      transports: ["websocket"],
     });
 
-    socket.on("notification", (n) => {
+    socket.on("connect", () => {
+      console.log("[Socket] Connected to WebSocket server");
+      socket.emit("subscribeToMachine", machineId);
+      console.log("[Socket] Subscribed to machine:", machineId);
+    });
+
+    // 🔔 NEW NOTIFICATION
+    socket.on("notification_created", (n) => {
+      console.log("[Socket] Notification created:", n);
       setNotifications((prev) => [
         {
           id: n.notification_id,
           title: n.header,
           message: n.description || n.subheader || "",
-          timestamp: new Date(n.date_created),
+          timestamp: n.date_created ? new Date(n.date_created) : new Date(),
           read: n.resolved || false,
           type: n.type,
         },
@@ -218,7 +239,23 @@ const NotificationButton = ({ notificationMenuRef }) => {
       ]);
     });
 
+    socket.on("notification_resolved", (data) => {
+      console.log("[Socket] Notification resolved:", data);
+      setNotifications((prev) =>
+        prev.filter((notif) => notif.id !== data.notification_id),
+      );
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("[Socket] Disconnected:", reason);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("[Socket] Connection error:", err);
+    });
+
     return () => {
+      console.log("[Socket] Disconnecting...");
       socket.disconnect();
     };
   }, [machineId]);

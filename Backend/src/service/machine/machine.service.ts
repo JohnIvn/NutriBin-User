@@ -16,6 +16,30 @@ type MachineRow = {
   date_created: string;
 };
 
+type HardwareStatusRow = {
+  c1: boolean;
+  c2: boolean;
+  c3: boolean;
+  c4: boolean;
+  c5: boolean;
+  s1: boolean;
+  s2: boolean;
+  s3: boolean;
+  s4: boolean;
+  s5: boolean;
+  s6: boolean;
+  s7: boolean;
+  s8: boolean;
+  s9: boolean;
+  m1: boolean;
+  m2: boolean;
+  m3: boolean;
+  m4: boolean;
+  m5: boolean;
+  m6: boolean;
+  m7: boolean;
+};
+
 @Injectable()
 export class MachineService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -107,7 +131,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      const result = await client.query(
+      const result = await client.query<HardwareStatusRow>(
         `
         SELECT
           c1, c2, c3, c4, c5,
@@ -135,7 +159,7 @@ export class MachineService {
     }
   }
 
-  async restartMachine(machineId: string) {
+  restartMachine(machineId: string) {
     // In a real scenario, this would send a command to the machine via MQTT or similar
     // For now, we'll simulate success and maybe log it
     console.log(`Restart command initiated for machine: ${machineId}`);
