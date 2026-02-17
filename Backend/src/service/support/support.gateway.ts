@@ -90,6 +90,16 @@ export class SupportGateway implements OnGatewayInit {
             .emit('ticket_status_updated', updatedTicket);
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'TIMED_OUT') {
+          console.error('Supabase Realtime timed out. Retrying in 5s...');
+          setTimeout(() => this.startSupabaseRealtimeListener(), 5000);
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error(
+            'Channel error. Check if Realtime is enabled on these tables.',
+          );
+        }
+      });
   }
 }
