@@ -221,7 +221,7 @@ export default function Modules() {
               </div>
               <h2 className="text-xl font-bold text-[#3A4D39]">Sensors</h2>
               <span className="ml-auto text-xs font-bold bg-[#ECE3CE] text-[#739072] px-2 py-1 rounded-full">
-                9 Units
+                11 Units
               </span>
             </div>
 

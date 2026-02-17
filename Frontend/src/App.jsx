@@ -25,7 +25,8 @@ export default function App() {
       <Toaster richColors position="top-center" />
       <ScrollToTop />
       {user ? <MainLayout /> : <GuestLayout />}
-      {!window.location.pathname.includes("/support") && <Footer />}
+      {!window.location.pathname.includes("/support")}
+      <Footer />
     </BrowserRouter>
   );
 }

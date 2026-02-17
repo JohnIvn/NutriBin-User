@@ -178,7 +178,7 @@ export default function Cameras() {
         </div>
 
         {/* main grid content */}
-        <div className="grid grid-cols-1 gap-8 pb-20">
+        <div className="grid grid-cols-1 gap-8 pb-20 max-w-5xl mx-auto">
           {/* camera 1 */}
           <div className="flex flex-col bg-white rounded-3xl shadow-lg shadow-[#3A4D39]/5 border border-[#3A4D39]/10 overflow-hidden">
             {/* card header */}
