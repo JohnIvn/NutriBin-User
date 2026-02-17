@@ -8,6 +8,9 @@ import {
 } from '@nestjs/websockets';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Server, Socket } from 'socket.io';
+import ws from 'ws';
+
+(global as any).WebSocket = ws;
 
 // Interfaces based on your Service SQL queries
 interface SupportTicket {
