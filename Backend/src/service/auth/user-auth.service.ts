@@ -465,6 +465,12 @@ export class UserAuthService {
       status: user.status,
     };
 
+    await client.query(
+      `INSERT INTO auth_attempts (customer_id, user_type, attempt_type, site_visited, success)
+      VALUES ($1, 'customer', 'login', 'Customer Portal', $2)`,
+      [user.customer_id || null, true],
+    );
+
     return {
       ok: true,
       requiresMFA: false,
