@@ -373,14 +373,16 @@ export class UserAuthService {
           user_type,
           authentication_type,
           enabled
+          is_used
         )
-        VALUES ($1, $2, $3, 'customer', 'email', true)
+        VALUES ($1, $2, $3, 'customer', 'email', true, false)
         ON CONFLICT (customer_id) DO UPDATE
         SET mfa_token = EXCLUDED.mfa_token,
             mfa_token_expiry = EXCLUDED.mfa_token_expiry,
             enabled = true,
             user_type = 'customer',
             authentication_type = 'email'
+            is_used = false,
         `,
         [user.customer_id, mfaToken, tokenExpiry.toISOString()],
       );

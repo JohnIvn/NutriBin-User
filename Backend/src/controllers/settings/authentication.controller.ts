@@ -264,7 +264,8 @@ export class AuthenticationController {
         `
       UPDATE authentication
       SET mfa_token = NULL,
-          mfa_token_expiry = NULL
+          mfa_token_expiry = NULL,
+          is_used = true,
       WHERE customer_id = $1
       `,
         [body.customerId],
