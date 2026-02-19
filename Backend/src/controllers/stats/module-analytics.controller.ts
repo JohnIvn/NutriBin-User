@@ -85,7 +85,6 @@ export class ModuleAnalyticsController {
           ma.c2,
           ma.c3,
           ma.c4,
-          ma.c5,
           ma.s1,
           ma.s2,
           ma.s3,
@@ -138,6 +137,7 @@ export class ModuleAnalyticsController {
   async requestRepair(
     @Body('machineId') machineId: string,
     @Body('customerId') customerId: string,
+    @Body('module') module: string,
   ) {
     const client = this.databaseService.getClient();
 
@@ -147,6 +147,10 @@ export class ModuleAnalyticsController {
 
     if (!customerId) {
       throw new BadRequestException('customerId is missing');
+    }
+
+    if (!module) {
+      throw new BadRequestException('module is required')
     }
 
     try {
@@ -167,9 +171,9 @@ export class ModuleAnalyticsController {
         `
         INSERT INTO repair
         (machine_id, user_id, description, repair_status)
-        VALUES ($1, $2, 'Need Repair', 'active')
+        VALUES ($1, $2, $3, 'active')
         `,
-        [machineId, customerId],
+        [machineId, customerId, module],
       );
       return {
         ok: true,

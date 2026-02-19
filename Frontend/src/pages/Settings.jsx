@@ -277,12 +277,6 @@ export default function Settings() {
       return;
     }
 
-    // Check if phone needs verification
-    if (!phoneVerified && pendingPhone !== originalNumber) {
-      toast.error("Please verify your new phone number before saving");
-      return;
-    }
-
     try {
       setSaveLoading(true);
       const values = form.getValues();

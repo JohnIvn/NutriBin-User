@@ -6,13 +6,11 @@ import {
   Cpu,
   Fan,
   Eye,
-  Thermometer,
   Droplets,
   Wind,
   Activity,
-  Zap,
+  BrickWallFire,
   Cog,
-  Wifi,
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
@@ -27,9 +25,6 @@ export default function Modules() {
   const machineId = selectedMachine?.machine_id;
   const customerId = user?.customer_id;
 
-  //console.log(customerId)
-  //console.log("machine_id snapshot:", selectedMachine?.machine_id);
-
   useEffect(() => {
     if (!machineId) return;
 
@@ -43,6 +38,8 @@ export default function Modules() {
         if (data.ok) {
           setModules(data.data.modules);
         }
+
+        console.log(data)
       } catch (err) {
         console.error(err);
       } finally {
@@ -53,9 +50,13 @@ export default function Modules() {
     fetchModules();
   }, [machineId]);
 
-  const requestRepair = async () => {
+  const requestRepair = async (moduleName) => {
     if (!machineId || !customerId) {
       toast.warning("Missing machine or user information");
+      return;
+    }
+    if (!moduleName) {
+      toast.warning("Please specify a module to repair");
       return;
     }
 
@@ -64,18 +65,18 @@ export default function Modules() {
         method: "POST",
         url: "/module-analytics/repair",
         data: {
-          machineId: machineId,
-          customerId: customerId,
+          machineId,
+          customerId,
+          module: moduleName,
         },
       });
 
       if (res.data?.ok) {
-        toast.success("Repair request submitted successfully");
+        toast.success(`Repair request for ${moduleName} submitted successfully`);
       }
     } catch (err) {
       const message =
         err?.response?.data?.message || "Failed to request repair";
-
       toast.error(message);
     }
   };
@@ -102,7 +103,11 @@ export default function Modules() {
               System Modules
             </h1>
             <p className="text-[#4F6F52] font-medium mt-1 text-lg">
-              Real-time hardware status and diagnostics.
+              Hardware status and diagnostics.
+            </p>
+            <p className="text-[#4F6F52] font-bold mt-1 text-lg">
+              Please click the module if the module is offline to make a repair
+              request.
             </p>
           </div>
           <div className="px-4 py-2 bg-white border border-[#3A4D39]/10 rounded-xl shadow-sm">
@@ -125,7 +130,7 @@ export default function Modules() {
               </div>
               <h2 className="text-xl font-bold text-[#3A4D39]">Controllers</h2>
               <span className="ml-auto text-xs font-bold bg-[#ECE3CE] text-[#739072] px-2 py-1 rounded-full">
-                5 Units
+                4 Units
               </span>
             </div>
 
@@ -135,28 +140,28 @@ export default function Modules() {
                 icon={Cpu}
                 offline={modules?.arduino_q}
                 subtext="Main Logic Unit"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Arduino Q")}
               />
               <ModuleCard
                 title="ESP32 Filter"
                 icon={Cpu}
                 offline={modules?.esp32_filter}
                 subtext="Filterings"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for ESP32 Filter")}
               />
               <ModuleCard
-                title="ESP32 Grinder"
+                title="ESP32 Sensors"
                 icon={Cpu}
                 offline={modules?.esp32_sensors}
                 subtext="Processing Unit"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for ESP32 sensors")}
               />
               <ModuleCard
-                title="ESP32 Exhaust"
+                title="ESP32 Servo"
                 icon={Cpu}
                 offline={modules?.esp32_servo}
                 subtext="Ventilation Control"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for ESP32 Servo")}
               />
             </div>
           </div>
@@ -169,7 +174,7 @@ export default function Modules() {
               </div>
               <h2 className="text-xl font-bold text-[#3A4D39]">Actuators</h2>
               <span className="ml-auto text-xs font-bold bg-[#ECE3CE] text-[#739072] px-2 py-1 rounded-full">
-                7 Units
+                5 Units
               </span>
             </div>
 
@@ -179,42 +184,35 @@ export default function Modules() {
                 icon={Cog}
                 offline={modules?.servo_a}
                 subtext="Gate Control"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Servo A")}
               />
               <ModuleCard
                 title="Servo B"
                 icon={Cog}
                 offline={modules?.servo_b}
                 subtext="Valve Control"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Servo B")}
               />
               <ModuleCard
                 title="Servo Diverter"
                 icon={Cog}
                 offline={modules?.servo_mixer}
                 subtext="Mixing of materials"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Servo Mixer")}
               />
               <ModuleCard
                 title="Grinder Motor"
                 icon={Cog}
                 offline={modules?.grinder}
                 subtext="High Torque Grinder"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Grinder")}
               />
               <ModuleCard
-                title="Mixer Motor"
-                icon={Cog}
-                offline={modules?.servo_mixer}
-                subtext="Mixing System"
-                onClick={requestRepair}
-              />
-              <ModuleCard
-                title="Exhaust Fan (Out)"
+                title="Exhaust Fan"
                 icon={Fan}
                 offline={modules?.exhaust}
                 subtext="Air Out"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Exhaust Fan")}
               />
             </div>
           </div>
@@ -233,81 +231,91 @@ export default function Modules() {
 
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#3A4D39]/10 space-y-3">
               <ModuleCard
-                title="Camera 1"
+                title="Camera"
                 icon={Eye}
                 offline={modules?.camera}
                 subtext="Input Monitoring"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Camera")}
               />
               <ModuleCard
                 title="Humidity Sensor"
                 icon={Droplets}
                 offline={modules?.humidity}
                 subtext="DHT22"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Humidity Sensor")}
               />
               <ModuleCard
                 title="Methane Sensor"
                 icon={Wind}
                 offline={modules?.methane}
                 subtext="MQ-4 Gas Sensor"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Methane Sensor")}
               />
               <ModuleCard
                 title="Carbon Monoxide Sensor"
                 icon={AlertTriangle}
                 offline={modules?.carbon_monoxide}
                 subtext="MQ-7 CO Sensor"
-                onClick={requestRepair}
+                onClick={() =>
+                  requestRepair("Repair need for Carbon Monoxide Sensor")
+                }
               />
               <ModuleCard
                 title="Air Quality Sensor"
                 icon={Wind}
                 offline={modules?.air_quality}
                 subtext="MQ-135"
-                onClick={requestRepair}
+                onClick={() =>
+                  requestRepair("Repair need for Air Quality Sensor")
+                }
               />
               <ModuleCard
                 title="Combustible Gas Sensor"
-                icon={Zap}
+                icon={BrickWallFire}
                 offline={modules?.combustible_gasses}
                 subtext="MQ-2 Sensor"
-                onClick={requestRepair}
+                onClick={() =>
+                  requestRepair("Repair need for Combustible Gassses Sensor")
+                }
               />
               <ModuleCard
                 title="NPK Sensor"
                 icon={Activity}
                 offline={modules?.npk}
                 subtext="Soil Analysis"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for NPK Sensor")}
               />
               <ModuleCard
                 title="Moisture Sensor"
                 icon={Droplets}
                 offline={modules?.moisture}
                 subtext="Capacitive Probe"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Moisture Sensor")}
               />
               <ModuleCard
                 title="Reed Switch Sensor"
                 icon={CheckCircle2}
                 offline={modules?.reed}
                 subtext="Door / Lid Detection"
-                onClick={requestRepair}
+                onClick={() =>
+                  requestRepair("Repair need for Reed Switch Sensor")
+                }
               />
               <ModuleCard
                 title="Ultrasonic Sensor"
                 icon={Activity}
                 offline={modules?.ultrasonic}
                 subtext="Distance Measurement"
-                onClick={requestRepair}
+                onClick={() =>
+                  requestRepair("Repair need for Ultrasonic Sensor")
+                }
               />
               <ModuleCard
                 title="Weight Sensor"
                 icon={Activity}
                 offline={modules?.weight}
                 subtext="Load Cell"
-                onClick={requestRepair}
+                onClick={() => requestRepair("Repair need for Weight Sensor")}
               />
             </div>
           </div>
