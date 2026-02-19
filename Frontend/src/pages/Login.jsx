@@ -48,10 +48,14 @@ export function Login() {
           method: "GET",
         });
 
-        if (response.data.ok && response.data.mfaVerified) {
+        if (
+          response.data.ok &&
+          response.data.mfaVerified &&
+          response.data.user
+        ) {
           setMfaMessage(null);
           setLoginMessage("Login successful!");
-          login(response.data.user); // optionally fetch user info again
+          login(response.data.user); // now logs in the actual user
           clearInterval(interval);
           setTimeout(() => navigate("/dashboard"), 500);
         }
