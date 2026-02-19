@@ -337,7 +337,6 @@ export class AuthenticationController {
 
     return { ok: true, mfaVerified: isUsed, user };
   }
-}
 
   @Post('verify-mfa-sms')
   async verifyMfaSms(@Body() body: { code?: string; customerId?: string }) {
