@@ -302,7 +302,7 @@ export class AuthenticationController {
     const client = this.databaseService.getClient();
 
     const result = await client.query(
-      `SELECT isUsed FROM authentication WHERE customer_id = $1 LIMIT 1`,
+      `SELECT is_used FROM authentication WHERE customer_id = $1 LIMIT 1`,
       [customerId],
     );
 
