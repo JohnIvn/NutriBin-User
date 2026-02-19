@@ -382,7 +382,7 @@ export class UserAuthService {
             enabled = true,
             user_type = 'customer',
             authentication_type = 'email',
-            is_used = false,
+            is_used = false
         `,
         [user.customer_id, mfaToken, tokenExpiry.toISOString()],
       );
