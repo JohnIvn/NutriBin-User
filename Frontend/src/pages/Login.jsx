@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userAccount } from "@/schema/userAccount";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import request from "@/utils/Requests";
 import { useUser } from "@/contexts/UserContextHook";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
@@ -25,6 +25,7 @@ export function Login() {
   const [loginMessage, setLoginMessage] = useState(null);
   const [loginError, setLoginError] = useState(null);
   const [mfaMessage, setMfaMessage] = useState(null);
+  const [mfaCustomerId, setMfaCustomerId] = useState(null);
   const { login } = useUser();
   const navigate = useNavigate();
 
@@ -36,6 +37,31 @@ export function Login() {
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (!mfaCustomerId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await request({
+          url: `/user/mfa-status?customerId=${mfaCustomerId}`,
+          method: "GET",
+        });
+
+        if (response.data.ok && response.data.mfaVerified) {
+          setMfaMessage(null);
+          setLoginMessage("Login successful!");
+          login(response.data.user);
+          clearInterval(interval);
+          setTimeout(() => navigate("/dashboard"), 500);
+        }
+      } catch (err) {
+        console.error("MFA polling error:", err);
+      }
+    }, 5000); // every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [mfaCustomerId]);
 
   async function onSubmit(values) {
     try {
@@ -70,6 +96,7 @@ export function Login() {
           }
         }
         setMfaMessage("Go to your email to verify your login with MFA.");
+        setMfaCustomerId(response.data.customerId);
         return;
       }
 
