@@ -44,21 +44,21 @@ export function Login() {
     const interval = setInterval(async () => {
       try {
         const response = await request({
-          url: `/user/mfa-status?customerId=${mfaCustomerId}`,
+          url: `/authentication/${mfaCustomerId}/mfa-status`,
           method: "GET",
         });
 
         if (response.data.ok && response.data.mfaVerified) {
           setMfaMessage(null);
           setLoginMessage("Login successful!");
-          login(response.data.user);
+          login(response.data.user); // optionally fetch user info again
           clearInterval(interval);
           setTimeout(() => navigate("/dashboard"), 500);
         }
       } catch (err) {
         console.error("MFA polling error:", err);
       }
-    }, 5000); // every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [mfaCustomerId]);

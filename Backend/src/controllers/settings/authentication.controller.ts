@@ -295,6 +295,20 @@ export class AuthenticationController {
       throw new InternalServerErrorException('Failed to verify MFA');
     }
   }
+  
+  @Get(':customerId/mfa-status')
+  async getMfaStatus(@Param('customerId') customerId: string) {
+    const client = this.databaseService.getClient();
+    const result = await client.query(
+      `SELECT mfa_token FROM authentication WHERE customer_id = $1 LIMIT 1`,
+      [customerId],
+    );
+
+    if (!result.rowCount) return { ok: false, mfaVerified: false };
+
+    // If mfa_token is null → MFA completed
+    return { ok: true, mfaVerified: result.rows[0].mfa_token === null };
+  }
 
   @Post('verify-mfa-sms')
   async verifyMfaSms(@Body() body: { code?: string; customerId?: string }) {
