@@ -3,12 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import Requests from "@/utils/Requests";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
-import { useUser } from "@/contexts/UserContextHook";
 
 export function VerifyMFA() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useUser();
 
   const [status, setStatus] = useState("verifying"); // 'verifying' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState("");
@@ -18,9 +16,6 @@ export function VerifyMFA() {
       try {
         const token = searchParams.get("token");
         const customerId = searchParams.get("customerId");
-
-        console.log("[MFA Customer] Token:", token);
-        console.log("[MFA Customer] CustomerId:", customerId);
 
         // Validate required parameters
         if (!token || !customerId) {
@@ -49,14 +44,6 @@ export function VerifyMFA() {
         if (response.data.ok) {
           setStatus("success");
           toast.success("MFA verification successful!");
-
-          // Log in the user with the returned customer data
-          login(response.data.customer);
-
-          // Redirect to dashboard after a short delay
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 1500);
         } else {
           setStatus("error");
           setErrorMessage(response.data.message || "Verification failed");
