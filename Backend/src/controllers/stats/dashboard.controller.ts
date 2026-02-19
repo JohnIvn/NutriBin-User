@@ -57,11 +57,11 @@ export class DashboardController {
     try {
       const machineResult = await client.query<MachineRow>(
         `
-        SELECT m.machine_id
-        FROM machines m
-        JOIN machine_customers mc ON mc.machine_id = m.machine_id
+        SELECT mc.machine_id
+        FROM machine_customers mc
+        JOIN machine_serial ms ON ms.machine_serial_id = mc.machine_id 
         WHERE mc.customer_id = $1
-          AND m.is_active = true
+          AND ms.is_active = true
         LIMIT 1
         `,
         [customerId],

@@ -15,14 +15,17 @@ import {
   Leaf,
   CheckCircle2,
   Zap,
+  RefreshCw,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
+import { motion as Motion } from "framer-motion";
 
 export default function Fertilizer() {
   // temp unit converter
   const [tempUnit, setTempUnit] = useState("C");
   const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
   const hasData = analytics !== null;
 
   const { user, selectedMachine } = useUser();
@@ -32,6 +35,8 @@ export default function Fertilizer() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
+        setLoading(true);
+
         const res = await Requests({
           url: `/fertilizer-analytics/${customerId}`,
           params: {
@@ -39,18 +44,20 @@ export default function Fertilizer() {
           },
         });
 
-        console.log(res.data.analytics);
-
         if (res.data.ok && res.data.analytics.length > 0) {
           setAnalytics(res.data.analytics[0]);
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchAnalytics();
-  }, [customerId]);
+    if (customerId && machineId) {
+      fetchAnalytics();
+    }
+  }, [customerId, machineId]);
 
   // temperature converter
   const convertTemp = (celsius, unit) => {
@@ -122,6 +129,19 @@ export default function Fertilizer() {
         },
       ]
     : [];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+        </Motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">

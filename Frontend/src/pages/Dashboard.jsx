@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  RefreshCw,
   Bell,
   Leaf,
   Droplets,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import Requests from "@/utils/Requests";
 import { useUser } from "@/contexts/UserContextHook";
+import { motion as Motion } from "framer-motion";
 
 // --- StatCard Component ---
 const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => {
@@ -78,8 +80,13 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[#3A4D39] font-bold">
-        Loading dashboard...
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+        </Motion.div>
       </div>
     );
   }

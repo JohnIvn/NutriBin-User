@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import Requests from "@/utils/Requests";
 import { io } from "socket.io-client";
 import getBaseUrl from "@/utils/GetBaseUrl";
+import { RefreshCw } from "lucide-react";
 
 // Constants
 const NAVIGATION = {
@@ -98,14 +99,6 @@ const NavLink = ({ to, children, currentPath }) => {
     </Link>
   );
 };
-
-const LoadingSkeleton = () => (
-  <div className="flex items-center gap-4">
-    <div className="w-16 h-5 bg-[#3A4D39]/10 rounded-full animate-pulse" />
-    <div className="w-16 h-5 bg-[#3A4D39]/10 rounded-full animate-pulse" />
-    <div className="w-9 h-9 rounded-full bg-[#3A4D39]/10 animate-pulse" />
-  </div>
-);
 
 const UserAvatar = ({ user, getInitials }) => (
   <Avatar className="size-9 ring-2 ring-[#3A4D39]/20 group-hover:ring-[#3A4D39]/40 transition-all">
@@ -914,7 +907,18 @@ export default function Header() {
             {/* Right Navigation */}
             <nav className="hidden lg:flex items-center gap-6 xl:gap-8 flex-1 justify-end">
               {loading ? (
-                <LoadingSkeleton />
+                <div className="flex items-center justify-center min-h-[60vh]">
+                  <Motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1,
+                      ease: "linear",
+                    }}
+                  >
+                    <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+                  </Motion.div>
+                </div>
               ) : user ? (
                 <>
                   {NAVIGATION.authenticated.right.map((link) => (

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ModuleCard from "@/components/ui/ModuleCard";
 import { toast } from "sonner";
 import {
+  RefreshCw,
   Cpu,
   Fan,
   Eye,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
+import { motion as Motion } from "framer-motion";
 
 export default function Modules() {
   const [modules, setModules] = useState(null);
@@ -80,12 +82,16 @@ export default function Modules() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[#3A4D39] font-bold">
-        Loading dashboard...
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+        </Motion.div>
       </div>
     );
   }
-
   return (
     <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
       <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
