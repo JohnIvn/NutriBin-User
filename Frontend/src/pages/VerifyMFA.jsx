@@ -67,7 +67,7 @@ export function VerifyMFA() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchParams, navigate, login]);
+  }, [searchParams, navigate]);
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 p-4">

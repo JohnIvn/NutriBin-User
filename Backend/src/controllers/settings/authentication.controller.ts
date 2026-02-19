@@ -23,12 +23,18 @@ interface UserRow {
   last_updated: Date;
   status: string;
 }
-
 interface MfaRow {
   customer_id: string;
   contact_number: string | null;
 }
-
+interface AuthenticationRow {
+  is_used: boolean;
+}
+interface MfaStatusResponse {
+  ok: boolean;
+  mfaVerified: boolean;
+  user?: UserRow | null;
+}
 @Controller('authentication')
 export class AuthenticationController {
   constructor(
@@ -298,10 +304,13 @@ export class AuthenticationController {
   }
 
   @Get(':customerId/mfa-status')
-  async getMfaStatus(@Param('customerId') customerId: string) {
+  async getMfaStatus(
+    @Param('customerId') customerId: string,
+  ): Promise<MfaStatusResponse> {
     const client = this.databaseService.getClient();
 
-    const result = await client.query(
+    // ✅ Type the query result
+    const result = await client.query<AuthenticationRow>(
       `SELECT is_used FROM authentication WHERE customer_id = $1 LIMIT 1`,
       [customerId],
     );
@@ -312,12 +321,12 @@ export class AuthenticationController {
 
     const isUsed = result.rows[0].is_used;
 
-    let user = null;
+    let user: UserRow | null = null;
     if (isUsed) {
-      const userResult = await client.query(
+      const userResult = await client.query<UserRow>(
         `SELECT customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status
-       FROM user_customer
-       WHERE customer_id = $1`,
+         FROM user_customer
+         WHERE customer_id = $1`,
         [customerId],
       );
 
@@ -328,6 +337,7 @@ export class AuthenticationController {
 
     return { ok: true, mfaVerified: isUsed, user };
   }
+}
 
   @Post('verify-mfa-sms')
   async verifyMfaSms(@Body() body: { code?: string; customerId?: string }) {
