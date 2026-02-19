@@ -55,7 +55,7 @@ export function Login() {
         ) {
           setMfaMessage(null);
           setLoginMessage("Login successful!");
-          login(response.data.user); // now logs in the actual user
+          login(response.data.user);
           clearInterval(interval);
           setTimeout(() => navigate("/dashboard"), 500);
         }
