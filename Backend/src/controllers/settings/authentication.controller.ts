@@ -310,7 +310,7 @@ export class AuthenticationController {
       return { ok: false, mfaVerified: false };
     }
 
-    const isUsed = result.rows[0].isused;
+    const isUsed = result.rows[0].is_used;
 
     let user = null;
     if (isUsed) {

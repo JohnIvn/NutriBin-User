@@ -372,7 +372,7 @@ export class UserAuthService {
           mfa_token_expiry,
           user_type,
           authentication_type,
-          enabled
+          enabled,
           is_used
         )
         VALUES ($1, $2, $3, 'customer', 'email', true, false)
@@ -381,7 +381,7 @@ export class UserAuthService {
             mfa_token_expiry = EXCLUDED.mfa_token_expiry,
             enabled = true,
             user_type = 'customer',
-            authentication_type = 'email'
+            authentication_type = 'email',
             is_used = false,
         `,
         [user.customer_id, mfaToken, tokenExpiry.toISOString()],
