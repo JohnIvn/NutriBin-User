@@ -51,6 +51,17 @@ import {
   Upload,
   Trash2,
 } from "lucide-react";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 // Constants
 const PHONE_VERIFICATION_REGEX = /^[0-9]{6}$/;
@@ -76,6 +87,7 @@ export default function Settings() {
   const { user, logout, refreshUser } = useUser();
   const navigate = useNavigate();
   const defaultPosition = [14.5995, 120.9842];
+  const [markerPosition, setMarkerPosition] = useState(defaultPosition);
 
   // Password reset state
   const [resetOpen, setResetOpen] = useState(false);
@@ -375,11 +387,14 @@ export default function Settings() {
 
       if (res.data?.ok) {
         toast.success("Phone verified");
+
         setPhoneVerified(true);
         setOriginalNumber(pendingPhone);
         form.setValue("number", pendingPhone);
         setPhoneCode("");
         setPhoneError("");
+
+        await handleSubmission();
       } else {
         toast.error(res.data?.message || "Verification failed");
       }
@@ -544,19 +559,6 @@ export default function Settings() {
     setShowConfirmPassword(false);
   };
 
-  const handleDragEnd = async (e) => {
-    const { lat, lng } = e.target.getLatLng();
-
-    // Nominatim / other reverse geocoding
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-    );
-    const data = await res.json();
-
-    const addressString = data.display_name || `${lat}, ${lng}`;
-    form.setValue("address", addressString);
-  };
-
   // Handle account closure
   const handleCloseAccount = async () => {
     const userId = user?.customer_id;
@@ -670,13 +672,45 @@ export default function Settings() {
     };
   }, [previewUrl]);
 
-  function MapClickHandler({ form }) {
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        {
+          headers: {
+            "Accept-Language": "en",
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (data && data.display_name) {
+        return data.display_name;
+      }
+
+      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }
+  };
+
+  function MapClickHandler({ form, setMarkerPosition, reverseGeocode }) {
     useMapEvents({
-      click(e) {
+      async click(e) {
         const { lat, lng } = e.latlng;
-        form.setValue("address", `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+
+        setMarkerPosition([lat, lng]);
+
+        form.setValue("address", "Fetching address...");
+
+        const readableAddress = await reverseGeocode(lat, lng);
+
+        form.setValue("address", readableAddress);
       },
     });
+
     return null;
   }
 
@@ -1050,23 +1084,25 @@ export default function Settings() {
                         {editMode && (
                           <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
                             <MapContainer
-                              center={defaultPosition}
+                              center={markerPosition}
                               zoom={13}
                               scrollWheelZoom={true}
                               style={{ height: "280px", width: "100%" }}
                             >
                               <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                attribution="&copy; OpenStreetMap contributors"
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                               />
-                              <Marker
-                                position={defaultPosition}
-                                draggable={editMode}
-                                eventHandlers={{ dragend: handleDragEnd }}
-                              >
-                                <Popup>Drag me to update your location</Popup>
+
+                              <Marker position={markerPosition}>
+                                <Popup>Selected location</Popup>
                               </Marker>
-                              <MapClickHandler form={form} />
+
+                              <MapClickHandler
+                                form={form}
+                                setMarkerPosition={setMarkerPosition}
+                                reverseGeocode={reverseGeocode}
+                              />
                             </MapContainer>
                           </div>
                         )}
