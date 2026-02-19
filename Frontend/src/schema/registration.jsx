@@ -2,13 +2,13 @@ import { z } from "zod";
 
 export const registration = z
   .object({
-    firstname: z
+    firstName: z
       .string()
       .trim()
       .min(3, "First name must be at least 3 characters")
       .regex(/^[A-Za-z\s]+$/, "First name must contain only letters"),
 
-    lastname: z
+    lastName: z
       .string()
       .trim()
       .min(3, "Last name must be at least 3 characters")

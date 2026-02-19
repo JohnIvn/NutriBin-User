@@ -19,8 +19,6 @@ import { useUser } from "@/contexts/UserContextHook";
 import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
 import TOSModal from "@/components/ui/TOSModal";
 
-// `postToBackend` is provided by `@/utils/Requests`
-
 export default function Register() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -426,6 +424,7 @@ export default function Register() {
                   {/* submit */}
                   <Button
                     type="submit"
+                    
                     disabled={!tosAccepted}
                     className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base rounded-xl transition-all shadow-lg mt-2"
                   >
