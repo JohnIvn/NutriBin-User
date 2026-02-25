@@ -150,7 +150,7 @@ export class ModuleAnalyticsController {
     }
 
     if (!module) {
-      throw new BadRequestException('module is required')
+      throw new BadRequestException('module is required');
     }
 
     try {

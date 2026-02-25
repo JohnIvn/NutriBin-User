@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -10,14 +5,21 @@ import {
   MessageBody,
   ConnectedSocket,
   OnGatewayInit,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import {
+  createClient,
+  SupabaseClient,
+  RealtimeChannel,
+  REALTIME_SUBSCRIBE_STATES,
+} from '@supabase/supabase-js';
 import { Server, Socket } from 'socket.io';
 import ws from 'ws';
 
-(global as any).WebSocket = ws;
+(global as typeof globalThis & { WebSocket: any }).WebSocket = ws;
 
-// Interfaces based on your Service SQL queries
+// ─── Domain Types ────────────────────────────────────────────────────────────
+
 interface SupportTicket {
   ticket_id: string;
   customer_id: string;
@@ -34,102 +36,140 @@ interface SupportMessage {
   date_sent: Date;
 }
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
+// Payload shapes emitted to the client
+type NewMessagePayload = SupportMessage;
+type TicketStatusPayload = SupportTicket;
+
+// Typed map of server-to-client events
+interface ServerToClientEvents {
+  new_message_received: (payload: NewMessagePayload) => void;
+  ticket_status_updated: (payload: TicketStatusPayload) => void;
+}
+
+// Typed map of client-to-server events
+interface ClientToServerEvents {
+  joinTicket: (data: JoinTicketDto) => void;
+}
+
+// Inbound message body for joinTicket
+interface JoinTicketDto {
+  ticketId: string;
+}
+
+// ─── Supabase Database Schema (minimal, extend as needed) ────────────────────
+
+interface Database {
+  public: {
+    Tables: {
+      support_messages: { Row: SupportMessage };
+      support_tickets: { Row: SupportTicket };
+    };
+  };
+}
+
+// ─── Environment ─────────────────────────────────────────────────────────────
+
+const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || '';
+  process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_KEY ?? '';
+
+// ─── Gateway ─────────────────────────────────────────────────────────────────
 
 @WebSocketGateway({ cors: true })
-export class SupportGateway implements OnGatewayInit {
+export class SupportGateway implements OnGatewayInit, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
-  private supabase: SupabaseClient<any, 'public'>;
+  server!: Server<ClientToServerEvents, ServerToClientEvents>;
+
+  private readonly supabase: SupabaseClient<Database>;
 
   constructor() {
-    this.supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    this.supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
-        // Essential for keeping proxies like Railway's alive
-        heartbeatIntervalMs: 15000,
+        params: { eventsPerSecond: 10 },
+        // Keeps proxies like Railway's connection alive
+        heartbeatIntervalMs: 15_000,
       },
     });
   }
 
-  afterInit() {
+  afterInit(): void {
     this.startSupabaseRealtimeListener();
   }
 
-  /**
-   * Room Management:
-   * When a user opens a ticket, they "subscribe" to that ticket's room.
-   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handleDisconnect(_client: Socket): void {
+    // Intentionally empty — Socket.IO handles room cleanup automatically.
+  }
+
+  // ─── Room Management ───────────────────────────────────────────────────────
+
   @SubscribeMessage('joinTicket')
   handleJoinTicket(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { ticketId: string },
-  ) {
-    client.join(`ticket_${data.ticketId}`);
-    console.log(`User joined room: ticket_${data.ticketId}`);
+    @MessageBody() { ticketId }: JoinTicketDto,
+  ): void {
+    const room = `ticket_${ticketId}`;
+    void client.join(room);
+    console.log(`User joined room: ${room}`);
   }
 
-  private startSupabaseRealtimeListener() {
-    this.supabase;
-    const channel = this.supabase
+  // ─── Supabase Realtime ─────────────────────────────────────────────────────
+
+  private startSupabaseRealtimeListener(): void {
+    const channel: RealtimeChannel = this.supabase
       .channel('support-system-changes')
-      .on(
+      // 1. New support messages
+      .on<SupportMessage>(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'support_messages' },
-        (payload) => {
-          const newMessage = payload.new as SupportMessage;
+        ({ new: newMessage }) => {
           console.log('New message detected:', newMessage.message_id);
-
-          // Emit only to users in that specific ticket room
           this.server
             .to(`ticket_${newMessage.ticket_id}`)
             .emit('new_message_received', newMessage);
         },
       )
-      // 2. Listen for ticket updates (like status changes or priority updates)
-      .on(
+      // 2. Ticket status / priority updates
+      .on<SupportTicket>(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'support_tickets' },
-        (payload) => {
-          const updatedTicket = payload.new as SupportTicket;
+        ({ new: updatedTicket }) => {
           console.log('Ticket update detected:', updatedTicket.ticket_id);
-
           this.server
             .to(`ticket_${updatedTicket.ticket_id}`)
             .emit('ticket_status_updated', updatedTicket);
         },
       )
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+      .subscribe((status) => {
+        if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
           console.log('✅ Connected to Supabase Realtime');
+          return;
         }
 
-        if (status === 'TIMED_OUT') {
+        if (status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
           console.error('❌ Supabase TIMED_OUT. Cleaning up...');
-          // Remove the specific channel before retrying
-          await this.supabase.removeChannel(channel);
-          setTimeout(() => this.startSupabaseRealtimeListener(), 5000);
+          void this.supabase.removeChannel(channel).then(() => {
+            setTimeout(() => this.startSupabaseRealtimeListener(), 5_000);
+          });
+          return;
         }
 
-        if (status === 'CHANNEL_ERROR') {
+        if (status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR) {
           console.error(
             '❌ Channel Error. Check if Realtime is enabled in Supabase Dashboard.',
           );
         }
       });
 
-    // Optional: Listen for heartbeat signals specifically
+    // Warn on heartbeat timeouts — indicates an unstable network
     this.supabase.realtime.onHeartbeat((hbStatus) => {
       if (hbStatus === 'timeout') {
         console.warn('⚠️ Heartbeat timeout detected. Network may be unstable.');
       }
     });
   }
-  async onModuleDestroy() {
+
+  async onModuleDestroy(): Promise<void> {
     console.log('Cleaning up Supabase Realtime connections...');
     await this.supabase.removeAllChannels();
   }

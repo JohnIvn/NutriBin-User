@@ -76,7 +76,7 @@ export class FertilizerAnalyticsController {
     try {
       const where: string[] = ['fa.user_id = $1'];
       const values: string[] = [customerId];
- 
+
       // optional, but kept for flexibility
       if (machineId) {
         where.push(`fa.machine_id = $${values.length + 1}`);
