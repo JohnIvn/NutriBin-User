@@ -137,12 +137,17 @@ function TicketCard({ ticket, isSelected, onClick }) {
 }
 
 function MessageBubble({ msg, user, isInitial }) {
+  // isMe = customer/user → RIGHT side
+  // admin/support → LEFT side
   const isMe = isInitial || msg.sender_type === "customer";
+
   return (
-    <div className={`flex gap-3 ${isMe ? "" : "flex-row-reverse"} items-end`}>
+    // User (isMe) aligns to the right; admin aligns to the left
+    <div className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""} items-end`}>
+      {/* Avatar */}
       <div
         className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-          isMe ? "bg-[#e2d3b4] text-[#7c5c38]" : "bg-[#3a4d39] text-[#fbf1df]"
+          isMe ? "bg-[#3a4d39] text-[#fbf1df]" : "bg-[#e2d3b4] text-[#7c5c38]"
         }`}
       >
         {isMe ? (
@@ -151,14 +156,18 @@ function MessageBubble({ msg, user, isInitial }) {
           <Shield className="w-3.5 h-3.5" />
         )}
       </div>
+
+      {/* Bubble + label */}
       <div
-        className={`max-w-[76%] space-y-1 ${!isMe ? "items-end flex flex-col" : ""}`}
+        className={`max-w-[76%] space-y-1 ${isMe ? "items-end flex flex-col" : ""}`}
       >
         <div
           className={`px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap ${
             isMe
-              ? "bg-white border border-[#e2d3b4] text-[#4a2e0e] rounded-2xl rounded-bl-sm shadow-sm"
-              : "bg-[#3a4d39] text-[#e8f2e8] rounded-2xl rounded-br-sm shadow-md shadow-[#3a4d39]/20"
+              ? // User bubble — right side, green
+                "bg-[#3a4d39] text-[#e8f2e8] rounded-2xl rounded-br-sm shadow-md shadow-[#3a4d39]/20"
+              : // Admin bubble — left side, white
+                "bg-white border border-[#e2d3b4] text-[#4a2e0e] rounded-2xl rounded-bl-sm shadow-sm"
           }`}
         >
           {isInitial ? msg.description : msg.message}
