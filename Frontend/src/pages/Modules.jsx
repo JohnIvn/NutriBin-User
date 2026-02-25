@@ -9,10 +9,11 @@ import {
   Droplets,
   Wind,
   Activity,
-  BrickWallFire,
+  Flame,
   Cog,
   CheckCircle2,
   AlertTriangle,
+  Server,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
@@ -39,7 +40,7 @@ export default function Modules() {
           setModules(data.data.modules);
         }
 
-        console.log(data)
+        console.log(data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -72,7 +73,9 @@ export default function Modules() {
       });
 
       if (res.data?.ok) {
-        toast.success(`Repair request for ${moduleName} submitted successfully`);
+        toast.success(
+          `Repair request for ${moduleName} submitted successfully`,
+        );
       }
     } catch (err) {
       const message =
@@ -81,60 +84,160 @@ export default function Modules() {
     }
   };
 
+  // Calculate module statistics
+  const getModuleStats = () => {
+    if (!modules) return { total: 0, online: 0, offline: 0 };
+
+    const moduleValues = Object.values(modules);
+    const total = moduleValues.length;
+    const offline = moduleValues.filter(
+      (val) => val === true || val === 1,
+    ).length;
+    const online = total - offline;
+
+    return { total, online, offline };
+  };
+
+  const stats = getModuleStats();
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-screen min-w-screen bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6]">
         <Motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
         >
-          <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+          <RefreshCw className="w-12 h-12 text-[#4F6F52]" />
         </Motion.div>
       </div>
     );
   }
+
   return (
-    <div className="min-h-screen w-full bg-[#ECE3CE]/20 font-sans pb-20">
-      <section className="max-w-400 mx-auto px-6 pt-8 space-y-8">
-        {/* header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-2">
-            <h1 className="text-4xl font-black text-[#3A4D39] tracking-tight">
-              System Modules
-            </h1>
-            <p className="text-[#4F6F52] font-medium mt-1 text-lg">
-              Hardware status and diagnostics.
-            </p>
-            <p className="text-[#4F6F52] font-bold mt-1 text-lg">
-              Please click the module if the module is offline to make a repair
-              request.
-            </p>
-          </div>
-          <div className="px-4 py-2 bg-white border border-[#3A4D39]/10 rounded-xl shadow-sm">
-            <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[#4F6F52] animate-pulse" />
-              <span className="font-bold text-[#3A4D39] text-sm">
-                System Diagnostic Running
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* main grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-          {/* micro-controllers */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 mb-2 px-1">
-              <div className="p-2 bg-[#3A4D39]/10 rounded-lg text-[#3A4D39]">
-                <Cpu className="w-5 h-5" />
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Header */}
+        <Motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 sm:mb-12"
+        >
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-2">
+              <div className="inline-block mb-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#4F6F52]/10 rounded-full">
+                  <Server className="w-4 h-4 text-[#4F6F52]" />
+                  <span className="text-xs font-bold text-[#4F6F52] uppercase tracking-wide">
+                    Hardware Diagnostics
+                  </span>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-[#3A4D39]">Controllers</h2>
-              <span className="ml-auto text-xs font-bold bg-[#ECE3CE] text-[#739072] px-2 py-1 rounded-full">
-                4 Units
-              </span>
+              <h1 className="text-4xl sm:text-5xl font-black text-[#3A4D39] tracking-tight mb-2">
+                System Modules
+              </h1>
+              <p className="text-[#739072] font-medium text-base sm:text-lg max-w-2xl mb-3">
+                Real-time hardware status and diagnostics monitoring.
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <p className="text-sm font-bold text-amber-800">
+                  Click any offline module to submit a repair request
+                </p>
+              </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#3A4D39]/10 space-y-3">
+            <div className="flex flex-col gap-3">
+              {/* Status Badge */}
+              <div className="px-5 py-3 bg-white border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5">
+                <div className="flex items-center gap-2.5">
+                  <Motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 2,
+                      ease: "easeInOut",
+                    }}
+                    className="relative"
+                  >
+                    <Activity className="w-6 h-6 text-[#4F6F52]" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  </Motion.div>
+                  <span className="font-bold text-[#3A4D39] text-sm sm:text-base">
+                    Diagnostic Running
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats Summary */}
+              <div className="flex gap-2">
+                <div className="flex-1 px-3 py-2 bg-white border border-[#4F6F52]/20 rounded-xl">
+                  <div className="text-xs text-[#739072] font-medium">
+                    Online
+                  </div>
+                  <div className="text-lg font-black text-green-600">
+                    {stats.online}
+                  </div>
+                </div>
+                <div className="flex-1 px-3 py-2 bg-white border border-red-200 rounded-xl">
+                  <div className="text-xs text-[#739072] font-medium">
+                    Offline
+                  </div>
+                  <div className="text-lg font-black text-red-600">
+                    {stats.offline}
+                  </div>
+                </div>
+                <div className="flex-1 px-3 py-2 bg-white border border-[#3A4D39]/20 rounded-xl">
+                  <div className="text-xs text-[#739072] font-medium">
+                    Total
+                  </div>
+                  <div className="text-lg font-black text-[#3A4D39]">
+                    {stats.total}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Motion.div>
+
+        {/* Main Grid */}
+        <Motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {/* Controllers Column */}
+          <Motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex flex-col gap-4"
+          >
+            {/* Column Header */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-[#3A4D39]/10 to-[#4F6F52]/10 rounded-xl shadow-sm">
+                  <Cpu className="w-5 h-5 text-[#3A4D39]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-[#3A4D39]">
+                    Controllers
+                  </h2>
+                  <p className="text-xs text-[#739072] font-medium">
+                    Processing Units
+                  </p>
+                </div>
+              </div>
+              <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
+                <span className="text-xs font-black text-[#739072]">
+                  4 Units
+                </span>
+              </div>
+            </div>
+
+            {/* Cards Container */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
               <ModuleCard
                 title="Arduino Q"
                 icon={Cpu}
@@ -164,21 +267,39 @@ export default function Modules() {
                 onClick={() => requestRepair("Repair need for ESP32 Servo")}
               />
             </div>
-          </div>
+          </Motion.div>
 
-          {/* motors column */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 mb-2 px-1">
-              <div className="p-2 bg-orange-50 rounded-lg text-orange-700">
-                <Cog className="w-5 h-5" />
+          {/* Actuators Column */}
+          <Motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col gap-4"
+          >
+            {/* Column Header */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm">
+                  <Cog className="w-5 h-5 text-orange-700" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-[#3A4D39]">
+                    Actuators
+                  </h2>
+                  <p className="text-xs text-[#739072] font-medium">
+                    Mechanical Systems
+                  </p>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-[#3A4D39]">Actuators</h2>
-              <span className="ml-auto text-xs font-bold bg-[#ECE3CE] text-[#739072] px-2 py-1 rounded-full">
-                5 Units
-              </span>
+              <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
+                <span className="text-xs font-black text-[#739072]">
+                  5 Units
+                </span>
+              </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#3A4D39]/10 space-y-3">
+            {/* Cards Container */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
               <ModuleCard
                 title="Servo A"
                 icon={Cog}
@@ -215,21 +336,37 @@ export default function Modules() {
                 onClick={() => requestRepair("Repair need for Exhaust Fan")}
               />
             </div>
-          </div>
+          </Motion.div>
 
-          {/* sensors column */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 mb-2 px-1">
-              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                <Eye className="w-5 h-5" />
+          {/* Sensors Column */}
+          <Motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col gap-4"
+          >
+            {/* Column Header */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm">
+                  <Eye className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-[#3A4D39]">Sensors</h2>
+                  <p className="text-xs text-[#739072] font-medium">
+                    Data Collection
+                  </p>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-[#3A4D39]">Sensors</h2>
-              <span className="ml-auto text-xs font-bold bg-[#ECE3CE] text-[#739072] px-2 py-1 rounded-full">
-                11 Units
-              </span>
+              <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
+                <span className="text-xs font-black text-[#739072]">
+                  11 Units
+                </span>
+              </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-[#3A4D39]/10 space-y-3">
+            {/* Cards Container */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
               <ModuleCard
                 title="Camera"
                 icon={Eye}
@@ -252,7 +389,7 @@ export default function Modules() {
                 onClick={() => requestRepair("Repair need for Methane Sensor")}
               />
               <ModuleCard
-                title="Carbon Monoxide Sensor"
+                title="Carbon Monoxide"
                 icon={AlertTriangle}
                 offline={modules?.carbon_monoxide}
                 subtext="MQ-7 CO Sensor"
@@ -261,7 +398,7 @@ export default function Modules() {
                 }
               />
               <ModuleCard
-                title="Air Quality Sensor"
+                title="Air Quality"
                 icon={Wind}
                 offline={modules?.air_quality}
                 subtext="MQ-135"
@@ -270,8 +407,8 @@ export default function Modules() {
                 }
               />
               <ModuleCard
-                title="Combustible Gas Sensor"
-                icon={BrickWallFire}
+                title="Combustible Gas"
+                icon={Flame}
                 offline={modules?.combustible_gasses}
                 subtext="MQ-2 Sensor"
                 onClick={() =>
@@ -293,7 +430,7 @@ export default function Modules() {
                 onClick={() => requestRepair("Repair need for Moisture Sensor")}
               />
               <ModuleCard
-                title="Reed Switch Sensor"
+                title="Reed Switch"
                 icon={CheckCircle2}
                 offline={modules?.reed}
                 subtext="Door / Lid Detection"
@@ -302,7 +439,7 @@ export default function Modules() {
                 }
               />
               <ModuleCard
-                title="Ultrasonic Sensor"
+                title="Ultrasonic"
                 icon={Activity}
                 offline={modules?.ultrasonic}
                 subtext="Distance Measurement"
@@ -318,9 +455,9 @@ export default function Modules() {
                 onClick={() => requestRepair("Repair need for Weight Sensor")}
               />
             </div>
-          </div>
-        </div>
-      </section>
+          </Motion.div>
+        </Motion.div>
+      </div>
     </div>
   );
 }

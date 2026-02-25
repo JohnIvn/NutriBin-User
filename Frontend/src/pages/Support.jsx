@@ -12,6 +12,9 @@ import {
   XCircle,
   Menu,
   X,
+  AlertCircle,
+  Info,
+  LifeBuoy,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,59 +33,52 @@ import {
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
 import getBaseUrl from "@/utils/GetBaseUrl";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 
-// ── Palette ──────────────────────────────────────────────────────────
-// bg:        #fbf1df  (warm cream — main background)
-// surface:   #f2e8d0  (deeper parchment — sidebar, header panels)
-// border:    #e2d3b4  (warm tan divider)
-// muted:     #b8a07a  (mid warm brown — placeholders, metadata)
-// subtle:    #8a6f4e  (deeper warm — secondary text)
-// strong:    #4a2e0e  (dark walnut — body text)
-// accent:    #3a4d39  (forest green — primary CTA, active states)
-// accent-lt: #dce8dc  (light green tint — icon backgrounds, hover)
-// accent-dk: #2a3a28  (deep green — hover on buttons)
-
+// Status & Priority Configuration
 const statusConfig = {
   open: {
     label: "Open",
-    className: "bg-amber-100 text-amber-700 border border-amber-200",
+    className: "bg-amber-100 text-amber-700 border-2 border-amber-200",
     dot: "bg-amber-500",
   },
   "in-progress": {
     label: "In Review",
-    className: "bg-violet-100 text-violet-700 border border-violet-200",
+    className: "bg-violet-100 text-violet-700 border-2 border-violet-200",
     dot: "bg-violet-500",
   },
   resolved: {
     label: "Resolved",
-    className: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    className: "bg-emerald-100 text-emerald-700 border-2 border-emerald-200",
     dot: "bg-emerald-500",
   },
   closed: {
     label: "Closed",
-    className: "bg-stone-200 text-stone-500 border border-stone-300",
+    className: "bg-stone-200 text-stone-600 border-2 border-stone-300",
     dot: "bg-stone-400",
   },
 };
 
 const priorityConfig = {
-  low: { label: "Low", color: "text-stone-400" },
-  medium: { label: "Medium", color: "text-amber-600" },
-  high: { label: "High", color: "text-orange-600" },
-  urgent: { label: "Urgent", color: "text-red-600" },
+  low: { label: "Low", color: "text-stone-500", icon: Info },
+  medium: { label: "Medium", color: "text-amber-600", icon: AlertCircle },
+  high: { label: "High", color: "text-orange-600", icon: AlertCircle },
+  urgent: { label: "Urgent", color: "text-red-600", icon: AlertCircle },
 };
 
 function StatusBadge({ status }) {
   const cfg = statusConfig[status] || {
     label: status,
-    className: "bg-stone-100 text-stone-500 border border-stone-200",
+    className: "bg-stone-100 text-stone-500 border-2 border-stone-200",
     dot: "bg-stone-400",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-[10px] font-semibold tracking-wider uppercase flex-shrink-0 ${cfg.className}`}
+      className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-bold tracking-wider uppercase flex-shrink-0 ${cfg.className}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+      <span
+        className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot} animate-pulse`}
+      />
       {cfg.label}
     </span>
   );
@@ -90,22 +86,30 @@ function StatusBadge({ status }) {
 
 function TicketCard({ ticket, isSelected, onClick }) {
   const pri = priorityConfig[ticket.priority] || priorityConfig.medium;
+  const PriorityIcon = pri.icon;
+
   return (
-    <button
+    <Motion.button
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3 }}
       onClick={onClick}
-      className={`w-full text-left px-5 py-4 border-b border-[#e2d3b4] transition-all duration-150 group relative ${
-        isSelected ? "bg-[#fbf1df]" : "hover:bg-[#f5e9d4]"
+      className={`w-full text-left px-5 py-4 border-b-2 border-[#e2d3b4] transition-all duration-200 group relative ${
+        isSelected
+          ? "bg-gradient-to-r from-[#3a4d39]/5 to-transparent"
+          : "hover:bg-[#f5e9d4]"
       }`}
     >
       {isSelected && (
-        <>
-          <span className="absolute left-0 top-0 h-full w-[3px] bg-[#3a4d39] rounded-r-sm" />
-          <span className="absolute inset-0 bg-gradient-to-r from-[#3a4d39]/5 to-transparent pointer-events-none" />
-        </>
+        <Motion.span
+          layoutId="selectedIndicator"
+          className="absolute left-0 top-0 h-full w-1 bg-[#3a4d39] rounded-r-lg shadow-lg"
+        />
       )}
-      <div className="flex items-start justify-between gap-2 mb-2">
+
+      <div className="flex items-start justify-between gap-3 mb-2.5">
         <p
-          className={`text-[13px] font-semibold leading-snug truncate pr-1 transition-colors ${
+          className={`text-sm font-bold leading-snug pr-1 transition-colors ${
             isSelected
               ? "text-[#3a4d39]"
               : "text-[#6b5237] group-hover:text-[#4a2e0e]"
@@ -115,16 +119,20 @@ function TicketCard({ ticket, isSelected, onClick }) {
         </p>
         <StatusBadge status={ticket.status} />
       </div>
+
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-[#b8a07a] font-mono tracking-wider">
+        <span className="text-[10px] text-[#b8a07a] font-mono tracking-wider font-bold bg-[#eddfc8] px-2 py-1 rounded-md">
           #{ticket.ticket_id.slice(-6).toUpperCase()}
         </span>
-        <div className="flex items-center gap-1.5">
-          <span className={`text-[10px] font-semibold ${pri.color}`}>
-            {pri.label}
-          </span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <PriorityIcon className={`w-3 h-3 ${pri.color}`} />
+            <span className={`text-[10px] font-bold ${pri.color}`}>
+              {pri.label}
+            </span>
+          </div>
           <span className="text-[#d4c4a0]">·</span>
-          <span className="text-[10px] text-[#b8a07a]">
+          <span className="text-[10px] text-[#b8a07a] font-medium">
             {new Date(ticket.date_created).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -132,65 +140,65 @@ function TicketCard({ ticket, isSelected, onClick }) {
           </span>
         </div>
       </div>
-    </button>
+    </Motion.button>
   );
 }
 
 function MessageBubble({ msg, user, isInitial }) {
-  // isMe = customer/user → RIGHT side
-  // admin/support → LEFT side
   const isMe = isInitial || msg.sender_type === "customer";
 
   return (
-    // User (isMe) aligns to the right; admin aligns to the left
-    <div className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""} items-end`}>
+    <Motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""} items-end`}
+    >
       {/* Avatar */}
       <div
-        className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-          isMe ? "bg-[#3a4d39] text-[#fbf1df]" : "bg-[#e2d3b4] text-[#7c5c38]"
+        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md ${
+          isMe
+            ? "bg-gradient-to-br from-[#3a4d39] to-[#2a3a28] text-white"
+            : "bg-gradient-to-br from-[#e2d3b4] to-[#d4c4a0] text-[#7c5c38]"
         }`}
       >
-        {isMe ? (
-          (user?.first_name?.[0] ?? "U")
-        ) : (
-          <Shield className="w-3.5 h-3.5" />
-        )}
+        {isMe ? (user?.first_name?.[0] ?? "U") : <Shield className="w-4 h-4" />}
       </div>
 
       {/* Bubble + label */}
       <div
-        className={`max-w-[76%] space-y-1 ${isMe ? "items-end flex flex-col" : ""}`}
+        className={`max-w-[76%] space-y-1.5 ${isMe ? "items-end flex flex-col" : ""}`}
       >
         <div
-          className={`px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap ${
+          className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
             isMe
-              ? // User bubble — right side, green
-                "bg-[#3a4d39] text-[#e8f2e8] rounded-2xl rounded-br-sm shadow-md shadow-[#3a4d39]/20"
-              : // Admin bubble — left side, white
-                "bg-white border border-[#e2d3b4] text-[#4a2e0e] rounded-2xl rounded-bl-sm shadow-sm"
+              ? "bg-gradient-to-br from-[#3a4d39] to-[#2a3a28] text-white rounded-2xl rounded-br-md shadow-lg"
+              : "bg-white border-2 border-[#e2d3b4] text-[#4a2e0e] rounded-2xl rounded-bl-md shadow-md"
           }`}
         >
           {isInitial ? msg.description : msg.message}
         </div>
-        <span className="text-[10px] text-[#b8a07a] px-1">
-          {isMe ? (isInitial ? "Original inquiry" : "You") : "Support Team"}
+        <div className="flex items-center gap-1.5 px-1">
+          <span className="text-[10px] text-[#b8a07a] font-bold">
+            {isMe ? (isInitial ? "Original Inquiry" : "You") : "Support Team"}
+          </span>
           {!isInitial && msg.date_sent && (
             <>
-              {" "}
-              ·{" "}
-              {new Date(msg.date_sent).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              <span className="text-[#d4c4a0]">·</span>
+              <span className="text-[10px] text-[#b8a07a]">
+                {new Date(msg.date_sent).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
             </>
           )}
-        </span>
+        </div>
       </div>
-    </div>
+    </Motion.div>
   );
 }
 
-// Sidebar extracted so it renders in both desktop panel + mobile drawer
 function SidebarContent({
   tickets,
   loading,
@@ -201,24 +209,28 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div className="px-5 pt-6 pb-5 border-b border-[#e2d3b4] flex-shrink-0">
+      <div className="px-5 pt-6 pb-5 border-b-2 border-[#e2d3b4] flex-shrink-0 bg-gradient-to-b from-[#f5ead5] to-[#f2e8d0]">
         <div className="flex items-start justify-between">
           <div>
-            <p className="font-mono text-[10px] font-medium tracking-[0.18em] text-[#b8a07a] uppercase mb-1.5">
-              Support Center
-            </p>
-            <h1 className="text-[21px] font-semibold text-[#3a4d39] leading-tight tracking-tight">
+            <div className="flex items-center gap-2 mb-2">
+              <LifeBuoy className="w-4 h-4 text-[#3a4d39]" />
+              <p className="font-mono text-[10px] font-bold tracking-widest text-[#b8a07a] uppercase">
+                Support Center
+              </p>
+            </div>
+            <h1 className="text-2xl font-black text-[#3a4d39] leading-tight tracking-tight">
               Your Tickets
             </h1>
-            <p className="text-[11px] text-[#8a6f4e] mt-1">
-              {tickets.length} {tickets.length === 1 ? "thread" : "threads"}
+            <p className="text-xs text-[#8a6f4e] mt-1 font-medium">
+              {tickets.length} active{" "}
+              {tickets.length === 1 ? "conversation" : "conversations"}
             </p>
           </div>
           <button
-            className="mt-1 flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#3a4d39] hover:bg-[#2a3a28] text-[#fbf1df] text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-95 shadow-md shadow-[#3a4d39]/25"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#3a4d39] hover:bg-[#2a3a28] text-white text-xs font-bold tracking-wide transition-all duration-200 active:scale-95 shadow-lg shadow-[#3a4d39]/25"
             onClick={() => setShowCreateDialog(true)}
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             New
           </button>
         </div>
@@ -228,36 +240,44 @@ function SidebarContent({
         {loading ? (
           <div className="px-5 py-6 space-y-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2.5">
-                <div className="skel h-3 w-3/4" />
-                <div className="skel h-2.5 w-2/5" />
-              </div>
+              <Motion.div
+                key={i}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.1 }}
+                className="space-y-2.5"
+              >
+                <div className="skel h-4 w-3/4" />
+                <div className="skel h-3 w-2/5" />
+              </Motion.div>
             ))}
           </div>
         ) : tickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full pb-20 px-8 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#dce8dc] flex items-center justify-center mb-3">
-              <MessageSquare className="w-5 h-5 text-[#3a4d39]" />
+            <div className="w-16 h-16 rounded-2xl bg-[#dce8dc] border-2 border-[#c4d8c4] flex items-center justify-center mb-4">
+              <MessageSquare className="w-7 h-7 text-[#3a4d39]" />
             </div>
-            <p className="text-[14px] font-semibold text-[#6b5237]">
+            <p className="text-base font-bold text-[#6b5237] mb-1">
               No tickets yet
             </p>
-            <p className="text-[12px] text-[#b8a07a] mt-0.5">
-              Create one to get started
+            <p className="text-xs text-[#b8a07a]">
+              Create one to get started with support
             </p>
           </div>
         ) : (
-          tickets.map((ticket) => (
-            <TicketCard
-              key={ticket.ticket_id}
-              ticket={ticket}
-              isSelected={selectedTicket?.ticket_id === ticket.ticket_id}
-              onClick={() => {
-                setSelectedTicket(ticket);
-                onTicketClick?.();
-              }}
-            />
-          ))
+          <AnimatePresence>
+            {tickets.map((ticket) => (
+              <TicketCard
+                key={ticket.ticket_id}
+                ticket={ticket}
+                isSelected={selectedTicket?.ticket_id === ticket.ticket_id}
+                onClick={() => {
+                  setSelectedTicket(ticket);
+                  onTicketClick?.();
+                }}
+              />
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </>
@@ -383,7 +403,6 @@ export default function Support() {
     };
   }, []);
 
-  // Join ticket room on selection
   useEffect(() => {
     if (selectedTicket && socketRef.current) {
       socketRef.current.emit("joinTicket", {
@@ -425,68 +444,53 @@ export default function Support() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
 
         .support-root * { font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; }
         .mono { font-family: 'Geist Mono', ui-monospace, monospace !important; }
 
-        .scrollbar-warm::-webkit-scrollbar       { width: 4px; }
-        .scrollbar-warm::-webkit-scrollbar-track  { background: transparent; }
-        .scrollbar-warm::-webkit-scrollbar-thumb  { background: #d4c4a0; border-radius: 99px; }
+        .scrollbar-warm::-webkit-scrollbar { width: 6px; }
+        .scrollbar-warm::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-warm::-webkit-scrollbar-thumb { background: #d4c4a0; border-radius: 99px; }
         .scrollbar-warm::-webkit-scrollbar-thumb:hover { background: #b8a07a; }
 
         .chat-input { caret-color: #3a4d39; }
         .chat-input:focus { outline: none; }
 
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .msg-enter { animation: fadeUp 0.22s cubic-bezier(0.22,1,0.36,1) forwards; }
-
-        @keyframes pulse-warm {
-          0%, 100% { opacity: 0.4; transform: translateY(0); }
-          50%       { opacity: 1;   transform: translateY(-3px); }
-        }
-        .dot-bounce { animation: pulse-warm 1.1s ease-in-out infinite; }
-
         .skel {
           background: linear-gradient(90deg, #e2d3b4 0%, #eddfc8 50%, #e2d3b4 100%);
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite;
-          border-radius: 4px;
+          border-radius: 6px;
         }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        /* Mobile drawer */
         .drawer-overlay {
           position: fixed; inset: 0; z-index: 40;
-          background: rgba(58,77,57,0.3);
-          backdrop-filter: blur(2px);
-          animation: overlayIn 0.18s ease;
+          background: rgba(58,77,57,0.4);
+          backdrop-filter: blur(4px);
+          animation: overlayIn 0.2s ease;
         }
         .drawer-panel {
           position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
-          width: min(300px, 88vw);
+          width: min(320px, 90vw);
           display: flex; flex-direction: column;
           background: #f2e8d0;
-          border-right: 1px solid #e2d3b4;
-          box-shadow: 6px 0 32px rgba(58,77,57,0.14);
-          animation: drawerIn 0.22s cubic-bezier(0.22,1,0.36,1);
+          border-right: 2px solid #e2d3b4;
+          box-shadow: 8px 0 32px rgba(58,77,57,0.15);
+          animation: drawerIn 0.25s cubic-bezier(0.22,1,0.36,1);
         }
         @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes drawerIn  { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-
-        [data-radix-dialog-overlay] { background: rgba(58,77,57,0.2) !important; backdrop-filter: blur(3px); }
+        @keyframes drawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
       `}</style>
 
       <div
         className="support-root flex w-full h-[calc(100vh-80px)] overflow-hidden"
         style={{ background: "#fbf1df" }}
       >
-        {/* ── DESKTOP SIDEBAR ─────────────────────────────────── */}
+        {/* Desktop Sidebar */}
         <div
-          className="hidden md:flex w-[300px] flex-shrink-0 border-r border-[#e2d3b4] flex-col"
+          className="hidden md:flex w-[320px] flex-shrink-0 border-r-2 border-[#e2d3b4] flex-col shadow-xl"
           style={{ background: "#f2e8d0" }}
         >
           <SidebarContent
@@ -498,75 +502,82 @@ export default function Support() {
           />
         </div>
 
-        {/* ── MOBILE DRAWER ───────────────────────────────────── */}
-        {sidebarOpen && (
-          <>
-            <div
-              className="drawer-overlay md:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="drawer-panel md:hidden">
-              <button
-                className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[#dce8dc] text-[#3a4d39] flex items-center justify-center hover:bg-[#c4d8c4] transition-colors z-10"
+        {/* Mobile Drawer */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              <Motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="drawer-overlay md:hidden"
                 onClick={() => setSidebarOpen(false)}
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <SidebarContent
-                tickets={tickets}
-                loading={loading}
-                selectedTicket={selectedTicket}
-                setSelectedTicket={setSelectedTicket}
-                setShowCreateDialog={setShowCreateDialog}
-                onTicketClick={() => setSidebarOpen(false)}
               />
-            </div>
-          </>
-        )}
+              <Motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="drawer-panel md:hidden"
+              >
+                <button
+                  className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-[#dce8dc] text-[#3a4d39] flex items-center justify-center hover:bg-[#c4d8c4] transition-colors z-10 shadow-md"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <SidebarContent
+                  tickets={tickets}
+                  loading={loading}
+                  selectedTicket={selectedTicket}
+                  setSelectedTicket={setSelectedTicket}
+                  setShowCreateDialog={setShowCreateDialog}
+                  onTicketClick={() => setSidebarOpen(false)}
+                />
+              </Motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
-        {/* ── CHAT PANEL ──────────────────────────────────────── */}
+        {/* Chat Panel */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {selectedTicket ? (
             <>
-              {/* Chat header */}
+              {/* Chat Header */}
               <div
-                className="flex-shrink-0 flex items-center justify-between px-4 md:px-7 py-3.5 md:py-4 border-b border-[#e2d3b4]"
+                className="flex-shrink-0 flex items-center justify-between px-4 md:px-7 py-4 md:py-5 border-b-2 border-[#e2d3b4] shadow-sm"
                 style={{ background: "#f2e8d0" }}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Mobile hamburger */}
                   <button
-                    className="md:hidden flex-shrink-0 w-8 h-8 rounded-lg bg-[#dce8dc] text-[#3a4d39] flex items-center justify-center hover:bg-[#c4d8c4] transition-colors"
+                    className="md:hidden flex-shrink-0 w-10 h-10 rounded-xl bg-[#dce8dc] text-[#3a4d39] flex items-center justify-center hover:bg-[#c4d8c4] transition-colors shadow-md"
                     onClick={() => setSidebarOpen(true)}
-                    aria-label="Open ticket list"
                   >
-                    <Menu className="w-4 h-4" />
+                    <Menu className="w-5 h-5" />
                   </button>
 
-                  <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[#dce8dc] flex items-center justify-center">
-                    <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#3a4d39]" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[#dce8dc] to-[#c4d8c4] flex items-center justify-center shadow-md">
+                    <MessageSquare className="w-5 h-5 text-[#3a4d39]" />
                   </div>
 
                   <div className="min-w-0">
-                    <h2 className="text-[14px] md:text-[15px] font-semibold text-[#3a4d39] truncate leading-tight">
+                    <h2 className="text-base md:text-lg font-bold text-[#3a4d39] truncate leading-tight">
                       {selectedTicket.subject}
                     </h2>
-                    <div className="flex items-center gap-1.5 md:gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-1">
                       <StatusBadge status={selectedTicket.status} />
                       <span className="text-[#d4c4a0] hidden sm:inline">·</span>
                       <span
-                        className={`mono text-[10px] font-medium tracking-wider uppercase hidden sm:inline ${priorityConfig[selectedTicket.priority]?.color}`}
+                        className={`mono text-[10px] font-bold tracking-wider uppercase hidden sm:inline ${priorityConfig[selectedTicket.priority]?.color}`}
                       >
                         {priorityConfig[selectedTicket.priority]?.label}
-                      </span>
-                      <span className="text-[#d4c4a0] hidden md:inline">·</span>
-                      <span className="mono text-[10px] text-[#b8a07a] tracking-wider hidden md:inline">
-                        #{selectedTicket.ticket_id.slice(-6).toUpperCase()}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="mono text-[10px] md:text-[11px] text-[#b8a07a] flex-shrink-0 ml-2 md:ml-4 hidden sm:block">
+
+                <div className="mono text-xs text-[#b8a07a] flex-shrink-0 ml-2 md:ml-4 hidden sm:flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-[#e2d3b4]">
+                  <Clock className="w-3.5 h-3.5" />
                   {new Date(selectedTicket.date_created).toLocaleDateString(
                     "en-US",
                     { month: "short", day: "numeric", year: "numeric" },
@@ -577,54 +588,61 @@ export default function Support() {
               {/* Messages */}
               <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto scrollbar-warm px-4 md:px-7 py-5 md:py-7 space-y-4 md:space-y-5"
+                className="flex-1 overflow-y-auto scrollbar-warm px-4 md:px-7 py-6 md:py-8 space-y-5"
                 style={{ background: "#fbf1df" }}
               >
-                <div className="msg-enter">
-                  <MessageBubble
-                    msg={selectedTicket}
-                    user={user}
-                    isInitial={true}
-                  />
-                </div>
+                <MessageBubble
+                  msg={selectedTicket}
+                  user={user}
+                  isInitial={true}
+                />
 
                 {messagesLoading ? (
-                  <div className="flex items-center gap-1.5 py-4 pl-11">
+                  <div className="flex items-center gap-2 py-6 pl-11">
                     {[0, 0.14, 0.28].map((d, i) => (
-                      <span
+                      <Motion.span
                         key={i}
-                        className="w-2 h-2 bg-[#3a4d39]/40 rounded-full dot-bounce"
-                        style={{ animationDelay: `${d}s` }}
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.4, 1, 0.4] }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.2,
+                          delay: d,
+                          ease: "easeInOut",
+                        }}
+                        className="w-2.5 h-2.5 bg-[#3a4d39] rounded-full"
                       />
                     ))}
                   </div>
                 ) : (
-                  messages.map((msg, idx) => (
-                    <div key={msg.message_id || idx} className="msg-enter">
-                      <MessageBubble msg={msg} user={user} isInitial={false} />
-                    </div>
+                  messages.map((msg) => (
+                    <MessageBubble
+                      key={msg.message_id}
+                      msg={msg}
+                      user={user}
+                      isInitial={false}
+                    />
                   ))
                 )}
               </div>
 
-              {/* Reply area */}
+              {/* Reply Area */}
               <div
-                className="flex-shrink-0 px-4 md:px-7 py-4 md:py-5 border-t border-[#e2d3b4]"
+                className="flex-shrink-0 px-4 md:px-7 py-5 md:py-6 border-t-2 border-[#e2d3b4] shadow-inner"
                 style={{ background: "#f2e8d0" }}
               >
                 {isClosed ? (
-                  <div className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#e2d3b4] border border-[#d4c4a0]">
-                    <XCircle className="w-4 h-4 text-[#b8a07a]" />
-                    <span className="text-[12px] text-[#8a6f4e] font-medium">
+                  <div className="flex items-center justify-center gap-2.5 py-4 rounded-xl bg-gradient-to-r from-[#e2d3b4] to-[#d4c4a0] border-2 border-[#d4c4a0]">
+                    <XCircle className="w-5 h-5 text-[#8a6f4e]" />
+                    <span className="text-sm text-[#6b5237] font-bold">
                       This ticket has been closed
                     </span>
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-end gap-3 rounded-xl border border-[#e2d3b4] bg-white px-4 pt-3 pb-3 shadow-sm transition-all duration-200 focus-within:border-[#3a4d39] focus-within:shadow-[0_0_0_3px_rgba(58,77,57,0.08)]">
+                    <div className="flex items-end gap-3 rounded-2xl border-2 border-[#e2d3b4] bg-white px-4 pt-3 pb-3 shadow-md transition-all duration-200 focus-within:border-[#3a4d39] focus-within:shadow-lg focus-within:shadow-[#3a4d39]/10">
                       <textarea
-                        placeholder="Write a message…"
-                        className="chat-input flex-1 border-none bg-transparent p-0 min-h-[52px] md:min-h-[56px] max-h-[120px] resize-none text-[13px] text-[#4a2e0e] placeholder:text-[#c4aa82] focus-visible:ring-0 shadow-none outline-none leading-relaxed"
+                        placeholder="Write your message…"
+                        className="chat-input flex-1 border-none bg-transparent p-0 min-h-[60px] max-h-[140px] resize-none text-sm text-[#4a2e0e] placeholder:text-[#c4aa82] focus-visible:ring-0 shadow-none outline-none leading-relaxed"
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         onKeyDown={(e) => {
@@ -637,88 +655,93 @@ export default function Support() {
                       <button
                         onClick={handleSendMessage}
                         disabled={!replyText.trim()}
-                        className="flex-shrink-0 mb-0.5 w-9 h-9 rounded-xl bg-[#3a4d39] hover:bg-[#2a3a28] disabled:bg-[#e2d3b4] disabled:cursor-not-allowed text-[#fbf1df] disabled:text-[#b8a07a] flex items-center justify-center transition-all duration-150 active:scale-90 shadow-sm shadow-[#3a4d39]/20"
+                        className="flex-shrink-0 mb-1 w-10 h-10 rounded-xl bg-[#3a4d39] hover:bg-[#2a3a28] disabled:bg-[#e2d3b4] disabled:cursor-not-allowed text-white disabled:text-[#b8a07a] flex items-center justify-center transition-all duration-200 active:scale-90 shadow-lg shadow-[#3a4d39]/25"
                       >
                         <Send className="w-4 h-4" />
                       </button>
                     </div>
-                    <p className="mono text-center text-[10px] text-[#b8a07a] mt-2.5 tracking-wide hidden sm:block">
-                      ↵ Enter to send · ⇧ Shift+Enter for new line
+                    <p className="mono text-center text-[10px] text-[#b8a07a] mt-3 tracking-wide hidden sm:block font-medium">
+                      Press <span className="font-bold">Enter</span> to send ·{" "}
+                      <span className="font-bold">Shift + Enter</span> for new
+                      line
                     </p>
                   </>
                 )}
               </div>
             </>
           ) : (
-            /* Empty state */
             <div
               className="flex-1 flex flex-col items-center justify-center px-6"
               style={{ background: "#fbf1df" }}
             >
-              <div className="text-center max-w-[280px]">
-                <div className="w-16 h-16 rounded-3xl bg-[#dce8dc] border border-[#c4d8c4] flex items-center justify-center mx-auto mb-5">
-                  <History className="w-6 h-6 text-[#3a4d39]" />
+              <Motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="text-center max-w-sm"
+              >
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#dce8dc] to-[#c4d8c4] border-2 border-[#c4d8c4] flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <History className="w-9 h-9 text-[#3a4d39]" />
                 </div>
-                <h3 className="text-[20px] font-semibold text-[#3a4d39] mb-2 tracking-tight">
+                <h3 className="text-2xl font-black text-[#3a4d39] mb-3 tracking-tight">
                   No ticket selected
                 </h3>
-                <p className="text-[13px] text-[#8a6f4e] leading-relaxed">
+                <p className="text-sm text-[#8a6f4e] leading-relaxed mb-6">
                   Choose a ticket from the sidebar, or open a new one to get
-                  help from our team.
+                  help from our support team.
                 </p>
-                <div className="flex flex-col sm:flex-row items-center gap-2.5 justify-center mt-5">
+                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
                   <button
-                    className="md:hidden w-full sm:w-auto flex items-center gap-2 justify-center px-4 py-2.5 rounded-xl border border-[#3a4d39] text-[#3a4d39] text-[12px] font-semibold hover:bg-[#dce8dc] transition-colors active:scale-95"
+                    className="md:hidden w-full sm:w-auto flex items-center gap-2 justify-center px-5 py-3 rounded-xl border-2 border-[#3a4d39] text-[#3a4d39] text-sm font-bold hover:bg-[#dce8dc] transition-all duration-200 active:scale-95"
                     onClick={() => setSidebarOpen(true)}
                   >
                     <Menu className="w-4 h-4" />
                     View Tickets
                   </button>
                   <button
-                    className="w-full sm:w-auto flex items-center gap-2 justify-center px-4 py-2.5 rounded-xl bg-[#3a4d39] text-[#fbf1df] text-[12px] font-semibold hover:bg-[#2a3a28] transition-colors shadow-md shadow-[#3a4d39]/20 active:scale-95"
+                    className="w-full sm:w-auto flex items-center gap-2 justify-center px-5 py-3 rounded-xl bg-[#3a4d39] text-white text-sm font-bold hover:bg-[#2a3a28] transition-all duration-200 shadow-lg shadow-[#3a4d39]/25 active:scale-95"
                     onClick={() => setShowCreateDialog(true)}
                   >
                     <Plus className="w-4 h-4" />
-                    Open a ticket
+                    Create Ticket
                   </button>
                 </div>
-              </div>
+              </Motion.div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Create Ticket Dialog ─────────────────────────────── */}
+      {/* Create Ticket Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent
-          className="w-[calc(100vw-32px)] sm:max-w-[460px] p-0 overflow-hidden border border-[#e2d3b4] rounded-2xl shadow-2xl shadow-[#3a4d39]/10"
+          className="w-[calc(100vw-32px)] sm:max-w-[500px] p-0 overflow-hidden border-2 border-[#e2d3b4] rounded-3xl shadow-2xl"
           style={{ background: "#fbf1df" }}
         >
-          {/* Green + warm gradient accent bar */}
-          <div className="h-[3px] w-full bg-gradient-to-r from-[#b8a07a] via-[#3a4d39] to-[#b8a07a]" />
-          <div className="p-5 sm:p-7">
-            <div className="flex items-center gap-3 mb-5 sm:mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#dce8dc] flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="w-5 h-5 text-[#3a4d39]" />
+          <div className="h-1 w-full bg-gradient-to-r from-[#b8a07a] via-[#3a4d39] to-[#b8a07a]" />
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#dce8dc] to-[#c4d8c4] flex items-center justify-center flex-shrink-0 shadow-md">
+                <MessageSquare className="w-6 h-6 text-[#3a4d39]" />
               </div>
               <div>
-                <DialogTitle className="text-[16px] sm:text-[17px] font-semibold text-[#3a4d39] leading-tight">
-                  New support ticket
+                <DialogTitle className="text-lg font-bold text-[#3a4d39] leading-tight">
+                  New Support Ticket
                 </DialogTitle>
-                <DialogDescription className="text-[12px] text-[#8a6f4e] mt-0.5">
+                <DialogDescription className="text-xs text-[#8a6f4e] mt-0.5 font-medium">
                   We typically respond within 24 hours
                 </DialogDescription>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="mono text-[10px] font-medium text-[#8a6f4e] uppercase tracking-[0.12em]">
+              <div className="space-y-2">
+                <label className="mono text-[10px] font-bold text-[#8a6f4e] uppercase tracking-widest">
                   Subject
                 </label>
                 <input
                   placeholder="Brief summary of your issue"
-                  className="w-full rounded-xl border border-[#e2d3b4] bg-white focus:border-[#3a4d39] focus:ring-2 focus:ring-[#3a4d39]/10 text-[13px] text-[#4a2e0e] placeholder:text-[#b8a07a] px-3.5 py-2.5 transition-all outline-none shadow-sm"
+                  className="w-full rounded-xl border-2 border-[#e2d3b4] bg-white focus:border-[#3a4d39] focus:ring-2 focus:ring-[#3a4d39]/10 text-sm text-[#4a2e0e] placeholder:text-[#b8a07a] px-4 py-3 transition-all outline-none shadow-sm"
                   value={newTicket.subject}
                   onChange={(e) =>
                     setNewTicket({ ...newTicket, subject: e.target.value })
@@ -726,14 +749,14 @@ export default function Support() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="mono text-[10px] font-medium text-[#8a6f4e] uppercase tracking-[0.12em]">
+              <div className="space-y-2">
+                <label className="mono text-[10px] font-bold text-[#8a6f4e] uppercase tracking-widest">
                   Description
                 </label>
                 <textarea
                   placeholder="Describe your issue in detail…"
                   rows={4}
-                  className="w-full rounded-xl border border-[#e2d3b4] bg-white focus:border-[#3a4d39] focus:ring-2 focus:ring-[#3a4d39]/10 text-[13px] text-[#4a2e0e] placeholder:text-[#b8a07a] px-3.5 py-2.5 transition-all outline-none resize-none shadow-sm"
+                  className="w-full rounded-xl border-2 border-[#e2d3b4] bg-white focus:border-[#3a4d39] focus:ring-2 focus:ring-[#3a4d39]/10 text-sm text-[#4a2e0e] placeholder:text-[#b8a07a] px-4 py-3 transition-all outline-none resize-none shadow-sm"
                   value={newTicket.description}
                   onChange={(e) =>
                     setNewTicket({ ...newTicket, description: e.target.value })
@@ -741,8 +764,8 @@ export default function Support() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="mono text-[10px] font-medium text-[#8a6f4e] uppercase tracking-[0.12em]">
+              <div className="space-y-2">
+                <label className="mono text-[10px] font-bold text-[#8a6f4e] uppercase tracking-widest">
                   Priority
                 </label>
                 <Select
@@ -751,11 +774,11 @@ export default function Support() {
                     setNewTicket({ ...newTicket, priority: v })
                   }
                 >
-                  <SelectTrigger className="rounded-xl border-[#e2d3b4] bg-white text-[13px] text-[#4a2e0e] shadow-sm">
+                  <SelectTrigger className="rounded-xl border-2 border-[#e2d3b4] bg-white text-sm text-[#4a2e0e] shadow-sm h-12">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent
-                    className="rounded-xl border-[#e2d3b4] shadow-xl text-[13px]"
+                    className="rounded-xl border-2 border-[#e2d3b4] shadow-xl text-sm"
                     style={{ background: "#fbf1df" }}
                   >
                     {Object.entries(priorityConfig).map(([key, p]) => (
@@ -764,10 +787,10 @@ export default function Support() {
                         value={key}
                         className="focus:bg-[#eee5d0]"
                       >
-                        <span className={`font-semibold ${p.color}`}>
+                        <span className={`font-bold ${p.color}`}>
                           {p.label}
                         </span>
-                        <span className="text-[#8a6f4e] ml-1.5">
+                        <span className="text-[#8a6f4e] ml-2">
                           —{" "}
                           {
                             {
@@ -785,15 +808,15 @@ export default function Support() {
               </div>
             </div>
 
-            <div className="mt-5 sm:mt-6 flex gap-2.5">
+            <div className="mt-6 flex gap-3">
               <button
-                className="flex-1 py-2.5 rounded-xl border border-[#e2d3b4] text-[12px] font-semibold text-[#8a6f4e] hover:bg-[#eddfc8] transition-colors"
+                className="flex-1 py-3 rounded-xl border-2 border-[#e2d3b4] text-sm font-bold text-[#8a6f4e] hover:bg-[#eddfc8] transition-colors"
                 onClick={() => setShowCreateDialog(false)}
               >
                 Cancel
               </button>
               <button
-                className="flex-1 py-2.5 rounded-xl bg-[#3a4d39] hover:bg-[#2a3a28] text-[#fbf1df] text-[12px] font-semibold tracking-wide transition-all shadow-md shadow-[#3a4d39]/20 disabled:opacity-50 active:scale-[0.98]"
+                className="flex-1 py-3 rounded-xl bg-[#3a4d39] hover:bg-[#2a3a28] text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-[#3a4d39]/25 disabled:opacity-50 active:scale-95"
                 onClick={handleCreateTicket}
                 disabled={createLoading}
               >

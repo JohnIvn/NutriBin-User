@@ -84,7 +84,6 @@ export class DashboardController {
         FROM announcements
         WHERE is_active = true
         ORDER BY COALESCE(date_published::timestamptz, date_created) DESC
-        LIMIT 2
         `,
       );
 
