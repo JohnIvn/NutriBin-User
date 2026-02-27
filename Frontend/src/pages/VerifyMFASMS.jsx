@@ -92,9 +92,8 @@ export function VerifyMFASMS() {
     try {
       setResendCooldown(60); // 60 second cooldown
       const res = await Requests({
-        url: "/authentication/resend-mfa-sms",
+        url: `/authentication/${customerId}/resend-mfa-sms`,
         method: "POST",
-        data: { customerId },
       });
 
       if (res.data.ok) {

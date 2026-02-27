@@ -11,6 +11,8 @@ import {
 
 import { DatabaseService } from '../../service/database/database.service';
 import { BrevoService } from 'src/service/email/brevo.service';
+import { randomInt } from 'crypto';
+import { IprogSmsService } from 'src/service/iprogsms/iprogsms.service';
 
 interface UserRow {
   customer_id: string;
@@ -40,6 +42,7 @@ export class AuthenticationController {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly mailer: BrevoService,
+    private readonly iprogSms: IprogSmsService
   ) {}
 
   @Get(':customerId/mfa')
@@ -336,6 +339,70 @@ export class AuthenticationController {
     }
 
     return { ok: true, mfaVerified: isUsed, user };
+  }
+
+  @Post(':customerId/resend-mfa-sms')
+  async resendMfa(@Param('customerId') customerId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query<UserRow>(
+        `SELECT customer_id, first_name, last_name, contact_number, address, email, date_created, last_updated, status
+       FROM user_customer
+       WHERE customer_id = $1
+       LIMIT 1`,
+        [customerId],
+      );
+
+      if (!result.rowCount) {
+        return {
+          ok: false,
+          error: 'Account not found',
+        };
+      }
+
+      const user = result.rows[0];
+      const phone = user.contact_number;
+
+      if (!phone) {
+        return {
+          ok: false,
+          error: 'No phone number on record for SMS verification',
+        };
+      }
+      // Clear previous MFA codes for this user
+      await client.query(
+        `DELETE FROM codes WHERE user_id = $1 AND purpose = 'mfa' AND used = false`,
+        [user.customer_id],
+      );
+
+      const code = String(randomInt(100000, 1000000));
+
+      await client.query(
+        `INSERT INTO codes (user_id, code, purpose, expires_at)
+           VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
+        [user.customer_id, code],
+      );
+
+      try {
+        await this.iprogSms.sendSms({
+          to: phone,
+          body: `Your NutriBin verification code is: ${code}`,
+        });
+      } catch (smsErr) {
+        console.error('Failed to send MFA SMS:', smsErr);
+        throw new InternalServerErrorException(
+          'Failed to send verification SMS',
+        );
+      }
+
+      return {
+        ok: true,
+        message: 'MFA verification code sent via SMS',
+      };
+    } catch (err) {
+      console.log("Error", err);
+    }
   }
 
   @Post('verify-mfa-sms')

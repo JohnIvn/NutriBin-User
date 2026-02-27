@@ -470,7 +470,7 @@ export class UserAuthService {
     await client.query(
       `INSERT INTO auth_attempts (customer_id, user_type, attempt_type, site_visited, success)
       VALUES ($1, 'customer', 'login', 'Customer Portal', $2)`,
-      [user.customer_id || null, true],
+      [user.customer_id, true],
     );
 
     return {
@@ -528,6 +528,12 @@ export class UserAuthService {
                 : 'This user account is inactive',
           };
         }
+
+        await client.query(
+          `INSERT INTO auth_attempts (customer_id, user_type, attempt_type, site_visited, success)
+            VALUES ($1, 'customer', 'login', 'Customer Portal', $2)`,
+          [user.customer_id, true],
+        );
 
         const safeUser = {
           customer_id: user.customer_id,
@@ -914,7 +920,7 @@ export class UserAuthService {
 
         await client.query(
           `INSERT INTO codes (user_id, code, purpose, expires_at)
-   VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
+           VALUES ($1, $2, 'mfa', NOW() + INTERVAL '15 minutes')`,
           [user.customer_id, code],
         );
 
