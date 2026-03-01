@@ -12,6 +12,7 @@ import { DatabaseService } from '../../service/database/database.service';
 
 type MachineAnalyticsRow = {
   machine_id: string;
+  is_active: boolean | null;
   c1: boolean | null;
   c2: boolean | null;
   c3: boolean | null;
@@ -36,7 +37,10 @@ type MachineAnalyticsRow = {
 };
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
+  const isMachineOffline = row.is_active === false;
+
   const invertStatus = (val: any) => {
+    if (isMachineOffline) return 'offline';
     if (val === null || val === undefined) return null;
     // Database value true means there is a fault/issue -> App should show Offline (false)
     // Database value false means everything is OK -> App should show Online (true)
@@ -95,6 +99,7 @@ export class HardwareController {
         `
         SELECT
           ma.machine_id,
+          ms.is_active,
           ma.c1,
           ma.c2,
           ma.c3,
@@ -117,6 +122,7 @@ export class HardwareController {
           ma.m5,
           ma.date_created
         FROM machines ma
+        LEFT JOIN machine_serial ms ON ma.machine_id = ms.machine_serial_id
         WHERE ma.machine_id = $1
         ORDER BY ma.date_created DESC
         LIMIT 1
