@@ -161,12 +161,16 @@ export class MobileService {
         return { ok: false, message: 'Customer ID is required' };
       }
 
-      const result = await client.query<FertilizerAnalyticsRow>(
+      const result = await client.query<
+        FertilizerAnalyticsRow & { is_active: boolean }
+      >(
         `
   SELECT nitrogen, phosphorus, potassium, 
          temperature, ph, humidity, moisture, weight_kg, reed_switch,
-         methane, air_quality, carbon_monoxide, combustible_gases
+         methane, air_quality, carbon_monoxide, combustible_gases,
+         ms.is_active
   FROM fertilizer_analytics fa
+  LEFT JOIN machine_serial ms ON fa.machine_id = ms.machine_serial_id
   WHERE fa.machine_id = $1 
     AND EXISTS (
       SELECT 1 
@@ -185,10 +189,12 @@ export class MobileService {
       }
 
       const machineData = result.rows[0];
+      const isMachineOffline = machineData.is_active === false;
 
       // Invert reed_switch logic: true/1/t means CLOSED/SECURE (Online), false/0/f means OPEN/WARNING (Offline)
       // Actually, based on previous prompt: if db is true then false (Offline), if db is false then true (Online)
       const invertValue = (val: any) => {
+        if (isMachineOffline) return 'offline';
         if (val === null || val === undefined) return null;
         const isTruthy =
           val === true ||
@@ -201,6 +207,8 @@ export class MobileService {
 
       if (machineData) {
         machineData.reed_switch = invertValue(machineData.reed_switch);
+        // Add is_active to the returned data so the frontend can use it if needed
+        (machineData as any).is_active = !isMachineOffline;
       }
 
       return {
