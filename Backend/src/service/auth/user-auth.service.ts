@@ -824,6 +824,13 @@ export class UserAuthService {
 
     const user = result.rows[0];
 
+    // Log attempt
+    await client.query(
+      `INSERT INTO auth_attempts (customer_id, user_type, attempt_type, site_visited, success)
+      VALUES ($1, 'customer', 'login', 'Customer Portal', $2)`,
+      [user.customer_id, true],
+    );
+
     const matches = await bcrypt.compare(password, user.password);
     if (!matches) {
       return {
