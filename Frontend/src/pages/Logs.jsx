@@ -10,10 +10,16 @@ import {
   Download,
   Filter,
   Database,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
 import { motion as Motion } from "framer-motion";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function Logs() {
   const { selectedMachine } = useUser();
@@ -24,6 +30,7 @@ export default function Logs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
   // 🔄 Fetch logs from backend
@@ -36,8 +43,8 @@ export default function Logs() {
         url: `/trash-logs/${machineId}`,
         method: "GET",
         params: {
-          page: 1,
-          limit: 50,
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
         },
       });
 
@@ -53,8 +60,13 @@ export default function Logs() {
 
   // 🚀 Initial load & machine change
   useEffect(() => {
-    fetchLogs();
+    setCurrentPage(1);
   }, [machineId]);
+
+  // 🔄 Fetch logs when page changes or machine changes
+  useEffect(() => {
+    fetchLogs();
+  }, [currentPage, machineId]);
 
   // 🔍 Client-side filters
   const filteredLogs = logs.filter((log) => {
@@ -79,6 +91,60 @@ export default function Logs() {
   // Calculate filter stats
   const hasActiveFilters = searchTerm || selectedDate;
   const filterCount = (searchTerm ? 1 : 0) + (selectedDate ? 1 : 0);
+
+  // Generate page numbers with ellipsis
+  const generatePageNumbers = () => {
+    if (!pagination) return [];
+
+    const { currentPage: current, totalPages } = pagination;
+    const pages = [];
+    const maxVisible = 5; // Maximum number of page buttons to show
+
+    if (totalPages <= maxVisible + 2) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      let start = Math.max(2, current - 1);
+      let end = Math.min(totalPages - 1, current + 1);
+
+      // Adjust if near the start
+      if (current <= 3) {
+        start = 2;
+        end = maxVisible - 1;
+      }
+
+      // Adjust if near the end
+      if (current >= totalPages - 2) {
+        start = totalPages - (maxVisible - 2);
+        end = totalPages - 1;
+      }
+
+      // Add ellipsis after first page if needed
+      if (start > 2) {
+        pages.push("ellipsis-start");
+      }
+
+      // Add middle pages
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis before last page if needed
+      if (end < totalPages - 1) {
+        pages.push("ellipsis-end");
+      }
+
+      // Always show last page
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] font-sans">
@@ -302,12 +368,15 @@ export default function Logs() {
                   <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
                     pH
                   </th>
+                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
+                    Lid Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="9" className="p-0">
+                    <td colSpan="10" className="p-0">
                       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                         <Motion.div
                           animate={{ rotate: 360 }}
@@ -380,11 +449,26 @@ export default function Logs() {
                           {log.ph}
                         </span>
                       </td>
+                      <td className="p-4 text-center">
+                        {log.reed_switch == null ? (
+                          <span className="text-gray-400 text-sm font-medium">
+                            N/A
+                          </span>
+                        ) : log.reed_switch === true ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-lg bg-green-100 text-green-700 text-sm font-bold">
+                            Closed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-lg bg-red-100 text-red-700 text-sm font-bold">
+                            Open
+                          </span>
+                        )}
+                      </td>
                     </Motion.tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="9" className="p-0">
+                    <td colSpan="10" className="p-0">
                       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                         <div className="p-6 bg-[#ECE3CE]/40 rounded-2xl">
                           <ClipboardList className="w-12 h-12 text-[#739072]/40" />
@@ -407,21 +491,126 @@ export default function Logs() {
             </table>
           </div>
 
-          {/* Table Footer with Stats */}
-          {filteredLogs.length > 0 && (
-            <div className="px-6 py-4 bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/50 border-t border-[#ECE3CE]">
-              <div className="flex items-center justify-between text-xs text-[#739072]">
-                <span className="font-medium">
-                  Displaying {filteredLogs.length} of {logs.length} total
+          {/* Enhanced Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <Motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="border-t border-[#ECE3CE]/50 bg-gradient-to-r from-[#FAF9F6]/50 to-white px-6 py-5"
+            >
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Page Info */}
+                <div className="text-sm text-[#739072] font-medium">
+                  Showing{" "}
+                  <span className="font-bold text-[#3A4D39]">
+                    {(pagination.page - 1) * pagination.limit + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-bold text-[#3A4D39]">
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total,
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-bold text-[#3A4D39]">
+                    {pagination.total}
+                  </span>{" "}
                   records
-                </span>
-                {hasActiveFilters && (
-                  <span className="font-bold text-[#4F6F52]">
-                    {filterCount} filter{filterCount !== 1 ? "s" : ""} active
-                  </span>
-                )}
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-2">
+                  {/* First Page */}
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(1)}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      currentPage === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-[#3A4D39] hover:bg-[#ECE3CE]/50 active:scale-95"
+                    }`}
+                    title="First page"
+                  >
+                    <ChevronsLeft className="w-5 h-5" />
+                  </button>
+
+                  {/* Previous Page */}
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                      currentPage === 1
+                        ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                        : "bg-white border-2 border-[#3A4D39]/20 text-[#3A4D39] hover:bg-[#3A4D39] hover:text-white hover:border-[#3A4D39] shadow-sm active:scale-95"
+                    }`}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {generatePageNumbers().map((page, index) => {
+                      if (typeof page === "string") {
+                        // Render ellipsis
+                        return (
+                          <div
+                            key={page}
+                            className="px-2 text-[#739072] font-bold"
+                          >
+                            •••
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`min-w-[40px] h-10 rounded-lg text-sm font-bold transition-all duration-200 ${
+                            page === currentPage
+                              ? "bg-[#3A4D39] text-white shadow-lg shadow-[#3A4D39]/30 scale-105"
+                              : "bg-white border-2 border-[#3A4D39]/20 text-[#3A4D39] hover:bg-[#ECE3CE]/70 hover:border-[#4F6F52]/40 active:scale-95"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Page */}
+                  <button
+                    disabled={currentPage === pagination.totalPages}
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                      currentPage === pagination.totalPages
+                        ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                        : "bg-white border-2 border-[#3A4D39]/20 text-[#3A4D39] hover:bg-[#3A4D39] hover:text-white hover:border-[#3A4D39] shadow-sm active:scale-95"
+                    }`}
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  {/* Last Page */}
+                  <button
+                    disabled={currentPage === pagination.totalPages}
+                    onClick={() => setCurrentPage(pagination.totalPages)}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      currentPage === pagination.totalPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-[#3A4D39] hover:bg-[#ECE3CE]/50 active:scale-95"
+                    }`}
+                    title="Last page"
+                  >
+                    <ChevronsRight className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-            </div>
+            </Motion.div>
           )}
         </Motion.div>
       </div>
