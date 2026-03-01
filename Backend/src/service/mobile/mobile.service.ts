@@ -53,12 +53,16 @@ export class MobileService {
     const client = this.databaseService.getClient();
 
     try {
-      const machineResponse = await client.query<FetchMachinesRow>(
+      const machineResponse = await client.query<
+        FetchMachinesRow & { is_active: boolean }
+      >(
         `
-    SELECT mc.machine_id, ms.serial_number
+    SELECT mc.machine_id, ms.serial_number, m.is_active
     FROM machine_customers mc
     LEFT JOIN machine_serial ms
       ON mc.machine_id = ms.machine_serial_id
+    LEFT JOIN machines m
+      ON mc.machine_id = m.machine_id
     WHERE mc.customer_id = $1
   `,
         [customerId],
