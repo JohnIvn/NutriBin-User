@@ -168,8 +168,9 @@ export class MobileService {
   SELECT nitrogen, phosphorus, potassium, 
          temperature, ph, humidity, moisture, weight_kg, reed_switch,
          methane, air_quality, carbon_monoxide, combustible_gases,
-         fa.is_active
+         m.is_active
   FROM fertilizer_analytics fa
+  INNER JOIN machines m ON fa.machine_id = m.machine_id
   WHERE fa.machine_id = $1 
     AND EXISTS (
       SELECT 1 
