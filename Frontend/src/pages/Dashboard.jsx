@@ -364,7 +364,7 @@ function LogRow({ log, index }) {
     >
       <td className="px-5 py-3.5">
         <span className="font-mono text-[11px] font-bold text-[#9CA88F] bg-[#F0EBE3] px-2 py-1 rounded-md">
-          #{log.log_id.slice(0, 6).toUpperCase()}
+          #{log.fertilizer_analytics_id.slice(0, 6).toUpperCase()}
         </span>
       </td>
       <td className="px-5 py-3.5 text-[13px] font-semibold text-[#2C3E2D] whitespace-nowrap">
@@ -691,7 +691,11 @@ export default function Dashboard() {
                   </thead>
                   <tbody className="divide-y divide-[#F6F3ED]">
                     {trashLogs.map((log, i) => (
-                      <LogRow key={log.log_id} log={log} index={i} />
+                      <LogRow
+                        key={log.fertilizer_analytics_id}
+                        log={log}
+                        index={i}
+                      />
                     ))}
                   </tbody>
                 </table>
