@@ -99,7 +99,7 @@ export class HardwareController {
         `
         SELECT
           ma.machine_id,
-          ms.is_active,
+          ma.is_active,
           ma.c1,
           ma.c2,
           ma.c3,
@@ -122,7 +122,6 @@ export class HardwareController {
           ma.m5,
           ma.date_created
         FROM machines ma
-        LEFT JOIN machine_serial ms ON ma.machine_id = ms.machine_serial_id
         WHERE ma.machine_id = $1
         ORDER BY ma.date_created DESC
         LIMIT 1
