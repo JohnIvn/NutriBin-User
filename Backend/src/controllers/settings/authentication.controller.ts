@@ -42,7 +42,7 @@ export class AuthenticationController {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly mailer: BrevoService,
-    private readonly iprogSms: IprogSmsService
+    private readonly iprogSms: IprogSmsService,
   ) {}
 
   @Get(':customerId/mfa')
@@ -401,7 +401,7 @@ export class AuthenticationController {
         message: 'MFA verification code sent via SMS',
       };
     } catch (err) {
-      console.log("Error", err);
+      console.log('Error', err);
     }
   }
 

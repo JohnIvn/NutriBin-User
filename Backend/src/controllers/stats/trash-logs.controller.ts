@@ -57,7 +57,6 @@ function mapTrashLog(row: TrashLogRow) {
   };
 }
 
-
 @Controller('trash-logs')
 export class TrashLogsController {
   constructor(private readonly databaseService: DatabaseService) {}

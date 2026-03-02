@@ -192,11 +192,12 @@ export class MobileService {
         return { ok: false, error: 'No data  found' };
       }
 
-      const machineData = result.rows[0];
-      const isMachineOffline = machineData.is_active === false;
+      const row = result.rows[0] as FertilizerAnalyticsRow & {
+        is_active: boolean;
+      };
+      const isMachineOffline = row.is_active === false;
 
-      // Invert reed_switch logic: true/1/t means CLOSED/SECURE (Online), false/0/f means OPEN/WARNING (Offline)
-      // Actually, based on previous prompt: if db is true then false (Offline), if db is false then true (Online)
+      // Invert reed_switch logic
       const invertValue = (val: any) => {
         if (isMachineOffline) return 'offline';
         if (val === null || val === undefined) return null;
@@ -209,16 +210,13 @@ export class MobileService {
         return !isTruthy;
       };
 
-      if (machineData) {
-        machineData.reed_switch = invertValue(machineData.reed_switch);
-        // Add is_active to the returned data so the frontend can use it if needed
-        (machineData as any).is_active = !isMachineOffline;
-      }
+      row.reed_switch = invertValue(row.reed_switch);
+      row.is_active = !isMachineOffline;
 
       return {
         ok: true,
-        data: machineData,
-        message: 'Machine added successfully',
+        data: row,
+        message: 'Machine data fetched successfully',
       };
     } catch (err) {
       console.error(err);

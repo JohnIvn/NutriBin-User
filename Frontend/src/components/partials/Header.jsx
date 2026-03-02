@@ -29,10 +29,9 @@ const NAVIGATION = {
       { name: "Cameras", href: "/cameras" },
       { name: "Fertilizer", href: "/fertilizer" },
       { name: "Analytics", href: "/data" },
-      { name: "Guide", href: "/guide" },
+      { name: "Modules", href: "/modules" },
     ],
     right: [
-      { name: "Modules", href: "/modules" },
       { name: "Logs", href: "/logs" },
       { name: "Support", href: "/support" },
     ],
@@ -905,7 +904,7 @@ export default function Header() {
             </Link>
 
             {/* Right Navigation */}
-            <nav className="hidden lg:flex items-center gap-6 xl:gap-8 flex-1 justify-end">
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-8 flex-1 justify-start">
               {loading ? (
                 <div className="flex items-center justify-center min-h-[60vh]">
                   <Motion.div

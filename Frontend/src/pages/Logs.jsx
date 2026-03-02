@@ -90,7 +90,6 @@ export default function Logs() {
 
   // Calculate filter stats
   const hasActiveFilters = searchTerm || selectedDate;
-  const filterCount = (searchTerm ? 1 : 0) + (selectedDate ? 1 : 0);
 
   // Generate page numbers with ellipsis
   const generatePageNumbers = () => {
@@ -395,12 +394,12 @@ export default function Logs() {
                     </td>
                   </tr>
                 ) : filteredLogs.length ? (
-                  filteredLogs.map((log, index) => (
+                  filteredLogs.map((log, _index) => (
                     <Motion.tr
                       key={log.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.02 }}
+                      transition={{ duration: 0.3, delay: _index * 0.02 }}
                       className="border-t border-[#ECE3CE]/50 hover:bg-[#FAF9F6] transition-colors duration-150 group"
                     >
                       <td className="p-4">
@@ -552,7 +551,7 @@ export default function Logs() {
 
                   {/* Page Numbers */}
                   <div className="flex items-center gap-1">
-                    {generatePageNumbers().map((page, index) => {
+                    {generatePageNumbers().map((page) => {
                       if (typeof page === "string") {
                         // Render ellipsis
                         return (
