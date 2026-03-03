@@ -74,22 +74,25 @@ const QRCodeModal = ({ isOpen, onClose, qrData, isLoading }) => {
                       className="w-56 h-56 object-contain"
                     />
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs font-black text-[#3A4D39]/40 uppercase tracking-widest mb-1">
-                      Serial ID
-                    </p>
-                    <p className="font-mono font-bold text-[#3A4D39] bg-[#ECE3CE]/30 px-3 py-1.5 rounded-lg text-sm mb-4">
-                      {qrData.serial}
-                    </p>
-                    {qrData.machineId && qrData.machineId !== qrData.serial && (
-                      <>
+                  <div className="text-center w-full space-y-4">
+                    <div>
+                      <p className="text-xs font-black text-[#3A4D39]/40 uppercase tracking-widest mb-1">
+                        Serial ID (QR Data)
+                      </p>
+                      <p className="font-mono font-bold text-[#3A4D39] bg-[#ECE3CE]/30 px-3 py-2 rounded-lg text-sm break-all">
+                        {qrData.serial}
+                      </p>
+                    </div>
+
+                    {qrData.machineId && (
+                      <div className="pt-2 border-t border-[#3A4D39]/5">
                         <p className="text-xs font-black text-[#3A4D39]/40 uppercase tracking-widest mb-1">
-                          Internal ID
+                          Machine ID (Internal)
                         </p>
-                        <p className="font-mono text-[#3A4D39]/60 bg-[#ECE3CE]/10 px-3 py-1 rounded-lg text-xs truncate max-w-[200px]">
+                        <p className="font-mono text-[#3A4D39]/60 bg-[#ECE3CE]/10 px-3 py-1.5 rounded-lg text-xs break-all">
                           {qrData.machineId}
                         </p>
-                      </>
+                      </div>
                     )}
                   </div>
                 </>
