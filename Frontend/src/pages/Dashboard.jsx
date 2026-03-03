@@ -20,6 +20,7 @@ import { io } from "socket.io-client";
 import Requests from "@/utils/Requests";
 import { useUser } from "@/contexts/UserContextHook";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import getBaseUrl from "@/utils/GetBaseUrl";
 
 // ─── Stat config ──────────────────────────────────────────────────────────────
 const STAT_CONFIG = [
