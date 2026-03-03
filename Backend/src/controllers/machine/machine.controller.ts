@@ -5,6 +5,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   //  Patch,
   Param,
 } from '@nestjs/common';
@@ -41,6 +42,36 @@ export class MachineController {
     }
 
     return this.machineService.addMachine(machineSerial, customerId);
+  }
+
+  @Delete('delete')
+  async deleteMachine(
+    @Body('customerId') customerId: string,
+    @Body('machineId') machineId: string,
+  ) { 
+    if (!customerId || !machineId) {
+      throw new BadRequestException('customerId and machineId are required');
+    }
+
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query(
+        `DELETE FROM machine_customers 
+       WHERE customer_id = $1 AND machine_id = $2 
+       RETURNING *`,
+        [customerId, machineId],
+      );
+
+      if (!result || result.rowCount === 0) {
+        return { ok: false, error: 'Machine not found or already deleted' };
+      }
+
+      return { ok: true, message: 'Machine deleted successfully' };
+    } catch (error) {
+      console.error('Failed to delete machine:', error);
+      return { ok: false, error: 'Failed to delete machine' };
+    }
   }
 
   //Uncomment the code if it is gonna be used

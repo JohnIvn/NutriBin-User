@@ -34,6 +34,7 @@ import { RepairController } from './controllers/mobile/repair.controller';
 import { MachineNotificationsGateway } from './service/notification/machine-notifications.gateway';
 import { MachineNotificationsController } from './controllers/stats/machine-notifications.controller';
 import { SupportGateway } from './service/support/support.gateway';
+import { FertilizerAnalyticsGateway } from './service/stats/fertilizer-analytics.gateway';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { SupportGateway } from './service/support/support.gateway';
     IprogSmsService,
     VideoStreamGateway,
     MachineNotificationsGateway,
+    FertilizerAnalyticsGateway,
     SupportGateway,
     MachineService,
     MobileService,

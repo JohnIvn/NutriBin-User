@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import Requests from "@/utils/Requests";
 import { io } from "socket.io-client";
 import getBaseUrl from "@/utils/GetBaseUrl";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Server } from "lucide-react";
 
 // Constants
 const NAVIGATION = {
@@ -123,82 +123,7 @@ const NotificationButton = ({ notificationMenuRef }) => {
   const machineId = selectedMachine?.machine_id;
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-
-  useEffect(() => {
-    if (!machineId) return;
-
-    const fetchNotifications = async () => {
-      try {
-        const response = await Requests({
-          url: `/notifications/${machineId}`,
-          method: "GET",
-        });
-
-        const data = response.data.data;
-
-        setNotifications(
-          data.map((n) => ({
-            id: n.notification_id,
-            title: n.header,
-            message: n.description || n.subheader || "",
-            timestamp: new Date(n.date_created),
-            read: n.resolved || false,
-            type: n.type,
-          })),
-        );
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err);
-      }
-    };
-
-    fetchNotifications();
-  }, [machineId]);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // Mark single notification as read
-  const markAsRead = useCallback((id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }, []);
-
-  // Mark all as read
-  const markAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
-
-  // Clear single notification
-  const clearNotification = useCallback((id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }, []);
-
-  // Format timestamp
-  const formatTimestamp = (date) => {
-    const now = new Date();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
-  };
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case "alert":
-        return "bg-red-100 border-red-200 text-red-700";
-      case "warning":
-        return "bg-yellow-100 border-yellow-200 text-yellow-700";
-      case "info":
-        return "bg-blue-100 border-blue-200 text-blue-700";
-      default:
-        return "bg-[#ECE3CE] border-[#3A4D39]/20 text-[#3A4D39]";
-    }
-  };
+  const socketRef = useRef(null);
 
   // WebSocket connection
   useEffect(() => {
@@ -209,13 +134,14 @@ const NotificationButton = ({ notificationMenuRef }) => {
       transports: ["websocket"],
     });
 
+    socketRef.current = socket;
+
     socket.on("connect", () => {
       console.log("[Socket] Connected to WebSocket server");
       socket.emit("subscribeToMachine", machineId);
       console.log("[Socket] Subscribed to machine:", machineId);
     });
 
-    // 🔔 NEW NOTIFICATION
     socket.on("notification_created", (n) => {
       console.log("[Socket] Notification created:", n);
       setNotifications((prev) => [
@@ -249,8 +175,51 @@ const NotificationButton = ({ notificationMenuRef }) => {
     return () => {
       console.log("[Socket] Disconnecting...");
       socket.disconnect();
+      socketRef.current = null;
     };
   }, [machineId]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAsRead = useCallback((id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, []);
+
+  const clearNotification = useCallback((id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const formatTimestamp = (date) => {
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case "alert":
+        return "bg-red-100 border-red-200 text-red-700";
+      case "warning":
+        return "bg-yellow-100 border-yellow-200 text-yellow-700";
+      case "info":
+        return "bg-blue-100 border-blue-200 text-blue-700";
+      default:
+        return "bg-[#ECE3CE] border-[#3A4D39]/20 text-[#3A4D39]";
+    }
+  };
 
   // Close notification menu when clicking outside
   useEffect(() => {
@@ -588,31 +557,272 @@ const AddMachineModal = ({
   );
 };
 
+const MachineSelectionModal = ({
+  isOpen,
+  onClose,
+  user,
+  selectedMachine,
+  setSelectedMachine,
+  setAddMachineOpen,
+  onDeleteMachine,
+  isDeleting,
+}) => {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [machineToDelete, setMachineToDelete] = useState(null);
+
+  const handleSelect = (machine) => {
+    setSelectedMachine(machine);
+    localStorage.setItem("selectedMachine", JSON.stringify(machine));
+    onClose();
+    window.location.reload();
+  };
+
+  const handleDeleteClick = (e, machine) => {
+    e.stopPropagation();
+    setMachineToDelete(machine);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (machineToDelete) {
+      await onDeleteMachine(machineToDelete.machine_id);
+      setDeleteConfirmOpen(false);
+      setMachineToDelete(null);
+    }
+  };
+
+  return (
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Overlay */}
+            <Motion.div
+              {...ANIMATION_VARIANTS.modal.overlay}
+              onClick={onClose}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
+            />
+
+            {/* Modal Content */}
+            <Motion.div
+              {...ANIMATION_VARIANTS.modal.content}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                     w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[61] overflow-hidden"
+            >
+              <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10 flex justify-between items-center">
+                <h2 className="text-xl font-black text-[#3A4D39]">
+                  Manage Machines
+                </h2>
+                <Motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-[#3A4D39]/10 rounded-lg transition-colors"
+                  aria-label="Close modal"
+                >
+                  <XMarkIcon className="w-5 h-5 text-[#3A4D39]" />
+                </Motion.button>
+              </div>
+
+              <div className="p-6 flex flex-col gap-3 max-h-80 overflow-y-auto">
+                {user?.machines?.map((machine) => (
+                  <div
+                    key={machine.machine_id}
+                    className="flex items-center gap-2"
+                  >
+                    <button
+                      onClick={() => handleSelect(machine)}
+                      className={`flex-1 text-left px-4 py-3 rounded-xl font-medium
+                      transition-colors ${
+                        selectedMachine?.machine_id === machine.machine_id
+                          ? "bg-[#3A4D39] text-[#ECE3CE]"
+                          : "bg-[#ECE3CE]/30 text-[#3A4D39] hover:bg-[#ECE3CE]/50"
+                      }`}
+                    >
+                      {machine.machine_name || machine.machine_id}
+                    </button>
+                    <Motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => handleDeleteClick(e, machine)}
+                      disabled={isDeleting}
+                      className="p-2 rounded-lg hover:bg-red-50 transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete machine"
+                      aria-label="Delete machine"
+                    >
+                      <XMarkIcon className="w-5 h-5 text-red-600" />
+                    </Motion.button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="px-6 py-4 border-t border-[#3A4D39]/10">
+                <Motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    onClose();
+                    setAddMachineOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 
+                         bg-[#3A4D39] text-[#ECE3CE] rounded-xl font-bold
+                         hover:bg-[#4F6F52] transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Add New Machine
+                </Motion.button>
+              </div>
+            </Motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmOpen && machineToDelete && (
+          <>
+            <Motion.div
+              {...ANIMATION_VARIANTS.modal.overlay}
+              onClick={() => !isDeleting && setDeleteConfirmOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70]"
+            />
+
+            <Motion.div
+              {...ANIMATION_VARIANTS.modal.content}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                     w-[90%] max-w-sm bg-white rounded-2xl shadow-2xl z-[71] overflow-hidden"
+            >
+              <div className="px-6 py-5 bg-gradient-to-br from-red-50 to-red-50/50 border-b border-red-200">
+                <h2 className="text-xl font-black text-red-900">
+                  Delete Machine
+                </h2>
+                <p className="text-sm text-red-700 mt-1">
+                  This action cannot be undone
+                </p>
+              </div>
+
+              <div className="px-6 py-6">
+                <p className="text-[#3A4D39] mb-4">
+                  Are you sure you want to delete{" "}
+                  <strong className="font-bold">
+                    {machineToDelete.machine_name || machineToDelete.machine_id}
+                  </strong>
+                  ?
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirmOpen(false)}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
+                             bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
+                             transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <Motion.button
+                    whileHover={{ scale: isDeleting ? 1 : 1.02 }}
+                    whileTap={{ scale: isDeleting ? 1 : 0.98 }}
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-white 
+                             bg-red-600 hover:bg-red-700 
+                             shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/30
+                             transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                             flex items-center justify-center gap-2"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </Motion.button>
+                </div>
+              </div>
+            </Motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+// Machine Selector Button (separate from user menu)
+const MachineSelector = ({ selectedMachine, onClick }) => {
+  return (
+    <Motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex items-center gap-2 px-3 py-1.5 rounded-xl
+               bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
+               transition-all duration-200 group"
+      aria-label="Select machine"
+    >
+      <Server className="w-4 h-4 text-[#3A4D39]" />
+      <span className="text-sm font-bold text-[#3A4D39] max-w-[120px] truncate">
+        {selectedMachine?.machine_name ||
+          selectedMachine?.machine_id ||
+          "No Machine"}
+      </span>
+      <ChevronDownIcon className="w-4 h-4 text-[#3A4D39]" />
+    </Motion.button>
+  );
+};
+
+// Add Machine Button (when user has no machines)
+const AddMachineButton = ({ onClick }) => {
+  return (
+    <Motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl
+               bg-[#3A4D39] text-[#ECE3CE] hover:bg-[#4F6F52]
+               transition-all duration-200 shadow-md hover:shadow-lg
+               shadow-[#3A4D39]/20"
+      aria-label="Add machine"
+    >
+      <PlusIcon className="w-4 h-4" />
+      <span className="text-sm font-bold">Add Machine</span>
+    </Motion.button>
+  );
+};
+
 const UserMenu = ({
   user,
   userMenuOpen,
   setUserMenuOpen,
-  selectedMachine,
-  setSelectedMachine,
-  setAddMachineOpen,
   handleLogout,
   userMenuRef,
   getInitials,
 }) => {
-  const handleMachineChange = useCallback(
-    (e) => {
-      const machine = user.machines.find(
-        (m) => m.machine_id === e.target.value,
-      );
-      if (machine) {
-        setSelectedMachine(machine);
-        localStorage.setItem("selectedMachine", JSON.stringify(machine));
-        window.location.reload();
-      }
-    },
-    [user.machines, setSelectedMachine],
-  );
-
   return (
     <div className="relative ml-2" ref={userMenuRef}>
       <Motion.button
@@ -655,64 +865,6 @@ const UserMenu = ({
               </p>
             </div>
 
-            {/* Machine Selector */}
-            {user?.machines?.length > 0 && (
-              <div className="px-4 py-3 border-b border-[#3A4D39]/10 bg-[#ECE3CE]/30">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider">
-                    Machines
-                  </label>
-                  <Motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      setAddMachineOpen(true);
-                      setUserMenuOpen(false);
-                    }}
-                    className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
-                    title="Add Machine"
-                    aria-label="Add Machine"
-                  >
-                    <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
-                  </Motion.button>
-                </div>
-                <select
-                  value={selectedMachine?.machine_id || ""}
-                  onChange={handleMachineChange}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-[#3A4D39]/20
-                           text-[#3A4D39] font-medium text-sm
-                           focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30
-                           hover:border-[#3A4D39]/40 transition-colors cursor-pointer"
-                >
-                  {user.machines.map((machine) => (
-                    <option key={machine.machine_id} value={machine.machine_id}>
-                      {machine.machine_name || machine.machine_id}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Add Machine Button if no machines */}
-            {(!user?.machines || user.machines.length === 0) && (
-              <div className="px-4 py-3 border-b border-[#3A4D39]/10">
-                <Motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setAddMachineOpen(true);
-                    setUserMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 
-                           bg-[#3A4D39] text-[#ECE3CE] rounded-lg font-medium text-sm
-                           hover:bg-[#4F6F52] transition-colors"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                  Add Machine
-                </Motion.button>
-              </div>
-            )}
-
             {/* Menu Items */}
             <div className="py-2">
               <Link
@@ -744,6 +896,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [addMachineOpen, setAddMachineOpen] = useState(false);
+  const [machineModalOpen, setMachineModalOpen] = useState(false);
   const [machineSerial, setMachineSerial] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -767,12 +920,28 @@ export default function Header() {
 
   // Initialize selected machine
   useEffect(() => {
-    if (user?.machines?.length && !selectedMachine) {
-      const stored = localStorage.getItem("selectedMachine");
-      const initialMachine = stored ? JSON.parse(stored) : user.machines[0];
-      setSelectedMachine(initialMachine);
+    if (!user?.machines?.length) return;
+
+    const stored = localStorage.getItem("selectedMachine");
+
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const exists = user.machines.find(
+          (m) => m.machine_id === parsed.machine_id,
+        );
+
+        if (exists) {
+          setSelectedMachine(exists);
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to parse stored machine:", err);
+      }
     }
-  }, [user?.machines, selectedMachine, setSelectedMachine]);
+
+    setSelectedMachine(user.machines[0]);
+  }, [user?.machines, setSelectedMachine]);
 
   // Handle scroll
   useEffect(() => {
@@ -853,6 +1022,54 @@ export default function Header() {
     [machineSerial, user, refreshMachines],
   );
 
+  const handleDeleteMachine = useCallback(
+    async (machineId) => {
+      if (!machineId) {
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      const customerId = user?.id || user?.customer_id || user?.userId;
+
+      try {
+        const response = await Requests({
+          url: "/machine/delete",
+          method: "DELETE",
+          data: {
+            customerId,
+            machineId: machineId,
+          },
+        });
+
+        if (!response.data?.ok) {
+          throw new Error(response.data?.error || "Failed to delete machine");
+        }
+
+        // If deleted machine was selected, clear selection
+        if (selectedMachine?.machine_id === machineId) {
+          localStorage.removeItem("selectedMachine");
+          setSelectedMachine(null);
+        }
+
+        await refreshMachines();
+
+        // Close modal and reload if needed
+        setMachineModalOpen(false);
+
+        // Reload if the deleted machine was the selected one
+        if (selectedMachine?.machine_id === machineId) {
+          window.location.reload();
+        }
+      } catch (err) {
+        alert(err.message || "Failed to delete machine.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [user, selectedMachine, refreshMachines, setSelectedMachine],
+  );
+
   const getInitials = useCallback(
     (first, last) => `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase(),
     [],
@@ -906,7 +1123,7 @@ export default function Header() {
             {/* Right Navigation */}
             <nav className="hidden lg:flex items-center gap-6 xl:gap-8 flex-1 justify-start">
               {loading ? (
-                <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="flex items-center justify-center">
                   <Motion.div
                     animate={{ rotate: 360 }}
                     transition={{
@@ -915,7 +1132,7 @@ export default function Header() {
                       ease: "linear",
                     }}
                   >
-                    <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+                    <RefreshCw className="w-6 h-6 text-[#4F6F52]" />
                   </Motion.div>
                 </div>
               ) : user ? (
@@ -930,6 +1147,16 @@ export default function Header() {
                     </NavLink>
                   ))}
 
+                  {/* Machine Selector Button or Add Machine Button */}
+                  {user?.machines?.length > 0 ? (
+                    <MachineSelector
+                      selectedMachine={selectedMachine}
+                      onClick={() => setMachineModalOpen(true)}
+                    />
+                  ) : (
+                    <AddMachineButton onClick={() => setAddMachineOpen(true)} />
+                  )}
+
                   {/* Notification Button */}
                   <NotificationButton
                     notificationMenuRef={notificationMenuRef}
@@ -939,9 +1166,6 @@ export default function Header() {
                     user={user}
                     userMenuOpen={userMenuOpen}
                     setUserMenuOpen={setUserMenuOpen}
-                    selectedMachine={selectedMachine}
-                    setSelectedMachine={setSelectedMachine}
-                    setAddMachineOpen={setAddMachineOpen}
                     handleLogout={handleLogout}
                     userMenuRef={userMenuRef}
                     getInitials={getInitials}
@@ -1005,6 +1229,18 @@ export default function Header() {
         isSubmitting={isSubmitting}
         error={error}
         success={success}
+      />
+
+      {/* Machine Selection Modal */}
+      <MachineSelectionModal
+        isOpen={machineModalOpen}
+        onClose={() => setMachineModalOpen(false)}
+        user={user}
+        selectedMachine={selectedMachine}
+        setSelectedMachine={setSelectedMachine}
+        setAddMachineOpen={setAddMachineOpen}
+        onDeleteMachine={handleDeleteMachine}
+        isDeleting={isSubmitting}
       />
 
       {/* Mobile Drawer */}
@@ -1104,73 +1340,53 @@ export default function Header() {
                     </div>
 
                     {/* Machine Selector Mobile */}
-                    {user?.machines?.length > 0 && (
+                    {user?.machines?.length > 0 ? (
                       <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2 px-1">
-                          <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider">
-                            Active Machine
-                          </label>
-                          <Motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => {
-                              setAddMachineOpen(true);
-                              setMobileMenuOpen(false);
-                            }}
-                            className="p-1 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
-                            title="Add Machine"
-                            aria-label="Add Machine"
-                          >
-                            <PlusIcon className="w-4 h-4 text-[#3A4D39]" />
-                          </Motion.button>
-                        </div>
-                        <select
-                          value={selectedMachine?.machine_id || ""}
-                          onChange={(e) => {
-                            const machine = user.machines.find(
-                              (m) => m.machine_id === e.target.value,
-                            );
-                            if (machine) {
-                              setSelectedMachine(machine);
-                              localStorage.setItem(
-                                "selectedMachine",
-                                JSON.stringify(machine),
-                              );
-                              window.location.reload();
-                            }
+                        <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider mb-2 block px-1">
+                          Active Machine
+                        </label>
+                        <Motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setMachineModalOpen(true);
+                            setMobileMenuOpen(false);
                           }}
-                          className="w-full px-4 py-3 rounded-xl bg-white border border-[#3A4D39]/20
-                                   text-[#3A4D39] font-medium text-sm
-                                   focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30"
+                          className="w-full flex items-center justify-between px-4 py-3 
+                                   bg-white border border-[#3A4D39]/20 rounded-xl
+                                   hover:bg-[#ECE3CE]/30 transition-colors"
                         >
-                          {user.machines.map((machine) => (
-                            <option
-                              key={machine.machine_id}
-                              value={machine.machine_id}
-                            >
-                              {machine.machine_name || machine.machine_id}
-                            </option>
-                          ))}
-                        </select>
+                          <div className="flex items-center gap-2">
+                            <Server className="w-4 h-4 text-[#3A4D39]" />
+                            <span className="text-sm font-medium text-[#3A4D39] truncate">
+                              {selectedMachine?.machine_name ||
+                                selectedMachine?.machine_id ||
+                                "Select Machine"}
+                            </span>
+                          </div>
+                          <ChevronDownIcon className="w-4 h-4 text-[#3A4D39] flex-shrink-0" />
+                        </Motion.button>
                       </div>
-                    )}
-
-                    {/* Add Machine Button if no machines (mobile) */}
-                    {(!user?.machines || user.machines.length === 0) && (
-                      <Motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setAddMachineOpen(true);
-                          setMobileMenuOpen(false);
-                        }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-4
-                                 bg-[#3A4D39] text-[#ECE3CE] rounded-xl font-bold
-                                 hover:bg-[#4F6F52] transition-colors"
-                      >
-                        <PlusIcon className="w-5 h-5" />
-                        Add Machine
-                      </Motion.button>
+                    ) : (
+                      <div className="mb-4">
+                        <label className="text-xs text-[#3A4D39]/60 font-semibold uppercase tracking-wider mb-2 block px-1">
+                          Get Started
+                        </label>
+                        <Motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setAddMachineOpen(true);
+                            setMobileMenuOpen(false);
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3
+                                   bg-[#3A4D39] text-[#ECE3CE] rounded-xl font-bold
+                                   hover:bg-[#4F6F52] transition-colors shadow-md"
+                        >
+                          <PlusIcon className="w-5 h-5" />
+                          Add Your First Machine
+                        </Motion.button>
+                      </div>
                     )}
 
                     <Link

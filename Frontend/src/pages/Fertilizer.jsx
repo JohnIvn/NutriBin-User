@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { LabelList, Pie, PieChart, Cell } from "recharts";
 import {
   ChartContainer,
@@ -16,10 +16,14 @@ import {
   CheckCircle2,
   Zap,
   RefreshCw,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
+import { io } from "socket.io-client";
 import { motion as Motion } from "framer-motion";
+import getBaseUrl from "@/utils/GetBaseUrl";
 
 export default function Fertilizer() {
   const [tempUnit, setTempUnit] = useState("C");
@@ -30,9 +34,18 @@ export default function Fertilizer() {
   const { user, selectedMachine } = useUser();
   const customerId = user?.customer_id;
   const machineId = selectedMachine?.machine_id;
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    if (!customerId || !machineId) {
+      setAnalytics(null);
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchInitialAnalytics = async () => {
       try {
         setLoading(true);
 
@@ -41,26 +54,59 @@ export default function Fertilizer() {
           params: { machineId },
         });
 
-        if (res.data.ok && res.data.analytics.length > 0) {
+        if (isMounted && res.data.ok && res.data.analytics.length > 0) {
           setAnalytics(res.data.analytics[0]);
-        } else {
+        } else if (isMounted) {
           setAnalytics(null);
         }
       } catch (err) {
         console.error(err);
-        setAnalytics(null);
+        if (isMounted) setAnalytics(null);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
-    if (!customerId || !machineId) {
-      setAnalytics(null);
-      setLoading(false);
-      return;
-    }
+    fetchInitialAnalytics();
 
-    fetchAnalytics();
+    const baseUrl = getBaseUrl();
+
+    const socket = io(baseUrl, {
+      transports: ["websocket"],
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("✅ Connected to fertilizer realtime");
+
+      socket.emit("joinFertilizerRoom", {
+        customerId,
+        machineId,
+      });
+    });
+
+    socket.on("fertilizer_analytics_update", (data) => {
+      console.log("📡 New realtime fertilizer data:", data);
+
+      setAnalytics((prev) => ({
+        ...prev,
+        ...data,
+      }));
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Disconnected from realtime");
+    });
+
+    return () => {
+      isMounted = false;
+
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, [customerId, machineId]);
 
   const convertTemp = (celsius, unit) => {
@@ -95,7 +141,9 @@ export default function Fertilizer() {
       ]
     : [];
 
-  const total = pieChartData.reduce((sum, entry) => sum + entry.visitors, 0);
+  const total = Number(
+    pieChartData.reduce((sum, entry) => sum + entry.visitors, 0).toFixed(1),
+  );
 
   const chartConfig = {
     nitrogen: { label: "Nitrogen", color: "#4F6F52" },
@@ -122,6 +170,10 @@ export default function Fertilizer() {
           percentage: parseFloat(analytics.combustible_gases || 0),
         },
         {
+          type: "ph level",
+          percentage: parseFloat(analytics.ph || 0),
+        },
+        {
           type: "weight",
           percentage: parseFloat(analytics.weight_kg || 0),
         },
@@ -134,13 +186,16 @@ export default function Fertilizer() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen min-w-screen bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6]">
+      <div className="flex flex-col items-center justify-center min-h-screen min-w-screen bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] gap-4">
         <Motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
         >
           <RefreshCw className="w-12 h-12 text-[#4F6F52]" />
         </Motion.div>
+        <p className="text-sm font-semibold text-[#739072]">
+          Loading analytics...
+        </p>
       </div>
     );
   }
@@ -174,17 +229,24 @@ export default function Fertilizer() {
               </p>
             </div>
 
-            <div className="px-5 py-3 bg-white border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5">
-              <div className="flex items-center gap-2.5">
-                <div className="relative">
-                  <CheckCircle2 className="w-6 h-6 text-[#4F6F52]" />
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            {hasData && (
+              <Motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="px-5 py-3 bg-white border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <CheckCircle2 className="w-6 h-6 text-[#4F6F52]" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  </div>
+                  <span className="font-bold text-[#3A4D39] text-sm sm:text-base">
+                    All Systems Optimal
+                  </span>
                 </div>
-                <span className="font-bold text-[#3A4D39] text-sm sm:text-base">
-                  All Systems Optimal
-                </span>
-              </div>
-            </div>
+              </Motion.div>
+            )}
           </div>
         </Motion.div>
 
@@ -195,28 +257,41 @@ export default function Fertilizer() {
             transition={{ duration: 0.5 }}
             className="bg-white/80 backdrop-blur-sm border-2 border-dashed border-[#3A4D39]/20 rounded-3xl p-12 sm:p-16 flex flex-col items-center justify-center text-center shadow-xl"
           >
-            <div className="p-6 bg-gradient-to-br from-[#ECE3CE]/60 to-[#4F6F52]/10 rounded-2xl mb-6">
+            <Motion.div
+              animate={{
+                scale: [1, 1.05, 1],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 3,
+                ease: "easeInOut",
+              }}
+              className="p-6 bg-gradient-to-br from-[#ECE3CE]/60 to-[#4F6F52]/10 rounded-2xl mb-6"
+            >
               <Leaf className="w-12 h-12 text-[#4F6F52]" />
-            </div>
+            </Motion.div>
 
             <h3 className="text-2xl sm:text-3xl font-black text-[#3A4D39] mb-3">
               No Fertilizer Data Yet
             </h3>
 
-            <p className="text-[#739072] text-base sm:text-lg max-w-md leading-relaxed">
+            <p className="text-[#739072] text-base sm:text-lg max-w-md leading-relaxed mb-6">
               This machine hasn't sent any fertilizer or environmental readings
               yet. Once the system starts processing data, analytics will appear
               here automatically.
             </p>
 
-            <div className="mt-8 flex items-center gap-2 text-sm text-[#A1A1AA] font-medium">
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#ECE3CE]/30 rounded-full">
               <Motion.div
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-4 h-4 text-[#739072]" />
               </Motion.div>
-              <span>Waiting for sensor input…</span>
+              <span className="text-sm text-[#739072] font-semibold">
+                Waiting for sensor input…
+              </span>
             </div>
           </Motion.div>
         )}
@@ -235,91 +310,114 @@ export default function Fertilizer() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="lg:col-span-5 bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-[#3A4D39]/10 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+                  className="lg:col-span-5 bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-[#3A4D39]/10 overflow-hidden hover:shadow-2xl hover:border-[#4F6F52]/30 transition-all duration-300"
                 >
-                  <div className="px-6 py-5 bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-white rounded-xl shadow-sm">
-                        <Leaf className="w-5 h-5 text-[#4F6F52]" />
+                  <div className="px-6 py-5 bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/50 border-b-2 border-[#ECE3CE]">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-white rounded-xl shadow-sm border border-[#ECE3CE]">
+                          <Leaf className="w-5 h-5 text-[#4F6F52]" />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-black text-[#3A4D39]">
+                            NPK Composition
+                          </h2>
+                          <p className="text-xs text-[#739072] font-semibold">
+                            Nutrient Distribution
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h2 className="text-lg font-bold text-[#3A4D39]">
-                          NPK Composition
-                        </h2>
-                        <p className="text-xs text-[#739072] font-medium">
-                          Nutrient Distribution
-                        </p>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4F6F52]/10 rounded-lg">
+                        <TrendingUp className="w-4 h-4 text-[#4F6F52]" />
+                        <span className="text-xs font-bold text-[#4F6F52]">
+                          ACTIVE
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="p-8">
-                    <ChartContainer
-                      config={chartConfig}
-                      className="mx-auto aspect-square max-h-[280px] w-full"
-                    >
-                      <PieChart>
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent
-                              hideLabel
-                              className="bg-white border border-[#ECE3CE] shadow-lg rounded-xl"
-                            />
-                          }
-                        />
-
-                        <Pie
-                          data={pieChartData}
-                          dataKey="visitors"
-                          innerRadius={75}
-                          outerRadius={105}
-                          paddingAngle={4}
-                          nameKey="browser"
-                          stroke="none"
-                        >
-                          {pieChartData.map((entry, index) => (
-                            <Cell key={index} fill={entry.fill} />
-                          ))}
-
-                          <LabelList
-                            dataKey="visitors"
-                            className="fill-white font-bold"
-                            stroke="none"
-                            fontSize={14}
-                            formatter={(value) =>
-                              typeof value === "number" && total > 0
-                                ? `${((value / total) * 100).toFixed(0)}%`
-                                : ""
+                    <div className="relative">
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto aspect-square max-h-[280px] w-full"
+                      >
+                        <PieChart>
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                hideLabel
+                                className="bg-white border-2 border-[#ECE3CE] shadow-xl rounded-xl"
+                              />
                             }
                           />
-                        </Pie>
-                      </PieChart>
-                    </ChartContainer>
 
-                    <div className="w-full mt-6 space-y-2.5 pt-6 border-t border-[#ECE3CE]">
+                          <Pie
+                            data={pieChartData}
+                            dataKey="visitors"
+                            innerRadius={75}
+                            outerRadius={105}
+                            paddingAngle={6}
+                            nameKey="browser"
+                            stroke="white"
+                            strokeWidth={3}
+                          >
+                            {pieChartData.map((entry, index) => (
+                              <Cell key={index} fill={entry.fill} />
+                            ))}
+
+                            <LabelList
+                              dataKey="visitors"
+                              className="fill-white font-black drop-shadow-lg"
+                              stroke="none"
+                              fontSize={16}
+                              formatter={(value) =>
+                                typeof value === "number" && total > 0
+                                  ? `${((value / total) * 100).toFixed(0)}%`
+                                  : ""
+                              }
+                            />
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
+
+                      {/* Center label */}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="text-center">
+                          <div className="text-3xl font-black text-[#3A4D39]">
+                            {total}
+                          </div>
+                          <div className="text-xs font-bold text-[#739072] uppercase tracking-wide">
+                            Total PPM
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full mt-6 space-y-2 pt-6 border-t-2 border-[#ECE3CE]">
                       {pieChartData.map((item, idx) => (
                         <Motion.div
                           key={item.browser}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: 0.2 + idx * 0.1 }}
-                          className="flex items-center justify-between p-3 rounded-xl hover:bg-[#FAF9F6] transition-all duration-200 cursor-pointer group"
+                          className="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF9F6]/50 hover:bg-[#FAF9F6] border-2 border-transparent hover:border-[#ECE3CE] transition-all duration-200 cursor-pointer group"
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-4 h-4 rounded-full shadow-sm group-hover:scale-110 transition-transform duration-200"
+                              className="w-4 h-4 rounded-full shadow-md group-hover:scale-125 transition-transform duration-200 border-2 border-white"
                               style={{ backgroundColor: item.fill }}
                             />
-                            <span className="text-sm font-bold uppercase text-[#3A4D39] tracking-wide">
+                            <span className="text-sm font-black uppercase text-[#3A4D39] tracking-wider">
                               {item.browser}
                             </span>
                           </div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-black text-[#3A4D39]">
+                          <div className="flex items-baseline gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm">
+                            <span className="text-xl font-black text-[#3A4D39]">
                               {item.visitors}
                             </span>
-                            <span className="text-xs font-medium text-[#739072]">
-                              mg/L
+                            <span className="text-xs font-bold text-[#739072] uppercase">
+                              ppm
                             </span>
                           </div>
                         </Motion.div>
@@ -336,32 +434,33 @@ export default function Fertilizer() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="sm:col-span-2 bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-[#3A4D39]/10 p-6 sm:p-8 hover:shadow-2xl transition-shadow duration-300"
+                  className="sm:col-span-2 bg-gradient-to-br from-white/90 to-orange-50/30 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-orange-200/30 p-6 sm:p-8 hover:shadow-2xl hover:border-orange-300/50 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm">
-                        <ThermometerSun className="w-6 h-6 text-orange-600" />
+                      <div className="p-3 bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl shadow-lg">
+                        <ThermometerSun className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-bold text-[#3A4D39]">
+                        <h2 className="text-lg font-black text-[#3A4D39]">
                           Temperature
                         </h2>
-                        <p className="text-xs text-[#739072] font-medium">
-                          Current Reading
+                        <p className="text-xs text-[#739072] font-semibold flex items-center gap-1">
+                          <Activity className="w-3 h-3" />
+                          Live Reading
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex bg-[#ECE3CE]/40 p-1 rounded-xl border border-[#3A4D39]/10 shadow-sm">
+                    <div className="flex bg-white/80 backdrop-blur-sm p-1.5 rounded-xl border-2 border-orange-200/50 shadow-md">
                       {["C", "F", "K"].map((unit) => (
                         <button
                           key={unit}
                           onClick={() => setTempUnit(unit)}
-                          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 ${
+                          className={`px-3 py-2 text-xs font-black rounded-lg transition-all duration-200 ${
                             tempUnit === unit
-                              ? "bg-white text-[#3A4D39] shadow-sm"
-                              : "text-[#739072] hover:text-[#3A4D39]"
+                              ? "bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-md scale-105"
+                              : "text-[#739072] hover:text-[#3A4D39] hover:bg-orange-50"
                           }`}
                         >
                           °{unit}
@@ -370,14 +469,22 @@ export default function Fertilizer() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-center">
-                      <span className="text-7xl sm:text-8xl font-black text-[#3A4D39] tracking-tight">
-                        {displayTemp}
-                      </span>
-                      <span className="text-4xl sm:text-5xl ml-2 text-[#739072] font-bold">
-                        °{tempUnit}
-                      </span>
+                  <div className="flex items-center justify-center py-8 relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-100/20 to-transparent rounded-2xl" />
+                    <div className="text-center relative">
+                      <div className="flex items-start justify-center">
+                        <span className="text-7xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#3A4D39] to-orange-600 tracking-tight">
+                          {displayTemp}
+                        </span>
+                        <span className="text-4xl sm:text-5xl ml-2 text-orange-500 font-black">
+                          °{tempUnit}
+                        </span>
+                      </div>
+                      <div className="mt-3 inline-block px-4 py-1.5 bg-orange-100 rounded-full">
+                        <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">
+                          Optimal Range
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </Motion.div>
@@ -387,28 +494,32 @@ export default function Fertilizer() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-                  className="bg-white/70 backdrop-blur-md rounded-3xl shadow-lg border border-[#3A4D39]/10 p-6 hover:shadow-2xl transition-shadow duration-300"
+                  className="bg-gradient-to-br from-white/90 to-blue-50/30 backdrop-blur-md rounded-3xl shadow-xl border-2 border-blue-200/30 p-6 hover:shadow-2xl hover:border-blue-300/50 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm">
-                        <Wind className="w-5 h-5 text-blue-600" />
+                      <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-500 rounded-2xl shadow-lg">
+                        <Wind className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-sm md:text-base font-bold text-[#3A4D39]">
+                        <h2 className="text-sm md:text-base font-black text-[#3A4D39]">
                           Humidity
                         </h2>
-                        <p className="text-xs text-[#739072] font-medium">
-                          Relative
+                        <p className="text-xs text-[#739072] font-semibold">
+                          Relative Air
                         </p>
                       </div>
                     </div>
-                    <span className="text-2xl md:text-3xl font-black text-[#3A4D39]">
-                      {analytics?.humidity ?? 0}
-                      <span className="text-base md:text-lg text-[#739072]">
-                        %
-                      </span>
-                    </span>
+                    <div className="text-right">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl md:text-4xl font-black text-[#3A4D39]">
+                          {analytics?.humidity ?? 0}
+                        </span>
+                        <span className="text-lg font-bold text-blue-500">
+                          %
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Bar */}
@@ -422,28 +533,32 @@ export default function Fertilizer() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-                  className="bg-white/70 backdrop-blur-md rounded-3xl shadow-lg border border-[#3A4D39]/10 p-6 hover:shadow-2xl transition-shadow duration-300"
+                  className="bg-gradient-to-br from-white/90 to-cyan-50/30 backdrop-blur-md rounded-3xl shadow-xl border-2 border-cyan-200/30 p-6 hover:shadow-2xl hover:border-cyan-300/50 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow-sm">
-                        <Droplets className="w-5 h-5 text-cyan-600" />
+                      <div className="p-3 bg-gradient-to-br from-cyan-400 to-cyan-500 rounded-2xl shadow-lg">
+                        <Droplets className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-sm md:text-base font-bold text-[#3A4D39]">
+                        <h2 className="text-sm md:text-base font-black text-[#3A4D39]">
                           Moisture
                         </h2>
-                        <p className="text-xs text-[#739072] font-medium">
-                          Soil Level
+                        <p className="text-xs text-[#739072] font-semibold">
+                          Soil Content
                         </p>
                       </div>
                     </div>
-                    <span className="text-2xl md:text-3xl font-black text-[#3A4D39]">
-                      {analytics?.moisture ?? 0}
-                      <span className="text-base md:text-lg text-[#739072]">
-                        %
-                      </span>
-                    </span>
+                    <div className="text-right">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl md:text-4xl font-black text-[#3A4D39]">
+                          {analytics?.moisture ?? 0}
+                        </span>
+                        <span className="text-lg font-bold text-cyan-500">
+                          %
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Bar */}
@@ -459,18 +574,18 @@ export default function Fertilizer() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-[#3A4D39]/10 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+              className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-[#3A4D39]/10 overflow-hidden hover:shadow-2xl hover:border-[#4F6F52]/30 transition-all duration-300"
             >
-              <div className="px-6 py-5 bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
+              <div className="px-6 py-5 bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/50 border-b-2 border-[#ECE3CE]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-white rounded-xl shadow-sm">
+                  <div className="p-2.5 bg-white rounded-xl shadow-sm border border-[#ECE3CE]">
                     <Zap className="w-5 h-5 text-[#4F6F52]" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-[#3A4D39]">
+                    <h2 className="text-lg font-black text-[#3A4D39]">
                       Air Quality & Properties
                     </h2>
-                    <p className="text-xs text-[#739072] font-medium">
+                    <p className="text-xs text-[#739072] font-semibold">
                       Environmental Sensors
                     </p>
                   </div>
@@ -478,16 +593,23 @@ export default function Fertilizer() {
               </div>
 
               <div className="p-6 sm:p-8">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 sm:gap-5">
                   {GAS_DATA.map((gas, idx) => (
                     <Motion.div
                       key={gas.type}
-                      initial={{ opacity: 0, scale: 0.9 }}
+                      initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 0.6 + idx * 0.05 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.6 + idx * 0.05,
+                        type: "spring",
+                        stiffness: 200,
+                      }}
                       className="flex justify-center"
                     >
-                      <GasFlag gas={gas.type} percentage={gas.percentage} />
+                      <div className="w-32 h-32 sm:w-36 sm:h-36">
+                        <GasFlag gas={gas.type} percentage={gas.percentage} />
+                      </div>
                     </Motion.div>
                   ))}
                 </div>
