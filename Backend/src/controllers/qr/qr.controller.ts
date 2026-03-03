@@ -5,7 +5,7 @@ import {
   Res,
   BadRequestException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import * as QRCode from 'qrcode';
 
 @Controller('qr')
