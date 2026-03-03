@@ -57,7 +57,8 @@ export class MachineService {
           mc.nickname, 
           ms.serial_number
         FROM public.machine_customers mc
-        LEFT JOIN public.machine_serial ms ON mc.machine_id = ms.machine_serial_id
+        LEFT JOIN public.machines m ON mc.machine_id = m.machine_id
+        LEFT JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
         WHERE mc.customer_id = $1
         `,
         [customerId],
