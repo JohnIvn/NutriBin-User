@@ -54,7 +54,7 @@ export class MachineService {
         `
         SELECT mc.machine_id, mc.nickname, ms.serial_number
         FROM public.machine_customers mc
-        JOIN public.machine_serial ms ON mc.machine_id = ms.machine_serial_id
+        LEFT JOIN public.machine_serial ms ON mc.machine_id = ms.machine_serial_id::text
         WHERE mc.customer_id = $1
         `,
         [customerId],
