@@ -52,9 +52,12 @@ export class MachineService {
     try {
       const query = await client.query<FetchMachinesRow>(
         `
-        SELECT mc.machine_id, mc.nickname, ms.serial_number
+        SELECT 
+          mc.machine_id, 
+          mc.nickname, 
+          ms.serial_number
         FROM public.machine_customers mc
-        LEFT JOIN public.machine_serial ms ON mc.machine_id = ms.machine_serial_id::text
+        LEFT JOIN public.machine_serial ms ON mc.machine_id = ms.machine_serial_id
         WHERE mc.customer_id = $1
         `,
         [customerId],
