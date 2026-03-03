@@ -25,6 +25,7 @@ import { ChangePassword } from "@/pages/ChangePassword";
 import { useUser } from "@/contexts/UserContextHook";
 import DataScience from "@/pages/DataScience";
 import Support from "@/pages/Support";
+import DownloadApp from "@/pages/Download";
 
 function FallbackRoute() {
   const { user } = useUser();
@@ -50,6 +51,7 @@ export default function PageRouter() {
       <Route path="/socials" element={<Socials />} />
       <Route path="/studies" element={<Studies />} />
       <Route path="/guide" element={<Guide />} />
+      <Route path="/download" element={<DownloadApp />} />
       <Route path="/verify-mfa" element={<VerifyMFA />} />
       <Route path="/verify-mfasms" element={<VerifyMFASMS />} />
       <Route

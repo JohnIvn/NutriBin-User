@@ -14,10 +14,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Server,
+  Wrench,
+  X,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
-import { motion as Motion } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 
 export default function Modules() {
   const [modules, setModules] = useState(null);
@@ -25,6 +27,9 @@ export default function Modules() {
   const { user, selectedMachine } = useUser();
   const machineId = selectedMachine?.machine_id;
   const customerId = user?.customer_id;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeModule, setActiveModule] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!machineId) return;
@@ -51,16 +56,17 @@ export default function Modules() {
     fetchModules();
   }, [machineId]);
 
-  const requestRepair = async (moduleName) => {
-    if (!machineId || !customerId) {
-      toast.warning("Missing machine or user information");
-      return;
-    }
-    if (!moduleName) {
-      toast.warning("Please specify a module to repair");
-      return;
-    }
+  // Triggered when user clicks a card
+  const handleCardClick = (moduleName) => {
+    setActiveModule(moduleName);
+    setIsModalOpen(true);
+  };
 
+  // Final API call after confirmation
+  const confirmRepair = async () => {
+    if (!machineId || !customerId || !activeModule) return;
+
+    setIsSubmitting(true);
     try {
       const res = await Requests({
         method: "POST",
@@ -68,19 +74,20 @@ export default function Modules() {
         data: {
           machineId,
           customerId,
-          module: moduleName,
+          module: activeModule,
         },
       });
 
       if (res.data?.ok) {
-        toast.success(
-          `Repair request for ${moduleName} submitted successfully`,
-        );
+        toast.success(`Repair request for ${activeModule} submitted`);
+        setIsModalOpen(false);
       }
     } catch (err) {
       const message =
         err?.response?.data?.message || "Failed to request repair";
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -115,6 +122,70 @@ export default function Modules() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] font-sans">
+      
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <Motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-[#3A4D39]/40 backdrop-blur-sm"
+            />
+            <Motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-[#3A4D39]/10"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-3 bg-amber-100 rounded-2xl">
+                  <Wrench className="w-6 h-6 text-amber-700" />
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              <h3 className="text-2xl font-black text-[#3A4D39] mb-2">
+                Confirm Repair
+              </h3>
+              <p className="text-[#739072] mb-6">
+                Are you sure you want to request a repair for{" "}
+                <span className="font-bold text-[#4F6F52] underline">
+                  {activeModule}
+                </span>
+                ? This will alert the maintenance team immediately.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  disabled={isSubmitting}
+                  onClick={confirmRepair}
+                  className="w-full py-4 bg-[#3A4D39] text-white font-bold rounded-2xl hover:bg-[#4F6F52] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#3A4D39]/20 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Confirm Request"
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full py-4 bg-gray-50 text-gray-500 font-bold rounded-2xl hover:bg-gray-100 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </Motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
         <Motion.div
@@ -200,6 +271,91 @@ export default function Modules() {
           </div>
         </Motion.div>
 
+        <div className="bg-white/90 backdrop-blur-md border border-[#3A4D39]/10 rounded-3xl p-6 shadow-lg mb-6">
+          <h2 className="text-2xl font-black text-[#3A4D39] mb-4">
+            Machine Info
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {/* Active Status */}
+            <div className="flex items-center gap-3 p-3 bg-[#E6F5E9] rounded-xl border border-green-200 shadow-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-sm font-semibold text-[#3A4D39]">Active</p>
+                <p className="text-xs font-medium text-[#739072]">
+                  {modules?.is_active ? "Yes" : "No"}
+                </p>
+              </div>
+            </div>
+
+            {/* Firmware Version */}
+            <div className="flex items-center gap-3 p-3 bg-[#F0F4FF] rounded-xl border border-blue-200 shadow-sm">
+              <Server className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-semibold text-[#3A4D39]">Firmware</p>
+                <p className="text-xs font-medium text-[#739072]">
+                  {modules?.firmware_version || "-"}
+                </p>
+              </div>
+            </div>
+
+            {/* Target Firmware */}
+            <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
+              <Cog className="w-5 h-5 text-amber-600" />
+              <div>
+                <p className="text-sm font-semibold text-[#3A4D39]">
+                  Target Firmware
+                </p>
+                <p className="text-xs font-medium text-[#739072]">
+                  {modules?.target_firmware_version || "-"}
+                </p>
+              </div>
+            </div>
+
+            {/* Update Status */}
+            <div className="flex items-center gap-3 p-3 bg-[#F9EBF0] rounded-xl border border-pink-200 shadow-sm">
+              <Activity className="w-5 h-5 text-pink-600" />
+              <div>
+                <p className="text-sm font-semibold text-[#3A4D39]">
+                  Update Status
+                </p>
+                <p className="text-xs font-medium text-[#739072]">
+                  {modules?.update_status || "-"}
+                </p>
+              </div>
+            </div>
+
+            {/* Last Update Attempt */}
+            <div className="flex items-center gap-3 p-3 bg-[#E8F0F8] rounded-xl border border-blue-100 shadow-sm">
+              <RefreshCw className="w-5 h-5 text-blue-500" />
+              <div>
+                <p className="text-sm font-semibold text-[#3A4D39]">
+                  Last Update
+                </p>
+                <p className="text-xs font-medium text-[#739072]">
+                  {modules?.last_update_attempt
+                    ? new Date(modules.last_update_attempt).toLocaleString()
+                    : "-"}
+                </p>
+              </div>
+            </div>
+
+            {/* Last Seen */}
+            <div className="flex items-center gap-3 p-3 bg-[#FFF4E6] rounded-xl border border-orange-200 shadow-sm">
+              <Eye className="w-5 h-5 text-orange-600" />
+              <div>
+                <p className="text-sm font-semibold text-[#3A4D39]">
+                  Last Seen
+                </p>
+                <p className="text-xs font-medium text-[#739072]">
+                  {modules?.last_seen
+                    ? new Date(modules.last_seen).toLocaleString()
+                    : "-"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Main Grid */}
         <Motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -243,28 +399,28 @@ export default function Modules() {
                 icon={Cpu}
                 offline={modules?.arduino_q}
                 subtext="Main Logic Unit"
-                onClick={() => requestRepair("Repair need for Arduino Q")}
+                onClick={() => handleCardClick("Repair need for Arduino Q")}
               />
               <ModuleCard
                 title="ESP32 Filter"
                 icon={Cpu}
                 offline={modules?.esp32_filter}
                 subtext="Filterings"
-                onClick={() => requestRepair("Repair need for ESP32 Filter")}
+                onClick={() => handleCardClick("Repair need for ESP32 Filter")}
               />
               <ModuleCard
                 title="ESP32 Sensors"
                 icon={Cpu}
                 offline={modules?.esp32_sensors}
                 subtext="Processing Unit"
-                onClick={() => requestRepair("Repair need for ESP32 sensors")}
+                onClick={() => handleCardClick("Repair need for ESP32 sensors")}
               />
               <ModuleCard
                 title="ESP32 Servo"
                 icon={Cpu}
                 offline={modules?.esp32_servo}
                 subtext="Ventilation Control"
-                onClick={() => requestRepair("Repair need for ESP32 Servo")}
+                onClick={() => handleCardClick("Repair need for ESP32 Servo")}
               />
             </div>
           </Motion.div>
@@ -305,35 +461,35 @@ export default function Modules() {
                 icon={Cog}
                 offline={modules?.servo_a}
                 subtext="Gate Control"
-                onClick={() => requestRepair("Repair need for Servo A")}
+                onClick={() => handleCardClick("Repair need for Servo A")}
               />
               <ModuleCard
                 title="Servo B"
                 icon={Cog}
                 offline={modules?.servo_b}
                 subtext="Valve Control"
-                onClick={() => requestRepair("Repair need for Servo B")}
+                onClick={() => handleCardClick("Repair need for Servo B")}
               />
               <ModuleCard
                 title="Servo Diverter"
                 icon={Cog}
                 offline={modules?.servo_mixer}
                 subtext="Mixing of materials"
-                onClick={() => requestRepair("Repair need for Servo Mixer")}
+                onClick={() => handleCardClick("Repair need for Servo Mixer")}
               />
               <ModuleCard
                 title="Grinder Motor"
                 icon={Cog}
                 offline={modules?.grinder}
                 subtext="High Torque Grinder"
-                onClick={() => requestRepair("Repair need for Grinder")}
+                onClick={() => handleCardClick("Repair need for Grinder")}
               />
               <ModuleCard
                 title="Exhaust Fan"
                 icon={Fan}
                 offline={modules?.exhaust}
                 subtext="Air Out"
-                onClick={() => requestRepair("Repair need for Exhaust Fan")}
+                onClick={() => handleCardClick("Repair need for Exhaust Fan")}
               />
             </div>
           </Motion.div>
@@ -372,21 +528,21 @@ export default function Modules() {
                 icon={Eye}
                 offline={modules?.camera}
                 subtext="Input Monitoring"
-                onClick={() => requestRepair("Repair need for Camera")}
+                onClick={() => handleCardClick("Repair need for Camera")}
               />
               <ModuleCard
                 title="Humidity Sensor"
                 icon={Droplets}
                 offline={modules?.humidity}
                 subtext="DHT22"
-                onClick={() => requestRepair("Repair need for Humidity Sensor")}
+                onClick={() => handleCardClick("Repair need for Humidity Sensor")}
               />
               <ModuleCard
                 title="Methane Sensor"
                 icon={Wind}
                 offline={modules?.methane}
                 subtext="MQ-4 Gas Sensor"
-                onClick={() => requestRepair("Repair need for Methane Sensor")}
+                onClick={() => handleCardClick("Repair need for Methane Sensor")}
               />
               <ModuleCard
                 title="Carbon Monoxide"
@@ -394,7 +550,7 @@ export default function Modules() {
                 offline={modules?.carbon_monoxide}
                 subtext="MQ-7 CO Sensor"
                 onClick={() =>
-                  requestRepair("Repair need for Carbon Monoxide Sensor")
+                  handleCardClick("Repair need for Carbon Monoxide Sensor")
                 }
               />
               <ModuleCard
@@ -403,7 +559,7 @@ export default function Modules() {
                 offline={modules?.air_quality}
                 subtext="MQ-135"
                 onClick={() =>
-                  requestRepair("Repair need for Air Quality Sensor")
+                  handleCardClick("Repair need for Air Quality Sensor")
                 }
               />
               <ModuleCard
@@ -412,7 +568,7 @@ export default function Modules() {
                 offline={modules?.combustible_gasses}
                 subtext="MQ-2 Sensor"
                 onClick={() =>
-                  requestRepair("Repair need for Combustible Gassses Sensor")
+                  handleCardClick("Repair need for Combustible Gassses Sensor")
                 }
               />
               <ModuleCard
@@ -420,14 +576,14 @@ export default function Modules() {
                 icon={Activity}
                 offline={modules?.npk}
                 subtext="Soil Analysis"
-                onClick={() => requestRepair("Repair need for NPK Sensor")}
+                onClick={() => handleCardClick("Repair need for NPK Sensor")}
               />
               <ModuleCard
                 title="Moisture Sensor"
                 icon={Droplets}
                 offline={modules?.moisture}
                 subtext="Capacitive Probe"
-                onClick={() => requestRepair("Repair need for Moisture Sensor")}
+                onClick={() => handleCardClick("Repair need for Moisture Sensor")}
               />
               <ModuleCard
                 title="Reed Switch"
@@ -435,7 +591,7 @@ export default function Modules() {
                 offline={modules?.reed}
                 subtext="Door / Lid Detection"
                 onClick={() =>
-                  requestRepair("Repair need for Reed Switch Sensor")
+                  handleCardClick("Repair need for Reed Switch Sensor")
                 }
               />
               <ModuleCard
@@ -444,7 +600,7 @@ export default function Modules() {
                 offline={modules?.ultrasonic}
                 subtext="Distance Measurement"
                 onClick={() =>
-                  requestRepair("Repair need for Ultrasonic Sensor")
+                  handleCardClick("Repair need for Ultrasonic Sensor")
                 }
               />
               <ModuleCard
@@ -452,7 +608,7 @@ export default function Modules() {
                 icon={Activity}
                 offline={modules?.weight}
                 subtext="Load Cell"
-                onClick={() => requestRepair("Repair need for Weight Sensor")}
+                onClick={() => handleCardClick("Repair need for Weight Sensor")}
               />
             </div>
           </Motion.div>

@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 export default function Footer() {
   const footerLinks = [
     { name: "About Us", path: "/about" },
-    { name: "Guide", path: "/guide"},
+    { name: "Download", path: "/download" },
+    { name: "Guide", path: "/guide" },
     { name: "FAQs", path: "/faqs" },
     { name: "Terms of Service", path: "/terms" },
     { name: "Socials", path: "/socials" },

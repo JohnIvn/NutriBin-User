@@ -13,6 +13,7 @@ import { DatabaseService } from '../../service/database/database.service';
 
 type MachineAnalyticsRow = {
   machine_id: string;
+  is_active: boolean | null;
   c1: boolean | null;
   c2: boolean | null;
   c3: boolean | null;
@@ -34,11 +35,17 @@ type MachineAnalyticsRow = {
   m4: boolean | null;
   m5: boolean | null;
   date_created: string;
+  firmware_version: string | null;
+  target_firmware_version: string | null;
+  update_status: string | null;
+  last_update_attempt: string | null;
+  last_seen: string | null;
 };
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
   return {
     id: row.machine_id,
+    is_active: row.is_active,
     modules: {
       arduino_q: row.c1,
       esp32_filter: row.c2,
@@ -60,6 +67,11 @@ function mapMachineAnalytics(row: MachineAnalyticsRow) {
       servo_mixer: row.m3,
       grinder: row.m4,
       exhaust: row.m5,
+      firmware_version: row.firmware_version,
+      target_firmware_version: row.target_firmware_version,
+      update_status: row.update_status,
+      last_update_attempt: row.last_update_attempt,
+      last_seen: row.last_seen,
     },
     date_created: row.date_created,
   };
@@ -81,27 +93,16 @@ export class ModuleAnalyticsController {
       const result = await client.query<MachineAnalyticsRow>(
         `
         SELECT
-          ma.c1,
-          ma.c2,
-          ma.c3,
-          ma.c4,
-          ma.s1,
-          ma.s2,
-          ma.s3,
-          ma.s4,
-          ma.s5,
-          ma.s6,
-          ma.s7,
-          ma.s8,
-          ma.s9,
-          ma.s10,
-          ma.s11,
-          ma.m1,
-          ma.m1,
-          ma.m2,
-          ma.m3,
-          ma.m4,
-          ma.m5,
+          ma.machine_id,
+          ma.is_active,
+          ma.c1, ma.c2, ma.c3, ma.c4,
+          ma.s1, ma.s2, ma.s3, ma.s4, ma.s5, ma.s6, ma.s7, ma.s8, ma.s9, ma.s10, ma.s11,
+          ma.m1, ma.m2, ma.m3, ma.m4, ma.m5,
+          ma.firmware_version,
+          ma.target_firmware_version,
+          ma.update_status,
+          ma.last_update_attempt,
+          ma.last_seen,
           ma.date_created
         FROM machines ma
         WHERE ma.machine_id = $1
