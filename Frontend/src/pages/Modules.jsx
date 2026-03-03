@@ -96,7 +96,7 @@ export default function Modules() {
     if (!modules) return { total: 0, online: 0, offline: 0 };
 
     const moduleValues = Object.values(modules);
-    const total = moduleValues.length;
+    const total = moduleValues.length - 5;
     const offline = moduleValues.filter(
       (val) => val === true || val === 1,
     ).length;
