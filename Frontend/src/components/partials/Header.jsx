@@ -1327,23 +1327,34 @@ export default function Header() {
   const fetchQRCode = async (machine) => {
     try {
       const machineId = machine.machine_id;
-      const serial = machine.serial_number || machineId;
-
-      console.log("DEBUG fetchQRCode machine:", machine);
-      console.log("DEBUG machineId:", machineId);
-      console.log("DEBUG serial_number from machine:", machine.serial_number);
-      console.log("DEBUG final serial to use:", serial);
 
       setQrLoading(true);
       setQrModalOpen(true);
-      const response = await Requests({
+
+      // Get serial number from endpoint
+      const serialResponse = await Requests({
+        url: `/machine/serial/${encodeURIComponent(machineId)}`,
+        method: "GET",
+      });
+
+      if (!serialResponse.data?.ok || !serialResponse.data?.serial_number) {
+        setError("Failed to fetch serial number");
+        setQrModalOpen(false);
+        setQrLoading(false);
+        return;
+      }
+
+      const serial = serialResponse.data.serial_number;
+
+      // Generate QR using the serial
+      const qrResponse = await Requests({
         url: `/qr/generate/${encodeURIComponent(serial)}`,
         method: "GET",
       });
 
-      if (response.data.ok) {
+      if (qrResponse.data.ok) {
         setQrData({
-          ...response.data,
+          ...qrResponse.data,
           machineId: machineId,
         });
       } else {

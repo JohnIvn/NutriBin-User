@@ -32,6 +32,16 @@ export class MachineController {
     return this.machineService.fetchMachine(customerId);
   }
 
+  // Get serial number by machine ID
+  @Get('serial/:machineId')
+  async getSerial(@Param('machineId') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('Machine ID is required');
+    }
+
+    return this.machineService.getSerialByMachineId(machineId);
+  }
+
   @Post('add-machine')
   async addMachine(
     @Body('machineSerial') machineSerial: string,

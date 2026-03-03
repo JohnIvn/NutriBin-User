@@ -64,11 +64,6 @@ export class MachineService {
         [customerId],
       );
 
-      console.log(
-        'DEBUG fetchMachine result:',
-        JSON.stringify(query.rows, null, 2),
-      );
-
       return query.rows;
     } catch (err) {
       console.error('Error fetching machines:', err);
@@ -211,6 +206,38 @@ export class MachineService {
       };
     } catch (err) {
       console.error('Error fetching hardware status:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
+  async getSerialByMachineId(machineId: string): Promise<{
+    ok: boolean;
+    serial_number?: string;
+    error?: string;
+  }> {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query<{ serial_number: string }>(
+        `
+        SELECT ms.serial_number
+        FROM public.machines m
+        LEFT JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
+        WHERE m.machine_id = $1
+        `,
+        [machineId],
+      );
+
+      if (!result.rowCount || !result.rows[0]?.serial_number) {
+        return { ok: false, error: 'Serial not found for this machine' };
+      }
+
+      return {
+        ok: true,
+        serial_number: result.rows[0].serial_number,
+      };
+    } catch (err) {
+      console.error('Error fetching serial by machine ID:', err);
       return { ok: false, error: 'Database error' };
     }
   }
