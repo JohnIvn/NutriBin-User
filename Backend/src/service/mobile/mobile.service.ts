@@ -115,6 +115,26 @@ export class MobileService {
 
       const machineId = result.rows[0].machine_serial_id;
 
+      // Check if the machine is already associated with this customer
+      const existingAssociation = await client.query(
+        `
+        SELECT 1 FROM machine_customers
+        WHERE machine_id = $1 AND customer_id = $2
+        `,
+        [machineId, customerId],
+      );
+
+      if (
+        existingAssociation &&
+        existingAssociation.rowCount &&
+        existingAssociation.rowCount > 0
+      ) {
+        return {
+          ok: false,
+          error: 'You have already scanned and registered this machine.',
+        };
+      }
+
       await client.query(
         `
 	  UPDATE machine_serial
