@@ -15,7 +15,96 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import Requests from "@/utils/Requests";
 import { io } from "socket.io-client";
 import getBaseUrl from "@/utils/GetBaseUrl";
-import { RefreshCw, Server } from "lucide-react";
+import { RefreshCw, Server, QrCode } from "lucide-react";
+
+// Modal for QR Code Display (Similar to NutriBin Server)
+const QRCodeModal = ({ isOpen, onClose, qrData, isLoading }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Overlay */}
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.overlay}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80]"
+          />
+
+          {/* Modal Content */}
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.content}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                     w-[90%] max-w-sm bg-white rounded-2xl shadow-2xl z-[81] overflow-hidden"
+          >
+            <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-[#3A4D39] flex items-center gap-2">
+                  <QrCode className="w-6 h-6" />
+                  Machine QR Code
+                </h2>
+                <Motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-[#3A4D39]/10 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5 text-[#3A4D39]" />
+                </Motion.button>
+              </div>
+              <p className="text-sm text-[#3A4D39]/70 mt-1">
+                Scan this to register this machine in the app
+              </p>
+            </div>
+
+            <div className="p-8 flex flex-col items-center gap-6">
+              {isLoading ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <RefreshCw className="w-10 h-10 text-[#3A4D39] animate-spin" />
+                  <p className="text-[#3A4D39]/60 font-bold text-sm">
+                    Generating QR Code...
+                  </p>
+                </div>
+              ) : qrData?.qrCode ? (
+                <>
+                  <div className="bg-white p-4 rounded-2xl border-2 border-[#3A4D39]/10 shadow-inner">
+                    <img
+                      src={qrData.qrCode}
+                      alt="Machine QR Code"
+                      className="w-56 h-56 object-contain"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-black text-[#3A4D39]/40 uppercase tracking-widest mb-1">
+                      Machine ID
+                    </p>
+                    <p className="font-mono font-bold text-[#3A4D39] bg-[#ECE3CE]/30 px-3 py-1.5 rounded-lg text-sm">
+                      {qrData.serial}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-red-500 font-bold">Failed to generate QR</p>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-[#ECE3CE]/20 border-t border-[#3A4D39]/10">
+              <Motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onClose}
+                className="w-full py-3 rounded-xl font-bold bg-[#3A4D39] text-[#ECE3CE] 
+                         hover:bg-[#4F6F52] transition-all duration-200"
+              >
+                Done
+              </Motion.button>
+            </div>
+          </Motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // Constants
 const NAVIGATION = {
@@ -779,6 +868,7 @@ const MachineSelectionModal = ({
   setRenameModalOpen,
   setMachineToRename,
   onDeleteMachine,
+  onShowQR,
   isDeleting,
 }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -802,6 +892,12 @@ const MachineSelectionModal = ({
     e.stopPropagation();
     setMachineToDelete(machine);
     setDeleteConfirmOpen(true);
+  };
+
+  const handleQRClick = (e, machine) => {
+    e.stopPropagation();
+    onShowQR(machine.machine_id);
+    onClose();
   };
 
   const handleConfirmDelete = async () => {
@@ -903,30 +999,41 @@ const MachineSelectionModal = ({
                         </Motion.div>
                       )}
                     </Motion.button>
-                    <Motion.button
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={(e) => handleRenameClick(e, machine)}
-                      disabled={isDeleting}
-                      className="p-2 rounded-lg hover:bg-[#3A4D39]/10 transition-colors
-                             disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Rename machine"
-                      aria-label="Rename machine"
-                    >
-                      <PencilIcon className="w-5 h-5 text-[#3A4D39]" />
-                    </Motion.button>
-                    <Motion.button
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={(e) => handleDeleteClick(e, machine)}
-                      disabled={isDeleting}
-                      className="p-2 rounded-lg hover:bg-red-50 transition-colors
-                             disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Delete machine"
-                      aria-label="Delete machine"
-                    >
-                      <XMarkIcon className="w-5 h-5 text-red-600" />
-                    </Motion.button>
+                    <div className="flex px-2 items-center gap-1 border-l border-[#3A4D39]/10 ml-0.5">
+                      <Motion.button
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.85 }}
+                        onClick={(e) => handleQRClick(e, machine)}
+                        className="p-1.5 rounded-lg hover:bg-[#3A4D39]/10 transition-colors"
+                        title="Show machine QR code"
+                      >
+                        <QrCode className="w-5 h-5 text-[#3A4D39]" />
+                      </Motion.button>
+                      <Motion.button
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.85 }}
+                        onClick={(e) => handleRenameClick(e, machine)}
+                        disabled={isDeleting}
+                        className="p-1.5 rounded-lg hover:bg-[#3A4D39]/10 transition-colors
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Rename machine"
+                        aria-label="Rename machine"
+                      >
+                        <PencilIcon className="w-5 h-5 text-[#3A4D39]" />
+                      </Motion.button>
+                      <Motion.button
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.85 }}
+                        onClick={(e) => handleDeleteClick(e, machine)}
+                        disabled={isDeleting}
+                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Delete machine"
+                        aria-label="Delete machine"
+                      >
+                        <XMarkIcon className="w-5 h-5 text-red-600" />
+                      </Motion.button>
+                    </div>
                   </Motion.div>
                 ))}
               </div>
@@ -1197,7 +1304,34 @@ export default function Header() {
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [machineToRename, setMachineToRename] = useState(null);
   const [newMachineName, setNewMachineName] = useState("");
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrData, setQrData] = useState(null);
   const userMenuRef = useRef(null);
+
+  const fetchQRCode = async (machineId) => {
+    try {
+      setQrLoading(true);
+      setQrModalOpen(true);
+      const response = await Requests({
+        url: `/qr/generate/${encodeURIComponent(machineId)}`,
+        method: "GET",
+      });
+
+      if (response.data.ok) {
+        setQrData(response.data);
+      } else {
+        setError("Failed to generate QR code");
+        setQrModalOpen(false);
+      }
+    } catch (err) {
+      console.error("Error fetching QR code:", err);
+      setError("An error occurred while generating QR code");
+      setQrModalOpen(false);
+    } finally {
+      setQrLoading(false);
+    }
+  };
   const notificationMenuRef = useRef(null);
 
   const location = useLocation();
@@ -1610,7 +1744,16 @@ export default function Header() {
         setRenameModalOpen={setRenameModalOpen}
         setMachineToRename={setMachineToRename}
         onDeleteMachine={handleDeleteMachine}
+        onShowQR={fetchQRCode}
         isDeleting={isSubmitting}
+      />
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        qrData={qrData}
+        isLoading={qrLoading}
       />
 
       {/* Mobile Drawer */}
