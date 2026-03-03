@@ -37,6 +37,7 @@ import { SupportGateway } from './service/support/support.gateway';
 import { FertilizerAnalyticsGateway } from './service/stats/fertilizer-analytics.gateway';
 import { ModuleAnalyticsGateway } from './service/stats/module-analytics.gateway';
 import { DashboardGateway } from './service/stats/Dashboard.gateway';
+import { QrController } from './controllers/qr/qr.controller';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { DashboardGateway } from './service/stats/Dashboard.gateway';
     RecommendedCropsController,
     RepairController,
     MachineNotificationsController,
+    QrController,
   ],
   providers: [
     {
