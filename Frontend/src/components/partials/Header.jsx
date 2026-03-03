@@ -906,7 +906,7 @@ const MachineSelectionModal = ({
 
   const handleQRClick = (e, machine) => {
     e.stopPropagation();
-    fetchQRCode(machine);
+    onShowQR(machine);
     onClose();
   };
 
