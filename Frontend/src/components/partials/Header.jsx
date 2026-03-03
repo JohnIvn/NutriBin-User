@@ -896,7 +896,7 @@ const MachineSelectionModal = ({
 
   const handleQRClick = (e, machine) => {
     e.stopPropagation();
-    onShowQR(machine.machine_id);
+    onShowQR(machine.serial_number || machine.machine_id);
     onClose();
   };
 
@@ -980,12 +980,14 @@ const MachineSelectionModal = ({
                     >
                       <div>
                         <div className="font-bold">
-                          {machine.nickname || machine.machine_id}
+                          {machine.nickname ||
+                            machine.serial_number ||
+                            machine.machine_id}
                         </div>
-                        {machine.nickname &&
+                        {(machine.nickname || machine.serial_number) &&
                           machine.nickname !== machine.machine_id && (
                             <div className="text-xs opacity-70 mt-0.5">
-                              {machine.machine_id}
+                              {machine.serial_number || machine.machine_id}
                             </div>
                           )}
                       </div>

@@ -6,7 +6,8 @@ import { DatabaseService } from '../database/database.service';
 
 type FetchMachinesRow = {
   machine_id: string;
-  nickname: string
+  nickname: string;
+  serial_number?: string;
 };
 
 type MachineRow = {
@@ -51,9 +52,10 @@ export class MachineService {
     try {
       const query = await client.query<FetchMachinesRow>(
         `
-        SELECT machine_id, nickname
-        FROM public.machine_customers
-        WHERE customer_id = $1
+        SELECT mc.machine_id, mc.nickname, ms.serial_number
+        FROM public.machine_customers mc
+        JOIN public.machine_serial ms ON mc.machine_id = ms.machine_serial_id
+        WHERE mc.customer_id = $1
         `,
         [customerId],
       );
