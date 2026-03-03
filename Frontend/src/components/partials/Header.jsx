@@ -76,11 +76,21 @@ const QRCodeModal = ({ isOpen, onClose, qrData, isLoading }) => {
                   </div>
                   <div className="text-center">
                     <p className="text-xs font-black text-[#3A4D39]/40 uppercase tracking-widest mb-1">
-                      Machine ID
+                      Serial ID
                     </p>
-                    <p className="font-mono font-bold text-[#3A4D39] bg-[#ECE3CE]/30 px-3 py-1.5 rounded-lg text-sm">
+                    <p className="font-mono font-bold text-[#3A4D39] bg-[#ECE3CE]/30 px-3 py-1.5 rounded-lg text-sm mb-4">
                       {qrData.serial}
                     </p>
+                    {qrData.machineId && qrData.machineId !== qrData.serial && (
+                      <>
+                        <p className="text-xs font-black text-[#3A4D39]/40 uppercase tracking-widest mb-1">
+                          Internal ID
+                        </p>
+                        <p className="font-mono text-[#3A4D39]/60 bg-[#ECE3CE]/10 px-3 py-1 rounded-lg text-xs truncate max-w-[200px]">
+                          {qrData.machineId}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </>
               ) : (
@@ -896,7 +906,7 @@ const MachineSelectionModal = ({
 
   const handleQRClick = (e, machine) => {
     e.stopPropagation();
-    onShowQR(machine.serial_number || machine.machine_id);
+    fetchQRCode(machine);
     onClose();
   };
 
@@ -1311,17 +1321,23 @@ export default function Header() {
   const [qrData, setQrData] = useState(null);
   const userMenuRef = useRef(null);
 
-  const fetchQRCode = async (machineId) => {
+  const fetchQRCode = async (machine) => {
     try {
+      const machineId = machine.machine_id;
+      const serial = machine.serial_number || machineId;
+
       setQrLoading(true);
       setQrModalOpen(true);
       const response = await Requests({
-        url: `/qr/generate/${encodeURIComponent(machineId)}`,
+        url: `/qr/generate/${encodeURIComponent(serial)}`,
         method: "GET",
       });
 
       if (response.data.ok) {
-        setQrData(response.data);
+        setQrData({
+          ...response.data,
+          machineId: machineId,
+        });
       } else {
         setError("Failed to generate QR code");
         setQrModalOpen(false);
