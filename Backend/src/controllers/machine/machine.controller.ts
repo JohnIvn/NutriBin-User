@@ -44,6 +44,19 @@ export class MachineController {
     return this.machineService.addMachine(machineSerial, customerId);
   }
 
+  @Post('add-name-machine')
+  async addNameMachine(
+    @Body('name') name: string,
+    @Body('customerId') customerId: string,
+    @Body('machineId') machineId: string,
+  ) {
+    if (!name || !customerId) {
+      return { ok: false, error: 'machineSerial and customerId are required' };
+    }
+
+    return this.machineService.addNameMachine(machineId, name, customerId);
+  }
+
   @Delete('delete')
   async deleteMachine(
     @Body('customerId') customerId: string,

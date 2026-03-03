@@ -18,6 +18,11 @@ export function UserProvider({ children }) {
     return null;
   });
 
+  const [selectedMachine, setSelectedMachine] = useState(() => {
+    const stored = localStorage.getItem("selectedMachine");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const login = async (userData) => {
     try {
       let machines = [];
@@ -26,9 +31,12 @@ export function UserProvider({ children }) {
           url: `/machine/${userData.customer_id}`,
         });
         console.log("Machine response:", res.data);
-        // Response is directly the array of machines
+
         if (Array.isArray(res.data)) {
-          machines = res.data;
+          machines = res.data.map((m) => ({
+            ...m,
+            nickname: m.nickname || m.machine_id, // default to ID if nickname is null
+          }));
         }
       }
 
@@ -66,6 +74,28 @@ export function UserProvider({ children }) {
 
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      // *** FIX: Validate selectedMachine still exists in the updated machines list ***
+      const storedMachine = localStorage.getItem("selectedMachine");
+      if (storedMachine) {
+        try {
+          const parsed = JSON.parse(storedMachine);
+          const stillExists = machines.find(
+            (m) => m.machine_id === parsed.machine_id,
+          );
+
+          if (!stillExists) {
+            // Machine was deleted, clear it from localStorage and state
+            console.log("Deleted machine detected, clearing from localStorage");
+            localStorage.removeItem("selectedMachine");
+            setSelectedMachine(null);
+          }
+        } catch (err) {
+          console.error("Error validating stored machine:", err);
+          localStorage.removeItem("selectedMachine");
+          setSelectedMachine(null);
+        }
+      }
 
       return machines;
     } catch (err) {
@@ -141,11 +171,6 @@ export function UserProvider({ children }) {
     localStorage.removeItem("user");
     localStorage.removeItem("selectedMachine");
   };
-
-  const [selectedMachine, setSelectedMachine] = useState(() => {
-    const stored = localStorage.getItem("selectedMachine");
-    return stored ? JSON.parse(stored) : null;
-  });
 
   return (
     <UserContext.Provider

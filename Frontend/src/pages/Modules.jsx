@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import ModuleCard from "@/components/ui/ModuleCard";
 import { toast } from "sonner";
 import {
@@ -20,6 +20,8 @@ import {
 import { useUser } from "@/contexts/UserContextHook";
 import Requests from "@/utils/Requests";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import { io } from "socket.io-client";
+import getBaseUrl from "@/utils/GetBaseUrl";
 
 export default function Modules() {
   const [modules, setModules] = useState(null);
@@ -31,10 +33,14 @@ export default function Modules() {
   const [activeModule, setActiveModule] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const socketRef = useRef(null);
+
+  // ─────────────────────────────
+  // Fetch modules initially
+  // ─────────────────────────────
   useEffect(() => {
     if (!machineId) return;
 
-    console.log("Fetching modules for:", machineId);
     async function fetchModules() {
       try {
         const res = await Requests({
@@ -44,8 +50,6 @@ export default function Modules() {
         if (data.ok) {
           setModules(data.data.modules);
         }
-
-        console.log(data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -54,6 +58,41 @@ export default function Modules() {
     }
 
     fetchModules();
+  }, [machineId]);
+
+  // ─────────────────────────────
+  // Connect to WebSocket & join room
+  // ─────────────────────────────
+  useEffect(() => {
+    if (!machineId) return;
+    
+    const baseUrl = getBaseUrl();
+
+    const socket = io(
+      baseUrl,
+      {
+        transports: ["websocket"],
+      },
+    );
+
+    socketRef.current = socket;
+
+    // Join module room
+    socket.emit("joinModuleRoom", {  machineId });
+
+    // Listen for updates
+    socket.on("module_analytics_update", (payload) => {
+      console.log("Realtime module update:", payload);
+      setModules(payload.modules);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [machineId]);
 
   // Triggered when user clicks a card
@@ -122,7 +161,6 @@ export default function Modules() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] font-sans">
-      
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -535,14 +573,18 @@ export default function Modules() {
                 icon={Droplets}
                 offline={modules?.humidity}
                 subtext="DHT22"
-                onClick={() => handleCardClick("Repair need for Humidity Sensor")}
+                onClick={() =>
+                  handleCardClick("Repair need for Humidity Sensor")
+                }
               />
               <ModuleCard
                 title="Methane Sensor"
                 icon={Wind}
                 offline={modules?.methane}
                 subtext="MQ-4 Gas Sensor"
-                onClick={() => handleCardClick("Repair need for Methane Sensor")}
+                onClick={() =>
+                  handleCardClick("Repair need for Methane Sensor")
+                }
               />
               <ModuleCard
                 title="Carbon Monoxide"
@@ -583,7 +625,9 @@ export default function Modules() {
                 icon={Droplets}
                 offline={modules?.moisture}
                 subtext="Capacitive Probe"
-                onClick={() => handleCardClick("Repair need for Moisture Sensor")}
+                onClick={() =>
+                  handleCardClick("Repair need for Moisture Sensor")
+                }
               />
               <ModuleCard
                 title="Reed Switch"

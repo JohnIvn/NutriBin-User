@@ -35,6 +35,8 @@ import { MachineNotificationsGateway } from './service/notification/machine-noti
 import { MachineNotificationsController } from './controllers/stats/machine-notifications.controller';
 import { SupportGateway } from './service/support/support.gateway';
 import { FertilizerAnalyticsGateway } from './service/stats/fertilizer-analytics.gateway';
+import { ModuleAnalyticsGateway } from './service/stats/module-analytics.gateway';
+import { DashboardGateway } from './service/stats/Dashboard.gateway';
 
 @Module({
   imports: [
@@ -81,6 +83,8 @@ import { FertilizerAnalyticsGateway } from './service/stats/fertilizer-analytics
     VideoStreamGateway,
     MachineNotificationsGateway,
     FertilizerAnalyticsGateway,
+    ModuleAnalyticsGateway,
+    DashboardGateway,
     SupportGateway,
     MachineService,
     MobileService,

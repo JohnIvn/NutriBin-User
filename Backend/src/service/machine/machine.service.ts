@@ -6,6 +6,7 @@ import { DatabaseService } from '../database/database.service';
 
 type FetchMachinesRow = {
   machine_id: string;
+  nickname: string
 };
 
 type MachineRow = {
@@ -50,7 +51,7 @@ export class MachineService {
     try {
       const query = await client.query<FetchMachinesRow>(
         `
-        SELECT machine_id
+        SELECT machine_id, nickname
         FROM public.machine_customers
         WHERE customer_id = $1
         `,
@@ -123,6 +124,50 @@ export class MachineService {
       return {
         ok: false,
         error: 'Failed to add machine',
+      };
+    }
+  }
+
+  async addNameMachine(machineId: string, name: string, customerId: string) {
+    try {
+      const nameTrim = name.trim();
+      const client = this.databaseService.getClient();
+
+      if (!name) {
+        return { ok: false, error: 'Serial is required' };
+      }
+
+      const result = await client.query<MachineRow>(
+        `
+      SELECT machine_id
+      FROM machine_customers
+      WHERE customer_id = $1 AND machine_id = $2
+      `,
+        [customerId, machineId],
+      );
+
+      if (!result.rowCount) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      await client.query(
+        `
+      UPDATE machine_customers
+      SET nickname = $1
+      WHERE customer_id = $2 AND machine_id = $3
+      `,
+        [nameTrim, customerId, machineId],
+      );
+
+      return {
+        ok: true,
+        message: 'Machine nickname added successfully',
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        ok: false,
+        error: 'Failed to name machine',
       };
     }
   }

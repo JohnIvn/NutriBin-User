@@ -57,102 +57,121 @@ export class DashboardController {
   constructor(private readonly databaseService: DatabaseService) {}
 
   @Get(':customerId')
-  async getAnalytics(@Param('customerId') customerId: string) {
+  async getDashboard(@Param('customerId') customerId: string) {
     const client = this.databaseService.getClient();
 
     try {
+      // 1️⃣ Get the active machine
       const machineResult = await client.query<MachineRow>(
-        `
-        SELECT mc.machine_id
-        FROM machine_customers mc
-        JOIN machine_serial ms ON ms.machine_serial_id = mc.machine_id 
-        WHERE mc.customer_id = $1
-          AND ms.is_active = true
-        LIMIT 1
-        `,
+        `SELECT mc.machine_id
+       FROM machine_customers mc
+       JOIN machine_serial ms ON ms.machine_serial_id = mc.machine_id
+       WHERE mc.customer_id = $1
+         AND ms.is_active = true
+       LIMIT 1`,
         [customerId],
       );
-
       const machineId = machineResult.rows[0]?.machine_id;
+      if (!machineId) {
+        return { ok: false, message: 'No active machine found' };
+      }
 
-      const announcement = await client.query<AnnouncementRow>(
-        `
-        SELECT
-          announcement_id,
-          title,
-          body,
-          author,
-          priority,
-          notified,
-          date_published,
-          is_active,
-          date_created
-        FROM announcements
-        WHERE is_active = true
-        ORDER BY COALESCE(date_published::timestamptz, date_created) DESC
-        `,
+      // 2️⃣ Fetch active announcements
+      const announcementResult = await client.query<AnnouncementRow>(
+        `SELECT
+         announcement_id, title, body, author, priority, notified,
+         date_published, is_active, date_created
+       FROM announcements
+       WHERE is_active = true
+       ORDER BY COALESCE(date_published::timestamptz, date_created) DESC
+       LIMIT 5`, // dashboard usually shows top 5
       );
 
-      const analytics = await client.query<FertilizerAnalyticsRow>(
-        `
-        SELECT
-          fertilizer_analytics_id,
-          nitrogen,
-          phosphorus,
-          potassium,
-          moisture,
-          humidity,
-          temperature,
-          ph,
-          date_created
-        FROM fertilizer_analytics
-        WHERE machine_id = $1
-        ORDER BY date_created DESC
-        LIMIT 1
-        `,
+      // 3️⃣ Fetch latest analytics
+      const analyticsResult = await client.query<FertilizerAnalyticsRow>(
+        `SELECT
+         fertilizer_analytics_id, nitrogen, phosphorus, potassium,
+         moisture, humidity, temperature, ph, date_created
+       FROM fertilizer_analytics
+       WHERE machine_id = $1
+       ORDER BY date_created DESC
+       LIMIT 1`,
         [machineId],
       );
 
-      let trashLogs: TrashLogRow[] = [];
+      const latestAnalytics = analyticsResult.rows[0];
 
-      if (machineId) {
-        const trashLogsResult = await client.query<TrashLogRow>(
-          `
-        SELECT
-          fa.fertilizer_analytics_id,
-          fa.nitrogen,
-          fa.phosphorus,
-          fa.potassium,
-          fa.temperature,
-          fa.ph,
-          fa.humidity,
-          fa.moisture,
-          fa.methane,
-          fa.air_quality,
-          fa.carbon_monoxide,
-          fa.combustible_gases,
-          fa.weight_kg,
-          fa.reed_switch,
-          fa.date_created
-        FROM fertilizer_analytics fa
-        WHERE machine_id = $1
-        ORDER BY fa.date_created DESC
-        LIMIT 4
-          `,
-          [machineId],
-        );
-        trashLogs = trashLogsResult.rows;
-      }
+      // 4️⃣ Fetch last 4 trash logs with summary stats
+      const trashResult = await client.query<TrashLogRow>(
+        `SELECT
+         fertilizer_analytics_id, nitrogen, phosphorus, potassium,
+         temperature, ph, humidity, moisture,
+         methane, air_quality, carbon_monoxide, combustible_gases,
+         weight_kg, reed_switch, date_created
+       FROM fertilizer_analytics
+       WHERE machine_id = $1
+       ORDER BY date_created DESC
+       LIMIT 4`,
+        [machineId],
+      );
 
+      const trashLogs = trashResult.rows.map((log) => ({
+        ...log,
+        nitrogen: log.nitrogen ? parseFloat(log.nitrogen) : null,
+        phosphorus: log.phosphorus ? parseFloat(log.phosphorus) : null,
+        potassium: log.potassium ? parseFloat(log.potassium) : null,
+        temperature: log.temperature ? parseFloat(log.temperature) : null,
+        ph: log.ph ? parseFloat(log.ph) : null,
+        humidity: log.humidity ? parseFloat(log.humidity) : null,
+        moisture: log.moisture ? parseFloat(log.moisture) : null,
+        methane: log.methane ? parseFloat(log.methane) : null,
+        air_quality: log.air_quality ? parseFloat(log.air_quality) : null,
+        carbon_monoxide: log.carbon_monoxide
+          ? parseFloat(log.carbon_monoxide)
+          : null,
+        combustible_gases: log.combustible_gases
+          ? parseFloat(log.combustible_gases)
+          : null,
+        weight_kg: log.weight_kg ? parseFloat(log.weight_kg) : null,
+      }));
+
+      // 5️⃣ Compute some dashboard stats
+      const avgNitrogen =
+        trashLogs.reduce((sum, t) => sum + (t.nitrogen || 0), 0) /
+        (trashLogs.length || 1);
+      const avgPhosphorus =
+        trashLogs.reduce((sum, t) => sum + (t.phosphorus || 0), 0) /
+        (trashLogs.length || 1);
+
+      // 6️⃣ Return dashboard-ready object
       return {
         ok: true,
-        announcements: announcement.rows,
-        latestAnalytics: analytics.rows[0] ?? null,
-        trashLogs: trashLogs,
+        machineId,
+        announcements: announcementResult.rows,
+        latestAnalytics: latestAnalytics
+          ? {
+              ...latestAnalytics,
+              nitrogen: latestAnalytics.nitrogen
+                ? parseFloat(latestAnalytics.nitrogen)
+                : null,
+              phosphorus: latestAnalytics.phosphorus
+                ? parseFloat(latestAnalytics.phosphorus)
+                : null,
+              potassium: latestAnalytics.potassium
+                ? parseFloat(latestAnalytics.potassium)
+                : null,
+            }
+          : null,
+        trashLogs,
+        stats: {
+          avgNitrogen,
+          avgPhosphorus,
+          totalTrashLogs: trashLogs.length,
+        },
       };
     } catch (err) {
-      console.error('Dashboard analytics error', err);
-      throw new InternalServerErrorException('Failed to fetch');
+      console.error('Dashboard error', err);
+      throw new InternalServerErrorException('Failed to fetch dashboard data');
     }
   }
 }

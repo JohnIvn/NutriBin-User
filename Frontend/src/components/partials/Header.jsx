@@ -6,6 +6,8 @@ import {
   ChevronDownIcon,
   PlusIcon,
   BellIcon,
+  PencilIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContextHook";
@@ -221,10 +223,10 @@ const NotificationButton = ({ notificationMenuRef }) => {
     }
   };
 
-  // Close notification menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
+        notificationOpen &&
         notificationMenuRef.current &&
         !notificationMenuRef.current.contains(event.target)
       ) {
@@ -234,8 +236,15 @@ const NotificationButton = ({ notificationMenuRef }) => {
 
     if (notificationOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () =>
+      const handleEsc = (e) => {
+        if (e.key === "Escape") setNotificationOpen(false);
+      };
+      document.addEventListener("keydown", handleEsc);
+
+      return () => {
         document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleEsc);
+      };
     }
   }, [notificationOpen, notificationMenuRef]);
 
@@ -244,7 +253,10 @@ const NotificationButton = ({ notificationMenuRef }) => {
       <Motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => setNotificationOpen((v) => !v)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setNotificationOpen((prev) => !prev);
+        }}
         className="relative p-2.5 rounded-xl bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
                  transition-all duration-200 group"
         aria-label="Notifications"
@@ -460,8 +472,8 @@ const AddMachineModal = ({
                   placeholder="e.g., NB-2024-001"
                   className="w-full px-4 py-3 rounded-xl border-2 border-[#3A4D39]/20 
                            text-[#3A4D39] font-medium
-                           focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/30 focus:border-[#3A4D39]/40
-                           placeholder:text-[#3A4D39]/40 transition-all"
+                           focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/50 focus:border-[#3A4D39]/50 focus:shadow-lg focus:shadow-[#3A4D39]/10
+                           placeholder:text-[#3A4D39]/40 transition-all duration-300"
                   required
                   disabled={isSubmitting}
                   autoFocus
@@ -471,24 +483,30 @@ const AddMachineModal = ({
               {/* Error Message */}
               {error && (
                 <Motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl"
+                  exit={{ opacity: 0, y: -15 }}
+                  className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl shadow-sm"
                   role="alert"
                 >
-                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                  <p className="text-sm text-red-700 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />
+                    {error}
+                  </p>
                 </Motion.div>
               )}
 
               {/* Success Message */}
               {success && (
                 <Motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl"
+                  exit={{ opacity: 0, y: -15 }}
+                  className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl shadow-sm"
                   role="alert"
                 >
-                  <p className="text-sm text-green-700 font-medium">
+                  <p className="text-sm text-green-700 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-600 flex-shrink-0" />
                     {success}
                   </p>
                 </Motion.div>
@@ -496,16 +514,18 @@ const AddMachineModal = ({
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <button
+                <Motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={onClose}
                   className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
                            bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
-                           transition-colors disabled:opacity-50"
+                           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
                   Cancel
-                </button>
+                </Motion.button>
                 <Motion.button
                   whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
                   whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
@@ -513,7 +533,7 @@ const AddMachineModal = ({
                   className="flex-1 px-4 py-3 rounded-xl font-bold text-[#ECE3CE] 
                            bg-[#3A4D39] hover:bg-[#4F6F52] 
                            shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:shadow-[#3A4D39]/30
-                           transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
                            flex items-center justify-center gap-2"
                   disabled={isSubmitting}
                 >
@@ -557,6 +577,198 @@ const AddMachineModal = ({
   );
 };
 
+const RenameMachineModal = ({
+  isOpen,
+  onClose,
+  machine,
+  newName,
+  setNewName,
+  onSubmit,
+  isSubmitting,
+  error,
+  success,
+}) => {
+  useEffect(() => {
+    if (isOpen && machine) {
+      setNewName(machine.nickname || "");
+    }
+  }, [isOpen, machine, setNewName]);
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isOpen, onClose]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && machine && (
+        <>
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.overlay}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70]"
+          />
+
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.content}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                     w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[71] overflow-hidden"
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-[#3A4D39]">
+                  Rename Machine
+                </h2>
+                <Motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-[#3A4D39]/10 rounded-lg transition-colors"
+                  aria-label="Close modal"
+                >
+                  <XMarkIcon className="w-5 h-5 text-[#3A4D39]" />
+                </Motion.button>
+              </div>
+              <p className="text-sm text-[#3A4D39]/70 mt-1">
+                Give your machine a custom nickname
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={onSubmit} className="px-6 py-6">
+              <div className="mb-4">
+                <label
+                  htmlFor="machine-name"
+                  className="block text-sm font-semibold text-[#3A4D39] mb-2"
+                >
+                  Machine Name
+                </label>
+                <input
+                  id="machine-name"
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g., Kitchen Garden, Greenhouse #1"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[#3A4D39]/20 
+                           text-[#3A4D39] font-medium
+                           focus:outline-none focus:ring-2 focus:ring-[#3A4D39]/50 focus:border-[#3A4D39]/50 focus:shadow-lg focus:shadow-[#3A4D39]/10
+                           placeholder:text-[#3A4D39]/40 transition-all duration-300"
+                  required
+                  disabled={isSubmitting}
+                  autoFocus
+                />
+                <p className="text-xs text-[#3A4D39]/50 mt-2">
+                  Serial: {machine.machine_id}
+                </p>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <Motion.div
+                  initial={{ opacity: 0, y: -15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl shadow-sm"
+                  role="alert"
+                >
+                  <p className="text-sm text-red-700 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />
+                    {error}
+                  </p>
+                </Motion.div>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <Motion.div
+                  initial={{ opacity: 0, y: -15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl shadow-sm"
+                  role="alert"
+                >
+                  <p className="text-sm text-green-700 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-600 flex-shrink-0" />
+                    {success}
+                  </p>
+                </Motion.div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
+                           bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
+                           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Motion.button>
+                <Motion.button
+                  whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                  whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                  type="submit"
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-[#ECE3CE] 
+                           bg-[#3A4D39] hover:bg-[#4F6F52] 
+                           shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:shadow-[#3A4D39]/30
+                           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+                           flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <PencilIcon className="w-5 h-5" />
+                      Save Name
+                    </>
+                  )}
+                </Motion.button>
+              </div>
+            </form>
+          </Motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const MachineSelectionModal = ({
   isOpen,
   onClose,
@@ -564,6 +776,8 @@ const MachineSelectionModal = ({
   selectedMachine,
   setSelectedMachine,
   setAddMachineOpen,
+  setRenameModalOpen,
+  setMachineToRename,
   onDeleteMachine,
   isDeleting,
 }) => {
@@ -575,6 +789,13 @@ const MachineSelectionModal = ({
     localStorage.setItem("selectedMachine", JSON.stringify(machine));
     onClose();
     window.location.reload();
+  };
+
+  const handleRenameClick = (e, machine) => {
+    e.stopPropagation();
+    setMachineToRename(machine);
+    setRenameModalOpen(true);
+    onClose();
   };
 
   const handleDeleteClick = (e, machine) => {
@@ -608,10 +829,11 @@ const MachineSelectionModal = ({
               {...ANIMATION_VARIANTS.modal.content}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                     w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[61] overflow-hidden"
+                     w-[90%] max-w-lg bg-white rounded-2xl shadow-2xl z-[61] overflow-hidden"
             >
               <div className="px-6 py-5 bg-gradient-to-br from-[#ECE3CE] to-[#ECE3CE]/50 border-b border-[#3A4D39]/10 flex justify-between items-center">
-                <h2 className="text-xl font-black text-[#3A4D39]">
+                <h2 className="text-xl font-black text-[#3A4D39] flex items-center gap-2">
+                  <Server className="w-6 h-6" />
                   Manage Machines
                 </h2>
                 <Motion.button
@@ -625,26 +847,77 @@ const MachineSelectionModal = ({
                 </Motion.button>
               </div>
 
-              <div className="p-6 flex flex-col gap-3 max-h-80 overflow-y-auto">
-                {user?.machines?.map((machine) => (
-                  <div
-                    key={machine.machine_id}
-                    className="flex items-center gap-2"
+              <div className="p-6 flex flex-col gap-3 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-[#3A4D39]/40">
+                {(!user?.machines || user.machines.length === 0) && (
+                  <Motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-8 px-4"
                   >
-                    <button
+                    <Server className="w-12 h-12 text-[#3A4D39]/20 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-[#3A4D39] mb-1">
+                      No machines registered
+                    </p>
+                    <p className="text-xs text-[#3A4D39]/60">
+                      Add your first machine to get started
+                    </p>
+                  </Motion.div>
+                )}
+                {user?.machines?.map((machine, index) => (
+                  <Motion.div
+                    key={machine.machine_id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex items-center gap-2 border border-[#3A4D39]/20 rounded-xl p-1 hover:border-[#3A4D39]/40 transition-colors group"
+                  >
+                    <Motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelect(machine)}
-                      className={`flex-1 text-left px-4 py-3 rounded-xl font-medium
-                      transition-colors ${
+                      className={`flex-1 text-left px-4 py-3 rounded-lg font-medium
+                      transition-all flex justify-between items-center ${
                         selectedMachine?.machine_id === machine.machine_id
-                          ? "bg-[#3A4D39] text-[#ECE3CE]"
+                          ? "bg-[#3A4D39] text-[#ECE3CE] shadow-md shadow-[#3A4D39]/20"
                           : "bg-[#ECE3CE]/30 text-[#3A4D39] hover:bg-[#ECE3CE]/50"
                       }`}
                     >
-                      {machine.machine_name || machine.machine_id}
-                    </button>
+                      <div>
+                        <div className="font-bold">
+                          {machine.nickname || machine.machine_id}
+                        </div>
+                        {machine.nickname &&
+                          machine.nickname !== machine.machine_id && (
+                            <div className="text-xs opacity-70 mt-0.5">
+                              {machine.machine_id}
+                            </div>
+                          )}
+                      </div>
+                      {selectedMachine?.machine_id === machine.machine_id && (
+                        <Motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="flex items-center gap-1 ml-2 flex-shrink-0"
+                        >
+                          <CheckIcon className="w-5 h-5 text-green-400" />
+                        </Motion.div>
+                      )}
+                    </Motion.button>
                     <Motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
+                      onClick={(e) => handleRenameClick(e, machine)}
+                      disabled={isDeleting}
+                      className="p-2 rounded-lg hover:bg-[#3A4D39]/10 transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Rename machine"
+                      aria-label="Rename machine"
+                    >
+                      <PencilIcon className="w-5 h-5 text-[#3A4D39]" />
+                    </Motion.button>
+                    <Motion.button
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
                       onClick={(e) => handleDeleteClick(e, machine)}
                       disabled={isDeleting}
                       className="p-2 rounded-lg hover:bg-red-50 transition-colors
@@ -654,21 +927,23 @@ const MachineSelectionModal = ({
                     >
                       <XMarkIcon className="w-5 h-5 text-red-600" />
                     </Motion.button>
-                  </div>
+                  </Motion.div>
                 ))}
               </div>
 
-              <div className="px-6 py-4 border-t border-[#3A4D39]/10">
+              <div className="px-6 py-4 border-t border-[#3A4D39]/10 bg-[#ECE3CE]/30">
                 <Motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => {
                     onClose();
                     setAddMachineOpen(true);
                   }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 
                          bg-[#3A4D39] text-[#ECE3CE] rounded-xl font-bold
-                         hover:bg-[#4F6F52] transition-colors"
+                         hover:bg-[#4F6F52] shadow-lg shadow-[#3A4D39]/20
+                         hover:shadow-xl hover:shadow-[#3A4D39]/30
+                         transition-all duration-200"
                 >
                   <PlusIcon className="w-5 h-5" />
                   Add New Machine
@@ -708,22 +983,24 @@ const MachineSelectionModal = ({
                 <p className="text-[#3A4D39] mb-4">
                   Are you sure you want to delete{" "}
                   <strong className="font-bold">
-                    {machineToDelete.machine_name || machineToDelete.machine_id}
+                    {machineToDelete.nickname || machineToDelete.machine_id}
                   </strong>
                   ?
                 </p>
 
                 <div className="flex gap-3">
-                  <button
+                  <Motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     type="button"
                     onClick={() => setDeleteConfirmOpen(false)}
                     disabled={isDeleting}
                     className="flex-1 px-4 py-3 rounded-xl font-bold text-[#3A4D39] 
                              bg-[#ECE3CE] hover:bg-[#ECE3CE]/70 
-                             transition-colors disabled:opacity-50"
+                             transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
-                  </button>
+                  </Motion.button>
                   <Motion.button
                     whileHover={{ scale: isDeleting ? 1 : 1.02 }}
                     whileTap={{ scale: isDeleting ? 1 : 0.98 }}
@@ -732,7 +1009,7 @@ const MachineSelectionModal = ({
                     className="flex-1 px-4 py-3 rounded-xl font-bold text-white 
                              bg-red-600 hover:bg-red-700 
                              shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/30
-                             transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
                              flex items-center justify-center gap-2"
                   >
                     {isDeleting ? (
@@ -787,7 +1064,7 @@ const MachineSelector = ({ selectedMachine, onClick }) => {
     >
       <Server className="w-4 h-4 text-[#3A4D39]" />
       <span className="text-sm font-bold text-[#3A4D39] max-w-[120px] truncate">
-        {selectedMachine?.machine_name ||
+        {selectedMachine?.nickname ||
           selectedMachine?.machine_id ||
           "No Machine"}
       </span>
@@ -868,6 +1145,22 @@ const UserMenu = ({
             {/* Menu Items */}
             <div className="py-2">
               <Link
+                to="/logs"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
+                         hover:bg-[#ECE3CE]/50 transition-colors"
+              >
+                Logs
+              </Link>
+              <Link
+                to="/support"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
+                         hover:bg-[#ECE3CE]/50 transition-colors"
+              >
+                Support
+              </Link>
+              <Link
                 to="/settings"
                 onClick={() => setUserMenuOpen(false)}
                 className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
@@ -901,6 +1194,9 @@ export default function Header() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [machineToRename, setMachineToRename] = useState(null);
+  const [newMachineName, setNewMachineName] = useState("");
   const userMenuRef = useRef(null);
   const notificationMenuRef = useRef(null);
 
@@ -920,7 +1216,11 @@ export default function Header() {
 
   // Initialize selected machine
   useEffect(() => {
-    if (!user?.machines?.length) return;
+    if (!user?.machines?.length) {
+      localStorage.removeItem("selectedMachine");
+      setSelectedMachine(null);
+      return;
+    }
 
     const stored = localStorage.getItem("selectedMachine");
 
@@ -934,9 +1234,12 @@ export default function Header() {
         if (exists) {
           setSelectedMachine(exists);
           return;
+        } else {
+          localStorage.removeItem("selectedMachine");
         }
       } catch (err) {
         console.error("Failed to parse stored machine:", err);
+        localStorage.removeItem("selectedMachine");
       }
     }
 
@@ -1022,6 +1325,67 @@ export default function Header() {
     [machineSerial, user, refreshMachines],
   );
 
+  const handleRenameMachine = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setError("");
+      setSuccess("");
+      setIsSubmitting(true);
+
+      try {
+        const response = await Requests({
+          url: "/machine/add-name-machine",
+          method: "POST",
+          data: {
+            name: newMachineName.trim(),
+            customerId: user.id || user.customer_id || user.userId,
+            machineId: machineToRename.machine_id,
+          },
+        });
+
+        if (!response.data?.ok) {
+          throw new Error(response.data?.error || "Failed to rename machine");
+        }
+
+        setSuccess(response.data.message || "Machine renamed successfully!");
+
+        // Update the machine in local storage if it's the selected one
+        if (selectedMachine?.machine_id === machineToRename.machine_id) {
+          const updatedMachine = {
+            ...selectedMachine,
+            machine_name: newMachineName.trim(),
+          };
+          setSelectedMachine(updatedMachine);
+          localStorage.setItem(
+            "selectedMachine",
+            JSON.stringify(updatedMachine),
+          );
+        }
+
+        await refreshMachines();
+
+        setTimeout(() => {
+          setRenameModalOpen(false);
+          setMachineToRename(null);
+          setNewMachineName("");
+          setSuccess("");
+        }, 1500);
+      } catch (err) {
+        setError(err.message || "Failed to rename machine. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      newMachineName,
+      user,
+      machineToRename,
+      selectedMachine,
+      setSelectedMachine,
+      refreshMachines,
+    ],
+  );
+
   const handleDeleteMachine = useCallback(
     async (machineId) => {
       if (!machineId) {
@@ -1046,7 +1410,6 @@ export default function Header() {
           throw new Error(response.data?.error || "Failed to delete machine");
         }
 
-        // If deleted machine was selected, clear selection
         if (selectedMachine?.machine_id === machineId) {
           localStorage.removeItem("selectedMachine");
           setSelectedMachine(null);
@@ -1054,10 +1417,8 @@ export default function Header() {
 
         await refreshMachines();
 
-        // Close modal and reload if needed
         setMachineModalOpen(false);
 
-        // Reload if the deleted machine was the selected one
         if (selectedMachine?.machine_id === machineId) {
           window.location.reload();
         }
@@ -1137,17 +1498,6 @@ export default function Header() {
                 </div>
               ) : user ? (
                 <>
-                  {NAVIGATION.authenticated.right.map((link) => (
-                    <NavLink
-                      key={link.name}
-                      to={link.href}
-                      currentPath={location.pathname}
-                    >
-                      {link.name}
-                    </NavLink>
-                  ))}
-
-                  {/* Machine Selector Button or Add Machine Button */}
                   {user?.machines?.length > 0 ? (
                     <MachineSelector
                       selectedMachine={selectedMachine}
@@ -1157,7 +1507,6 @@ export default function Header() {
                     <AddMachineButton onClick={() => setAddMachineOpen(true)} />
                   )}
 
-                  {/* Notification Button */}
                   <NotificationButton
                     notificationMenuRef={notificationMenuRef}
                   />
@@ -1231,6 +1580,25 @@ export default function Header() {
         success={success}
       />
 
+      {/* Rename Machine Modal */}
+      <RenameMachineModal
+        isOpen={renameModalOpen}
+        onClose={() => {
+          setRenameModalOpen(false);
+          setMachineToRename(null);
+          setNewMachineName("");
+          setError("");
+          setSuccess("");
+        }}
+        machine={machineToRename}
+        newName={newMachineName}
+        setNewName={setNewMachineName}
+        onSubmit={handleRenameMachine}
+        isSubmitting={isSubmitting}
+        error={error}
+        success={success}
+      />
+
       {/* Machine Selection Modal */}
       <MachineSelectionModal
         isOpen={machineModalOpen}
@@ -1239,6 +1607,8 @@ export default function Header() {
         selectedMachine={selectedMachine}
         setSelectedMachine={setSelectedMachine}
         setAddMachineOpen={setAddMachineOpen}
+        setRenameModalOpen={setRenameModalOpen}
+        setMachineToRename={setMachineToRename}
         onDeleteMachine={handleDeleteMachine}
         isDeleting={isSubmitting}
       />
@@ -1359,7 +1729,7 @@ export default function Header() {
                           <div className="flex items-center gap-2">
                             <Server className="w-4 h-4 text-[#3A4D39]" />
                             <span className="text-sm font-medium text-[#3A4D39] truncate">
-                              {selectedMachine?.machine_name ||
+                              {selectedMachine?.nickname ||
                                 selectedMachine?.machine_id ||
                                 "Select Machine"}
                             </span>

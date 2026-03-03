@@ -53,7 +53,6 @@ export class DataScienceController {
         `
         SELECT DISTINCT m.machine_id, m.machine_id as name
         FROM machine_customers m
-        INNER JOIN fertilizer_analytics fa ON m.machine_id = fa.machine_id
         WHERE customer_id = $1
         ORDER BY m.machine_id
       `,

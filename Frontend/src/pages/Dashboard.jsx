@@ -16,6 +16,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
+import { io } from "socket.io-client";
 import Requests from "@/utils/Requests";
 import { useUser } from "@/contexts/UserContextHook";
 import { motion as Motion, AnimatePresence } from "framer-motion";
@@ -272,7 +273,7 @@ function StatCard({ config, value, index }) {
         </div>
         {hasValue && (
           <span className="text-[10px] font-bold text-[#3A4D39] bg-[#EAF0E6] px-2 py-0.5 rounded-full uppercase tracking-wider">
-            Recent
+            Live
           </span>
         )}
       </div>
@@ -410,6 +411,7 @@ function LogRow({ log, index }) {
 export default function Dashboard() {
   const { user } = useUser();
   const customerId = user?.customer_id;
+  const machineId = user?.machine_id;
 
   const [announcements, setAnnouncements] = useState([]);
   const [stats, setStats] = useState(null);
@@ -418,6 +420,64 @@ export default function Dashboard() {
   const [error, setError] = useState(false);
   const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
 
+  // WebSocket connection for real-time dashboard updates
+  useEffect(() => {
+    if (!customerId) return;
+
+    const baseUrl = getBaseUrl();
+
+    const socket = io(baseUrl, {
+      transports: ["websocket"],
+    });
+
+    socket.on("connect", () => {
+      console.log("✅ Dashboard WebSocket connected");
+      // Join the dashboard room with machine ID if available
+      socket.emit("joinDashboardRoom", { machineId: machineId || undefined });
+    });
+
+    socket.on("dashboard_update", (payload) => {
+      console.log("📡 Received dashboard update:", payload);
+      // Map the incoming socket data to the stats structure
+      const mappedData = {
+        machine_id: payload.machineId,
+        nitrogen: payload.sensors?.nitrogen,
+        phosphorus: payload.sensors?.phosphorus,
+        potassium: payload.sensors?.potassium,
+        moisture: payload.sensors?.moisture,
+        humidity: payload.sensors?.humidity,
+        temperature: payload.sensors?.temperature,
+        ph: payload.sensors?.ph,
+        methane: payload.sensors?.methane,
+        air_quality: payload.sensors?.air_quality,
+        carbon_monoxide: payload.sensors?.carbon_monoxide,
+        combustible_gases: payload.sensors?.combustible_gases,
+        weight_kg: payload.sensors?.weight_kg,
+        reed_switch: payload.sensors?.reed_switch,
+        date_created: payload.date_created,
+      };
+      setStats(mappedData);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("⚠️ Dashboard WebSocket disconnected");
+    });
+
+    socket.on("error", (error) => {
+      console.error("❌ WebSocket error:", error);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("connect");
+      socket.off("dashboard_update");
+      socket.off("disconnect");
+      socket.off("error");
+      socket.disconnect();
+    };
+  }, [customerId, machineId]);
+
+  // Initial data fetch via HTTP
   useEffect(() => {
     if (!customerId) return;
     async function fetchDashboard() {
@@ -510,7 +570,7 @@ export default function Dashboard() {
                 Dashboard
               </h1>
               <p className="text-[14px] text-[#9CA88F] font-medium mt-1.5">
-                Overview of your bins' compost status
+                Overview of your bins' compost status and average stats
               </p>
             </div>
             <div className="hidden sm:flex flex-col items-end">
