@@ -64,6 +64,11 @@ export class MachineService {
         [customerId],
       );
 
+      console.log(
+        'DEBUG fetchMachine result:',
+        JSON.stringify(query.rows, null, 2),
+      );
+
       return query.rows;
     } catch (err) {
       console.error('Error fetching machines:', err);

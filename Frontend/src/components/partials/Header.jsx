@@ -1329,6 +1329,11 @@ export default function Header() {
       const machineId = machine.machine_id;
       const serial = machine.serial_number || machineId;
 
+      console.log("DEBUG fetchQRCode machine:", machine);
+      console.log("DEBUG machineId:", machineId);
+      console.log("DEBUG serial_number from machine:", machine.serial_number);
+      console.log("DEBUG final serial to use:", serial);
+
       setQrLoading(true);
       setQrModalOpen(true);
       const response = await Requests({
