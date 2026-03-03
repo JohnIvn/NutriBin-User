@@ -48,7 +48,7 @@ export class MachineController {
   async deleteMachine(
     @Body('customerId') customerId: string,
     @Body('machineId') machineId: string,
-  ) { 
+  ) {
     if (!customerId || !machineId) {
       throw new BadRequestException('customerId and machineId are required');
     }

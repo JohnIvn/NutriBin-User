@@ -132,6 +132,7 @@ export class FertilizerAnalyticsGateway
     this.startRealtimeListener();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleDisconnect(_client: Socket): void {
     // Socket.IO handles room cleanup automatically
   }
