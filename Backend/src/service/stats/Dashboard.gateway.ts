@@ -124,9 +124,7 @@ const SUPABASE_SERVICE_KEY =
 // ─────────────────────────────────────────────────────────────
 
 @WebSocketGateway({ cors: true })
-export class DashboardGateway
-  implements OnGatewayInit, OnGatewayDisconnect
-{
+export class DashboardGateway implements OnGatewayInit, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -142,6 +140,7 @@ export class DashboardGateway
     this.startRealtimeListener();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleDisconnect(_client: Socket): void {
     // Socket.IO auto handles room cleanup
   }

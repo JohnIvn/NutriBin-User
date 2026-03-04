@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import * as QRCode from 'qrcode';
+import QRCode from 'qrcode';
 
 @Controller('qr')
 export class QrController {
@@ -18,13 +18,14 @@ export class QrController {
       }
 
       // Generate QR code as a data URL (PNG image)
-      const qrCodeDataUrl = await QRCode.toDataURL(serial, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      const qrCodeDataUrl = (await (QRCode as any).toDataURL(serial, {
         errorCorrectionLevel: 'H',
         type: 'image/png',
         quality: 0.95,
         margin: 1,
         width: 300,
-      });
+      })) as string;
 
       // Return as JSON with base64 encoded image
       res.json({
@@ -34,9 +35,11 @@ export class QrController {
         message: 'QR code generated successfully',
       });
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to generate QR code';
       res.status(400).json({
         ok: false,
-        error: error.message || 'Failed to generate QR code',
+        error: errorMessage,
       });
     }
   }
