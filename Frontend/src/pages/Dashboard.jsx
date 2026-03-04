@@ -452,11 +452,12 @@ export default function Dashboard() {
         if (machineIndex !== -1) {
           updatedMachines[machineIndex] = {
             ...updatedMachines[machineIndex],
-            latestAnalytics:
-              {
-                ...payload.sensors,
-                date_created: payload.date_created,
-              } || null,
+            latestAnalytics: payload.sensors
+              ? {
+                  ...payload.sensors,
+                  date_created: payload.date_created,
+                }
+              : null,
           };
         }
         return updatedMachines;

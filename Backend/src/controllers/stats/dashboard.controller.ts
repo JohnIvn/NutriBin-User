@@ -54,7 +54,7 @@ type MachineRow = {
 
 type MachineData = {
   machine_id: string;
-  latestAnalytics: any | null;
+  latestAnalytics: any;
   trashLogs: any[];
   stats: {
     avgNitrogen: number;
