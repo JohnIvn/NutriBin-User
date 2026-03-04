@@ -16,6 +16,7 @@ import Requests from "@/utils/Requests";
 import { io } from "socket.io-client";
 import getBaseUrl from "@/utils/GetBaseUrl";
 import { RefreshCw, Server, QrCode } from "lucide-react";
+import jsQR from "jsqr";
 
 // Modal for QR Code Display (Similar to NutriBin Server)
 const QRCodeModal = ({ isOpen, onClose, qrData, isLoading }) => {
@@ -520,6 +521,39 @@ const AddMachineModal = ({
     }
   }, [isOpen, onClose]);
 
+  const handleQRUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      const img = new Image();
+      img.src = reader.result;
+
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+          setMachineSerial(code.data);
+        } else {
+          alert("No QR code found in image.");
+        }
+      };
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -580,6 +614,25 @@ const AddMachineModal = ({
                   disabled={isSubmitting}
                   autoFocus
                 />
+
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold text-[#3A4D39]/70 mb-2">
+                    Or upload QR code image
+                  </label>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleQRUpload}
+                    className="block w-full text-sm text-[#3A4D39]
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-bold
+                    file:bg-[#3A4D39] file:text-[#ECE3CE]
+                    hover:file:bg-[#4F6F52]
+                    cursor-pointer"
+                  />
+                </div>
               </div>
 
               {/* Error Message */}
