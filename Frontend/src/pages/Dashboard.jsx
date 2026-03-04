@@ -412,18 +412,17 @@ function LogRow({ log, index }) {
 export default function Dashboard() {
   const { user } = useUser();
   const customerId = user?.customer_id;
-  const machineId = user?.machine_id;
 
   const [announcements, setAnnouncements] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [trashLogs, setTrashLogs] = useState([]);
+  const [machines, setMachines] = useState([]);
+  const [selectedMachineIndex, setSelectedMachineIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
 
   // WebSocket connection for real-time dashboard updates
   useEffect(() => {
-    if (!customerId) return;
+    if (!customerId || machines.length === 0) return;
 
     const baseUrl = getBaseUrl();
 
@@ -433,31 +432,35 @@ export default function Dashboard() {
 
     socket.on("connect", () => {
       console.log("✅ Dashboard WebSocket connected");
-      // Join the dashboard room with machine ID if available
-      socket.emit("joinDashboardRoom", { machineId: machineId || undefined });
+      // Join dashboard rooms for all machines
+      machines.forEach((machine) => {
+        socket.emit("joinDashboardRoom", { machineId: machine.machine_id });
+        console.log(
+          `📌 Joined dashboard room for machine: ${machine.machine_id}`,
+        );
+      });
     });
 
     socket.on("dashboard_update", (payload) => {
       console.log("📡 Received dashboard update:", payload);
-      // Map the incoming socket data to the stats structure
-      const mappedData = {
-        machine_id: payload.machineId,
-        nitrogen: payload.sensors?.nitrogen,
-        phosphorus: payload.sensors?.phosphorus,
-        potassium: payload.sensors?.potassium,
-        moisture: payload.sensors?.moisture,
-        humidity: payload.sensors?.humidity,
-        temperature: payload.sensors?.temperature,
-        ph: payload.sensors?.ph,
-        methane: payload.sensors?.methane,
-        air_quality: payload.sensors?.air_quality,
-        carbon_monoxide: payload.sensors?.carbon_monoxide,
-        combustible_gases: payload.sensors?.combustible_gases,
-        weight_kg: payload.sensors?.weight_kg,
-        reed_switch: payload.sensors?.reed_switch,
-        date_created: payload.date_created,
-      };
-      setStats(mappedData);
+      // Update the machines array with the new data
+      setMachines((prevMachines) => {
+        const updatedMachines = [...prevMachines];
+        const machineIndex = updatedMachines.findIndex(
+          (m) => m.machine_id === payload.machineId,
+        );
+        if (machineIndex !== -1) {
+          updatedMachines[machineIndex] = {
+            ...updatedMachines[machineIndex],
+            latestAnalytics:
+              {
+                ...payload.sensors,
+                date_created: payload.date_created,
+              } || null,
+          };
+        }
+        return updatedMachines;
+      });
     });
 
     socket.on("disconnect", () => {
@@ -476,7 +479,7 @@ export default function Dashboard() {
       socket.off("error");
       socket.disconnect();
     };
-  }, [customerId, machineId]);
+  }, [customerId, machines]);
 
   // Initial data fetch via HTTP
   useEffect(() => {
@@ -486,8 +489,8 @@ export default function Dashboard() {
         const res = await Requests({ url: `/dashboard/${customerId}` });
         const data = res.data;
         setAnnouncements(data.announcements || []);
-        setStats(data.latestAnalytics || null);
-        setTrashLogs(data.trashLogs || []);
+        setMachines(data.machines || []);
+        setSelectedMachineIndex(0);
       } catch (err) {
         console.error("Failed to load dashboard", err);
         setError(true);
@@ -540,9 +543,31 @@ export default function Dashboard() {
   }
 
   const hasAnnouncements = announcements.length > 0;
+  const currentMachine = machines[selectedMachineIndex];
+  const stats = currentMachine?.latestAnalytics || null;
+  const trashLogs = currentMachine?.trashLogs || [];
+  const dashboardStats = currentMachine?.stats || null;
   const hasStats =
     stats && Object.values(stats).some((v) => v !== null && v !== undefined);
   const hasLogs = trashLogs.length > 0;
+
+  if (machines.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+          <AlertCircle className="w-7 h-7 text-amber-400" />
+        </div>
+        <div>
+          <p className="text-[16px] font-bold text-[#2C3E2D] mb-1">
+            No machines found
+          </p>
+          <p className="text-[13px] text-[#9CA88F]">
+            You don't have any active machines. Please contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -574,17 +599,34 @@ export default function Dashboard() {
                 Overview of your bins' compost status and average stats
               </p>
             </div>
-            <div className="hidden sm:flex flex-col items-end">
-              <p className="text-[11px] font-bold text-[#9CA88F] uppercase tracking-widest mb-1">
-                {new Date().toLocaleDateString("en-US", { weekday: "long" })}
-              </p>
-              <p className="text-[15px] font-bold text-[#3A4D39]">
-                {new Date().toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+            <div className="flex flex-col sm:flex-col gap-3 items-start sm:items-end">
+              {machines.length > 1 && (
+                <select
+                  value={selectedMachineIndex}
+                  onChange={(e) =>
+                    setSelectedMachineIndex(Number(e.target.value))
+                  }
+                  className="px-3 py-2 rounded-lg bg-white border border-[#E4DDD0] text-[13px] font-semibold text-[#2C3E2D] hover:border-[#3A4D39] transition-colors"
+                >
+                  {machines.map((machine, idx) => (
+                    <option key={machine.machine_id} value={idx}>
+                      Machine {idx + 1} ({machine.machine_id.substring(0, 6)})
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div className="hidden sm:flex flex-col items-end">
+                <p className="text-[11px] font-bold text-[#9CA88F] uppercase tracking-widest mb-1">
+                  {new Date().toLocaleDateString("en-US", { weekday: "long" })}
+                </p>
+                <p className="text-[15px] font-bold text-[#3A4D39]">
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
             </div>
           </Motion.div>
 
@@ -689,6 +731,59 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* ── Average Stats ──────────────────────────────────────────────── */}
+          {dashboardStats && (
+            <Motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="bg-white rounded-3xl border border-[#E4DDD0] p-6 shadow-sm"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-[#EAF0E6] rounded-xl">
+                  <FlaskConical className="w-4 h-4 text-[#3A4D39]" />
+                </div>
+                <div>
+                  <h2 className="text-[14px] font-bold text-[#2C3E2D]">
+                    Average Analytics
+                  </h2>
+                  <p className="text-[11px] text-[#9CA88F]">
+                    Based on last {dashboardStats.totalTrashLogs} logs
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                  <p className="text-[11px] font-bold text-[#9CA88F] uppercase tracking-widest mb-1">
+                    Avg Nitrogen
+                  </p>
+                  <p className="text-[24px] font-black text-[#2C3E2D] tabular-nums">
+                    {dashboardStats.avgNitrogen?.toFixed(2) || "—"}
+                  </p>
+                  <p className="text-[10px] text-[#9CA88F] mt-1">mg/kg</p>
+                </div>
+                <div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl">
+                  <p className="text-[11px] font-bold text-[#9CA88F] uppercase tracking-widest mb-1">
+                    Avg Phosphorus
+                  </p>
+                  <p className="text-[24px] font-black text-[#2C3E2D] tabular-nums">
+                    {dashboardStats.avgPhosphorus?.toFixed(2) || "—"}
+                  </p>
+                  <p className="text-[10px] text-[#9CA88F] mt-1">mg/kg</p>
+                </div>
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl sm:col-span-1 col-span-2 sm:col-span-1">
+                  <p className="text-[11px] font-bold text-[#9CA88F] uppercase tracking-widest mb-1">
+                    Total Logs
+                  </p>
+                  <p className="text-[24px] font-black text-[#2C3E2D] tabular-nums">
+                    {dashboardStats.totalTrashLogs || 0}
+                  </p>
+                  <p className="text-[10px] text-[#9CA88F] mt-1">records</p>
+                </div>
+              </div>
+            </Motion.div>
+          )}
 
           {/* ── Trash logs table ─────────────────────────────────────────── */}
           <Motion.div
