@@ -99,6 +99,7 @@ export class FertilizerAnalyticsController {
             analytics: [
               {
                 id: null,
+                is_active: false,
                 nitrogen: 0,
                 phosphorus: 0,
                 potassium: 0,
