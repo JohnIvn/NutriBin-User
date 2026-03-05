@@ -83,8 +83,8 @@ export class FertilizerAnalyticsController {
         const machineCheck = await client.query<MachineSerialRow>(
           `
         SELECT is_active
-        FROM machine_serial
-        WHERE machine_serial_id = $1
+        FROM machines
+        WHERE machine_id
         LIMIT 1
         `,
           [machineId],
