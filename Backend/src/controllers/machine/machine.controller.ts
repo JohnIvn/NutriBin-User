@@ -63,6 +63,18 @@ export class MachineController {
     return this.machineService.updateFirmware(machineId, version);
   }
 
+  @Post('update-progress')
+  async updateProgress(
+    @Body('machineId') machineId: string,
+    @Body('updateProgress') updateProgress: string,
+  ) {
+    if (!machineId || updateProgress === undefined) {
+      throw new BadRequestException('machineId and updateProgress are required');
+    }
+
+    return this.machineService.updateProgress(machineId, updateProgress);
+  }
+
   @Post('add-machine')
   async addMachine(
     @Body('machineSerial') machineSerial: string,

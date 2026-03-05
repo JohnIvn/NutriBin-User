@@ -379,4 +379,33 @@ export class MachineService {
       return { ok: false, error: 'Database error' };
     }
   }
+
+  async updateProgress(machineId: string, updateProgress: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query(
+        `
+        UPDATE public.machines
+        SET update_progress = $2
+        WHERE machine_id = $1
+        RETURNING *
+        `,
+        [machineId, updateProgress],
+      );
+
+      if (result.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      return {
+        ok: true,
+        message: 'Progress updated',
+        updateProgress,
+      };
+    } catch (err) {
+      console.error('Error updating progress:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
 }
