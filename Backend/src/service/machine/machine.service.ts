@@ -252,4 +252,107 @@ export class MachineService {
       message: 'Restart command initiated successfully',
     };
   }
+
+  async checkFirmwareUpdate(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      // 1. Get current firmware version and model from machine and machine_serial
+      const machineResult = await client.query(
+        `
+        SELECT m.firmware_version, ms.model
+        FROM public.machines m
+        JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
+        WHERE m.machine_id = $1
+        `,
+        [machineId],
+      );
+
+      if (machineResult.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      const { firmware_version: currentVersion, model } = machineResult.rows[0];
+
+      // 2. Fetch all stable firmware compatible with this model
+      // We'll trust the database's version ordering if they follow a pattern,
+      // but for simplicity we'll fetch them and we could do semantic version comparison if needed.
+      // The requirement says: if users firmware is lower than the ver in firmware then available for update.
+      const firmwareResult = await client.query(
+        `
+        SELECT version, release_notes, release_date
+        FROM public.firmware
+        WHERE status = 'Stable' 
+        AND $1 = ANY(target_models)
+        ORDER BY release_date DESC, created_at DESC
+        LIMIT 1
+        `,
+        [model],
+      );
+
+      if (firmwareResult.rowCount === 0) {
+        return { ok: false, message: 'No compatible firmware found' };
+      }
+
+      const latestFirmware = firmwareResult.rows[0];
+      const latestVersion = latestFirmware.version;
+
+      // Simple string comparison for "lower than".
+      // In production, use a semver library if versions are like '1.2.3'
+      if (currentVersion < latestVersion) {
+        return {
+          ok: true,
+          updateAvailable: true,
+          currentVersion,
+          latestVersion,
+          releaseNotes: latestFirmware.release_notes,
+          releaseDate: latestFirmware.release_date,
+        };
+      } else {
+        return {
+          ok: true,
+          updateAvailable: false,
+          currentVersion,
+          latestVersion,
+        };
+      }
+    } catch (err) {
+      console.error('Error checking firmware update:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
+  async updateFirmware(machineId: string, version: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      // Requirement: after create a 3 sec fake loading update (Handled in frontend)
+      // then after that write to machine table firmware_version
+
+      const result = await client.query(
+        `
+        UPDATE public.machines
+        SET firmware_version = $2,
+            update_status = 'success',
+            last_update_attempt = now()
+        WHERE machine_id = $1
+        RETURNING *
+        `,
+        [machineId, version],
+      );
+
+      if (result.rowCount === 0) {
+        return { ok: false, error: 'Machine not found or update failed' };
+      }
+
+      return {
+        ok: true,
+        message: 'Firmware updated successfully',
+        newVersion: version,
+      };
+    } catch (err) {
+      console.error('Error updating firmware:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
 }

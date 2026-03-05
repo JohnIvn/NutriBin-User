@@ -42,6 +42,27 @@ export class MachineController {
     return this.machineService.getSerialByMachineId(machineId);
   }
 
+  @Get('firmware-update/:machineId')
+  async checkFirmwareUpdate(@Param('machineId') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('Machine ID is required');
+    }
+
+    return this.machineService.checkFirmwareUpdate(machineId);
+  }
+
+  @Post('update-firmware')
+  async updateFirmware(
+    @Body('machineId') machineId: string,
+    @Body('version') version: string,
+  ) {
+    if (!machineId || !version) {
+      throw new BadRequestException('machineId and version are required');
+    }
+
+    return this.machineService.updateFirmware(machineId, version);
+  }
+
   @Post('add-machine')
   async addMachine(
     @Body('machineSerial') machineSerial: string,
