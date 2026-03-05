@@ -307,12 +307,18 @@ export class MachineService {
       const latestFirmware = firmwareResult.rows[0];
       const latestVersion = latestFirmware.version;
 
+      // Check if there's an active/failed/interrupted update first
+      const hasActiveUpdate =
+        updateStatus === 'pending' ||
+        updateStatus === 'interrupted' ||
+        updateStatus === 'failed';
+
       // Simple string comparison for "lower than".
       // In production, use a semver library if versions are like '1.2.3'
-      if (currentVersion < latestVersion) {
+      if (currentVersion < latestVersion || hasActiveUpdate) {
         return {
           ok: true,
-          updateAvailable: true,
+          updateAvailable: currentVersion < latestVersion,
           currentVersion,
           latestVersion,
           targetFirmwareVersion: targetFirmwareVersion || latestVersion,
