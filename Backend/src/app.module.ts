@@ -38,6 +38,7 @@ import { FertilizerAnalyticsGateway } from './service/stats/fertilizer-analytics
 import { ModuleAnalyticsGateway } from './service/stats/module-analytics.gateway';
 import { DashboardGateway } from './service/stats/Dashboard.gateway';
 import { QrController } from './controllers/qr/qr.controller';
+import { BinSettingsController } from './controllers/mobile/bin-settings.controller';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { QrController } from './controllers/qr/qr.controller';
     RepairController,
     MachineNotificationsController,
     QrController,
+    BinSettingsController,
   ],
   providers: [
     {
