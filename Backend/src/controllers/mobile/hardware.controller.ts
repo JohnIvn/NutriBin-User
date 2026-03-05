@@ -37,14 +37,12 @@ type MachineAnalyticsRow = {
 };
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
+  const isMachineOffline = row.is_active === false;
+
   const invertStatus = (val: any) => {
-    // We only care if the part is actually broken in the latest data.
-    // If the database has 'true' (fault), we return false (broken).
-    // If the database has 'false' (no fault), we return true (OK) even if machine is offline.
     if (val === null || val === undefined) return null;
-    
-    // Database value true means there is a fault/issue -> App should show Offline (false)
-    // Database value false means everything is OK -> App should show Online (true)
+
+    // Database value true means there is a fault/issue
     const isFaulty =
       val === true ||
       val === 1 ||
@@ -52,6 +50,13 @@ function mapMachineAnalytics(row: MachineAnalyticsRow) {
       String(val).toLowerCase() === '1' ||
       String(val).toLowerCase() === 't';
 
+    if (isMachineOffline) {
+      // If machine is offline AND faulty -> Offline & Broken
+      // If machine is offline AND NOT faulty -> Offline
+      return isFaulty ? 'offline & broken' : 'offline';
+    }
+
+    // If machine is online: true (OK, not faulty) or false (Broken, faulty)
     return !isFaulty;
   };
 
