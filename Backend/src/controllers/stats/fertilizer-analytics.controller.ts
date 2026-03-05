@@ -58,6 +58,10 @@ function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
   };
 }
 
+type MachineSerialRow = {
+  is_active: boolean | null;
+};
+
 @Controller('fertilizer-analytics')
 export class FertilizerAnalyticsController {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -76,7 +80,7 @@ export class FertilizerAnalyticsController {
     try {
       // ✅ Check machine status first
       if (machineId) {
-        const machineCheck = await client.query(
+        const machineCheck = await client.query<MachineSerialRow>(
           `
         SELECT is_active
         FROM machine_serial
