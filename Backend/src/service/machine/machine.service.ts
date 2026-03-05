@@ -257,10 +257,10 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      // 1. Get current firmware version and model from machine and machine_serial
+      // 1. Get current firmware version, model, and status from machine and machine_serial
       const machineResult = await client.query(
         `
-        SELECT m.firmware_version, ms.model
+        SELECT m.firmware_version, m.target_firmware_version, m.update_status, m.update_progress, m.status, ms.model
         FROM public.machines m
         JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
         WHERE m.machine_id = $1
@@ -272,7 +272,17 @@ export class MachineService {
         return { ok: false, error: 'Machine not found' };
       }
 
-      const { firmware_version: currentVersion, model } = machineResult.rows[0];
+      const {
+        firmware_version: currentVersion,
+        target_firmware_version: targetFirmwareVersion,
+        update_status: updateStatus,
+        update_progress: updateProgress,
+        model,
+        status,
+      } = machineResult.rows[0];
+
+      const isOnline =
+        status === 'Online' || status === 'Ready' || status === 'Busy';
 
       // 2. Fetch all stable firmware compatible with this model
       // We'll trust the database's version ordering if they follow a pattern,
@@ -305,8 +315,12 @@ export class MachineService {
           updateAvailable: true,
           currentVersion,
           latestVersion,
+          targetFirmwareVersion: targetFirmwareVersion || latestVersion,
+          updateStatus: updateStatus || 'pending',
+          updateProgress: updateProgress || '0',
           releaseNotes: latestFirmware.release_notes,
           releaseDate: latestFirmware.release_date,
+          isOnline,
         };
       } else {
         return {
@@ -314,6 +328,10 @@ export class MachineService {
           updateAvailable: false,
           currentVersion,
           latestVersion,
+          targetFirmwareVersion,
+          updateStatus,
+          updateProgress,
+          isOnline,
         };
       }
     } catch (err) {
@@ -332,8 +350,9 @@ export class MachineService {
       const result = await client.query(
         `
         UPDATE public.machines
-        SET firmware_version = $2,
-            update_status = 'success',
+        SET target_firmware_version = $2,
+            update_status = 'pending',
+            update_progress = '0',
             last_update_attempt = now()
         WHERE machine_id = $1
         RETURNING *
