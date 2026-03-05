@@ -55,7 +55,13 @@ export default function Fertilizer() {
         });
 
         if (isMounted && res.data.ok && res.data.analytics.length > 0) {
-          setAnalytics(res.data.analytics[0]);
+          const data = res.data.analytics[0];
+
+          if (data.is_active === false) {
+            setAnalytics(null);
+          } else {
+            setAnalytics(data);
+          }
         } else if (isMounted) {
           setAnalytics(null);
         }
@@ -85,9 +91,14 @@ export default function Fertilizer() {
         machineId,
       });
     });
-
+    
     socket.on("fertilizer_analytics_update", (data) => {
       console.log("📡 New realtime fertilizer data:", data);
+
+      if (data.is_active === false) {
+        setAnalytics(null);
+        return;
+      }
 
       setAnalytics((prev) => ({
         ...prev,
