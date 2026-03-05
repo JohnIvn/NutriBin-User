@@ -328,9 +328,9 @@ export class MachineService {
           updateAvailable: false,
           currentVersion,
           latestVersion,
-          targetFirmwareVersion,
-          updateStatus,
-          updateProgress,
+          targetFirmwareVersion: targetFirmwareVersion,
+          updateStatus: updateStatus,
+          updateProgress: updateProgress,
           isOnline,
         };
       }
