@@ -39,13 +39,13 @@ export default function DownloadApp() {
             </div>
 
             <a
-              href="https://www.mediafire.com/file/p8t2lg3f25wm8r7/app-release.apk/file"
+              href="https://www.mediafire.com/file/zf8fuha27ysyfuf/app-release_3.apk/file"
               target="_blank"
               rel="noopener noreferrer"
             >
               <Button className="bg-white text-[#3A4D39] hover:bg-[#ECE3CE] px-10 py-6 rounded-xl text-lg font-bold flex items-center gap-3 shadow-xl">
                 <ArrowDownCircle className="w-6 h-6" />
-                Download APK (v2.2.2)
+                Download APK (v2.4.1)
               </Button>
             </a>
           </div>

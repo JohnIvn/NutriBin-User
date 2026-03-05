@@ -1725,7 +1725,10 @@ export default function Header() {
                   {user?.machines?.length > 0 ? (
                     <MachineSelector
                       selectedMachine={selectedMachine}
-                      onClick={() => setMachineModalOpen(true)}
+                      onClick={() => {
+                        refreshMachines();
+                        setMachineModalOpen(true);
+                      }}
                     />
                   ) : (
                     <AddMachineButton onClick={() => setAddMachineOpen(true)} />
