@@ -9,7 +9,8 @@ type Response = {
 
 type FetchMachinesRow = {
   machine_id: string;
-  machine_serial: string;
+  serial_number: string;
+  nickname?: string | null;
 };
 
 type MachineRow = {
@@ -57,7 +58,7 @@ export class MobileService {
         FetchMachinesRow & { is_active: boolean }
       >(
         `
-    SELECT mc.machine_id, ms.serial_number, m.is_active
+    SELECT mc.machine_id, ms.serial_number, mc.nickname, m.is_active
     FROM machine_customers mc
     LEFT JOIN machine_serial ms
       ON mc.machine_id = ms.machine_serial_id
