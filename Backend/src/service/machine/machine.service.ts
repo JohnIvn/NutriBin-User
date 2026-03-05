@@ -260,7 +260,7 @@ export class MachineService {
       // 1. Get current firmware version, model, and status from machine and machine_serial
       const machineResult = await client.query(
         `
-        SELECT m.firmware_version, m.target_firmware_version, m.update_status, m.update_progress, m.status, ms.model
+        SELECT m.firmware_version, m.target_firmware_version, m.update_status, m.update_progress, m.is_active, ms.model
         FROM public.machines m
         JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
         WHERE m.machine_id = $1
@@ -277,12 +277,11 @@ export class MachineService {
         target_firmware_version: targetFirmwareVersion,
         update_status: updateStatus,
         update_progress: updateProgress,
+        is_active: isActive,
         model,
-        status,
       } = machineResult.rows[0];
 
-      const isOnline =
-        status === 'Online' || status === 'Ready' || status === 'Busy';
+      const isOnline = isActive ? true : false;
 
       // 2. Fetch all stable firmware compatible with this model
       // We'll trust the database's version ordering if they follow a pattern,
