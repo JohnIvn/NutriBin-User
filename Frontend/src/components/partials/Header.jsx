@@ -134,11 +134,11 @@ const NAVIGATION = {
       { name: "Cameras", href: "/cameras" },
       { name: "Fertilizer", href: "/fertilizer" },
       { name: "Analytics", href: "/data" },
-      { name: "Modules", href: "/modules" },
     ],
     right: [
       { name: "Logs", href: "/logs" },
       { name: "Support", href: "/support" },
+      { name: "Modules", href: "/modules" },
     ],
   },
 };
@@ -1334,6 +1334,14 @@ const UserMenu = ({
                          hover:bg-[#ECE3CE]/50 transition-colors"
               >
                 Support
+              </Link>
+              <Link
+                to="/modules"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
+                         hover:bg-[#ECE3CE]/50 transition-colors"
+              >
+                Modules
               </Link>
               <Link
                 to="/settings"
