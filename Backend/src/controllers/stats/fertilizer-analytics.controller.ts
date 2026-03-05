@@ -74,10 +74,50 @@ export class FertilizerAnalyticsController {
     const client = this.databaseService.getClient();
 
     try {
+      // ✅ Check machine status first
+      if (machineId) {
+        const machineCheck = await client.query(
+          `
+        SELECT is_active
+        FROM machine_serial
+        WHERE machine_serial_id = $1
+        LIMIT 1
+        `,
+          [machineId],
+        );
+
+        const isActive = machineCheck.rows?.[0]?.is_active;
+
+        if (!isActive) {
+          // ❌ Machine inactive → return zero values
+          return {
+            ok: true,
+            analytics: [
+              {
+                id: null,
+                nitrogen: 0,
+                phosphorus: 0,
+                potassium: 0,
+                temperature: 0,
+                ph: 0,
+                humidity: 0,
+                moisture: 0,
+                methane: 0,
+                air_quality: 0,
+                carbon_monoxide: 0,
+                combustible_gases: 0,
+                weight_kg: 0,
+                reed_switch: 0,
+                date_created: null,
+              },
+            ],
+          };
+        }
+      }
+
       const where: string[] = ['fa.user_id = $1'];
       const values: string[] = [customerId];
 
-      // optional, but kept for flexibility
       if (machineId) {
         where.push(`fa.machine_id = $${values.length + 1}`);
         values.push(machineId);
@@ -85,27 +125,27 @@ export class FertilizerAnalyticsController {
 
       const result = await client.query<FertilizerAnalyticsRow>(
         `
-        SELECT
-          fa.fertilizer_analytics_id,
-          fa.nitrogen,
-          fa.phosphorus,
-          fa.potassium,
-          fa.temperature,
-          fa.ph,
-          fa.humidity,
-          fa.moisture,
-          fa.methane,
-          fa.air_quality,
-          fa.carbon_monoxide,
-          fa.combustible_gases,
-          fa.weight_kg,
-          fa.reed_switch,
-          fa.date_created
-        FROM fertilizer_analytics fa
-        WHERE ${where.join(' AND ')}
-        ORDER BY fa.date_created DESC
-        LIMIT 1
-        `,
+      SELECT
+        fa.fertilizer_analytics_id,
+        fa.nitrogen,
+        fa.phosphorus,
+        fa.potassium,
+        fa.temperature,
+        fa.ph,
+        fa.humidity,
+        fa.moisture,
+        fa.methane,
+        fa.air_quality,
+        fa.carbon_monoxide,
+        fa.combustible_gases,
+        fa.weight_kg,
+        fa.reed_switch,
+        fa.date_created
+      FROM fertilizer_analytics fa
+      WHERE ${where.join(' AND ')}
+      ORDER BY fa.date_created DESC
+      LIMIT 1
+      `,
         values,
       );
 
