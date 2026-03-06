@@ -32,8 +32,57 @@ export default function Modules() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeModule, setActiveModule] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRestartLoading, setIsRestartLoading] = useState(false);
 
   const socketRef = useRef(null);
+
+  // ─────────────────────────────
+  // Restart Machine Function
+  // ─────────────────────────────
+  const restartMachine = async () => {
+    try {
+      setIsRestartLoading(true);
+      const espSensorsIp = "192.168.1.184";
+      const espServoIp = "192.168.1.185";
+
+      const urls = [
+        `http://${espSensorsIp}/restart`,
+        `http://${espServoIp}/restart`,
+      ];
+
+      const results = await Promise.allSettled(
+        urls.map((url) =>
+          fetch(url, { method: "GET" })
+            .then((res) => {
+              return {
+                status: res.status,
+                ok: res.status === 200,
+              };
+            })
+            .catch((err) => ({
+              status: 408,
+              ok: false,
+              error: err.message,
+            })),
+        ),
+      );
+
+      const atLeastOneOk = results.some(
+        (result) => result.status === "fulfilled" && result.value.ok === true,
+      );
+
+      if (atLeastOneOk) {
+        toast.success("Restart command sent (skipped offline nodes)");
+      } else {
+        toast.error("All nodes offline. Check your Wi-Fi.");
+      }
+    } catch (err) {
+      toast.error("Connection failed: Ensure you're on the same Wi-Fi");
+      console.error("Restart error:", err);
+    } finally {
+      setIsRestartLoading(false);
+    }
+  };
 
   // ─────────────────────────────
   // Fetch modules initially
@@ -65,20 +114,17 @@ export default function Modules() {
   // ─────────────────────────────
   useEffect(() => {
     if (!machineId) return;
-    
+
     const baseUrl = getBaseUrl();
 
-    const socket = io(
-      baseUrl,
-      {
-        transports: ["websocket"],
-      },
-    );
+    const socket = io(baseUrl, {
+      transports: ["websocket"],
+    });
 
     socketRef.current = socket;
 
     // Join module room
-    socket.emit("joinModuleRoom", {  machineId });
+    socket.emit("joinModuleRoom", { machineId });
 
     // Listen for updates
     socket.on("module_analytics_update", (payload) => {
@@ -257,6 +303,25 @@ export default function Modules() {
             </div>
 
             <div className="flex flex-col gap-3">
+              {/* Restart Button */}
+              <button
+                onClick={restartMachine}
+                disabled={isRestartLoading}
+                className="px-5 py-3 bg-gradient-to-r from-[#3A4D39] to-[#4F6F52] text-white font-bold rounded-2xl shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:shadow-[#3A4D39]/30 hover:from-[#4F6F52] hover:to-[#3A4D39] transition-all duration-300 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRestartLoading ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>Restarting...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Restart Machine</span>
+                  </>
+                )}
+              </button>
+
               {/* Status Badge */}
               <div className="px-5 py-3 bg-white border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5">
                 <div className="flex items-center gap-2.5">
