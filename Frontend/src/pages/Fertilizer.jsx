@@ -56,7 +56,7 @@ export default function Fertilizer() {
 
         if (isMounted && res.data.ok && res.data.analytics.length > 0) {
           const data = res.data.analytics[0];
-
+          console.log(data)
           if (data.is_active === false) {
             setAnalytics(null);
           } else {
