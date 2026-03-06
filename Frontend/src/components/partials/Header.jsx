@@ -139,6 +139,7 @@ const NAVIGATION = {
       { name: "Logs", href: "/logs" },
       { name: "Support", href: "/support" },
       { name: "Modules", href: "/modules" },
+      { name: "Firmware", href: "/firmware" },
     ],
   },
 };
@@ -1342,6 +1343,14 @@ const UserMenu = ({
                          hover:bg-[#ECE3CE]/50 transition-colors"
               >
                 Modules
+              </Link>
+              <Link
+                to="/firmware"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
+                         hover:bg-[#ECE3CE]/50 transition-colors"
+              >
+                Firmware
               </Link>
               <Link
                 to="/settings"

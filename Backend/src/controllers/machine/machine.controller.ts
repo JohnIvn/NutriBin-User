@@ -42,24 +42,35 @@ export class MachineController {
     return this.machineService.getSerialByMachineId(machineId);
   }
 
-  @Get('firmware-update/:machineId')
+  @Get('check-firmware/:machineId')
+  async checkFirmware(@Param('machineId') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('Machine ID is required');
+    }
+
+    return this.machineService.checkFirmware(machineId);
+  }
+
+  // Automatic Check of firmware and automatic update of firmware
+  @Post('firmware-update/:machineId')
   async checkFirmwareUpdate(@Param('machineId') machineId: string) {
     if (!machineId) {
       throw new BadRequestException('Machine ID is required');
     }
 
-    return this.machineService.checkFirmwareUpdate(machineId);
+    return this.machineService.autoUpdateFirmware(machineId);
   }
 
   @Get('firmware-versions/:machineId')
-  async getFirmwareVersions(@Param('machineId') machineId: string) {
+  async firmwareVersions(@Param('machineId') machineId: string) {
     if (!machineId) {
       throw new BadRequestException('Machine ID is required');
     }
 
-    return this.machineService.getAllFirmwareVersions(machineId);
+    return this.machineService.firmwareVersions(machineId);
   }
 
+  // Manual update of firmware
   @Post('update-firmware')
   async updateFirmware(
     @Body('machineId') machineId: string,
@@ -84,6 +95,15 @@ export class MachineController {
     }
 
     return this.machineService.updateProgress(machineId, updateProgress);
+  }
+
+  @Post('complete-progress')
+  async completeProgress(@Body('machineId') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('machineId is required');
+    }
+
+    return this.machineService.completeProgress(machineId);
   }
 
   @Post('complete-update')
@@ -149,55 +169,4 @@ export class MachineController {
       return { ok: false, error: 'Failed to delete machine' };
     }
   }
-
-  //Uncomment the code if it is gonna be used
-  /*
-  // Fetches machines data on user view (When the user chose a machine to view)
-  @Get('data/:machineId')
-  async fetchMachineData(@Param('machineId') machineId: string) {
-    if (!machineId) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return { ok: true };
-  }
-
-  // Interval based sending of machine data (From Q to Server), to record machine data and allow non http based connection
-  @Post('insert/:machineId/:customerId')
-  async sendMachineData(
-    @Body() body: MachineDto,
-    @Param('customerId') customerId: string,
-    @Param('machineId') machineId: string,
-  ) {
-    if (!customerId || !machineId) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return { ok: true };
-  }
-
-  // Register machine for a user (wifi_ssid and password is HASHED)
-  @Post('register/:customerId')
-  async registerMachine(
-    @Body() body: MachineDto,
-    @Param('customerId') customerId: string,
-  ) {
-    if (!customerId) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return { ok: true };
-  }
-
-  // Update Maching information (name and wifi information)
-  @Patch('update/:machineId')
-  async updateMachineData(@Param('machineId') machineId: string) {
-    if (!machineId) {
-      throw new BadRequestException('Request body is required');
-    }
-
-    return { ok: true };
-  }
-  
-  */
 }

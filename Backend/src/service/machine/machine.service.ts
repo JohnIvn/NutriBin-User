@@ -253,6 +253,153 @@ export class MachineService {
     };
   }
 
+  async checkFirmware(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query(
+        `
+      SELECT firmware_version
+      FROM public.machines
+      WHERE machine_id = $1
+      `,
+        [machineId],
+      );
+
+      if (result.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      return {
+        ok: true,
+        firmwareVersion: result.rows[0].firmware_version,
+      };
+    } catch (err) {
+      console.error('Error checking firmware:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
+  async autoUpdateFirmware(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      // 1. Get machine info
+      const machineResult = await client.query(
+        `       SELECT m.firmware_version, ms.model
+        FROM public.machines m
+        JOIN public.machine_serial ms
+          ON m.machine_id = ms.machine_serial_id
+        WHERE m.machine_id = $1
+        `,
+        [machineId],
+      );
+
+      if (machineResult.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      const { firmware_version: currentVersion, model } = machineResult.rows[0];
+
+      // 2. Get latest stable firmware
+      const firmwareResult = await client.query(
+        `
+        SELECT version
+        FROM public.firmware
+        WHERE status = 'Stable'
+        AND $1 = ANY(target_models)
+        ORDER BY release_date DESC, created_at DESC
+        LIMIT 1
+        `,
+        [model],
+      );
+
+      if (firmwareResult.rowCount === 0) {
+        return { ok: false, message: 'No compatible firmware found' };
+      }
+
+      const latestVersion = firmwareResult.rows[0].version;
+
+      // 3. Compare versions
+      if (compareVersions(currentVersion, latestVersion) < 0) {
+        // 4. Update machine firmware automatically
+        await client.query(
+          `
+          UPDATE public.machines
+          SET firmware_version = $1,
+              target_firmware_version = NULL,
+              update_status = 'success',
+              update_progress = '100',
+              last_update_attempt = NOW()
+          WHERE machine_id = $2
+          `,
+          [latestVersion, machineId],
+        );
+
+        return {
+          ok: true,
+          updated: true,
+          previousVersion: currentVersion,
+          newVersion: latestVersion,
+        };
+      }
+
+      return {
+        ok: true,
+        updated: false,
+        currentVersion,
+        latestVersion,
+      };
+    } catch (err) {
+      console.error('Error auto updating firmware:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
+  async firmwareVersions(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      // 1. Get machine model
+      const machineResult = await client.query(
+        `       SELECT ms.model
+      FROM public.machine_serial ms
+      JOIN public.machines m
+        ON m.machine_id = ms.machine_serial_id
+      WHERE m.machine_id = $1
+      `,
+        [machineId],
+      );
+
+      if (machineResult.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      const { model } = machineResult.rows[0];
+
+      // 2. Fetch all stable firmware for this model
+      const firmwareResult = await client.query(
+        `
+        SELECT version, release_notes, release_date
+        FROM public.firmware
+        WHERE status = 'Stable'
+        AND $1 = ANY(target_models)
+        ORDER BY release_date DESC, created_at DESC
+        `,
+        [model],
+      );
+
+      return {
+        ok: true,
+        model,
+        versions: firmwareResult.rows,
+      };
+    } catch (err) {
+      console.error('Error fetching stable firmware:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
   async getAllFirmwareVersions(machineId: string) {
     const client = this.databaseService.getClient();
 
@@ -456,6 +603,35 @@ export class MachineService {
     }
   }
 
+  async completeProgress(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query(
+        `
+        UPDATE public.machines
+        SET update_progress = '100'
+        WHERE machine_id = $1
+        RETURNING update_progress
+        `,
+        [machineId],
+      );
+
+      if (result.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      return {
+        ok: true,
+        message: 'Progress completion tracked',
+        updateProgress: result.rows[0].update_progress,
+      };
+    } catch (err) {
+      console.error('Error completing progress:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
   async completeUpdate(machineId: string) {
     const client = this.databaseService.getClient();
 
@@ -491,4 +667,15 @@ export class MachineService {
       return { ok: false, error: 'Database error' };
     }
   }
+}
+
+function compareVersions(v1: string, v2: string) {
+  const a = v1.replace('v', '').split('.').map(Number);
+  const b = v2.replace('v', '').split('.').map(Number);
+
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const diff = (a[i] || 0) - (b[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
 }

@@ -26,6 +26,7 @@ import { useUser } from "@/contexts/UserContextHook";
 import DataScience from "@/pages/DataScience";
 import Support from "@/pages/Support";
 import DownloadApp from "@/pages/Download";
+import Firmware from "@/pages/Firmware";
 
 function FallbackRoute() {
   const { user } = useUser();
@@ -99,6 +100,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <Modules />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/firmware"
+        element={
+          <ProtectedRoute>
+            <Firmware />
           </ProtectedRoute>
         }
       />
