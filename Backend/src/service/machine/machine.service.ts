@@ -474,7 +474,10 @@ export class MachineService {
       );
 
       if (result.rowCount === 0) {
-        return { ok: false, error: 'Machine not found or no target version set' };
+        return {
+          ok: false,
+          error: 'Machine not found or no target version set',
+        };
       }
 
       return {
