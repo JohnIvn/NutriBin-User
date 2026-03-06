@@ -98,6 +98,7 @@ export default function Modules() {
         const data = res.data;
         if (data.ok) {
           setModules(data.data.modules);
+          console.log(data)
         }
       } catch (err) {
         console.error(err);
@@ -303,7 +304,7 @@ export default function Modules() {
             </div>
 
             <div className="flex flex-col gap-3">
-              {/* Restart Button */}
+              {/* Restart Button 
               <button
                 onClick={restartMachine}
                 disabled={isRestartLoading}
@@ -321,6 +322,7 @@ export default function Modules() {
                   </>
                 )}
               </button>
+              */} 
 
               {/* Status Badge */}
               <div className="px-5 py-3 bg-white border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5">
@@ -385,7 +387,7 @@ export default function Modules() {
               <div>
                 <p className="text-sm font-semibold text-[#3A4D39]">Active</p>
                 <p className="text-xs font-medium text-[#739072]">
-                  {modules?.is_active ? "Yes" : "No"}
+                  {!modules?.is_active ? "Yes" : "No"}
                 </p>
               </div>
             </div>

@@ -200,7 +200,7 @@ export class ModuleAnalyticsGateway
             .to(`module_${newRow.machine_id}`)
             .emit('module_analytics_update', payload);
 
-          console.log(`📡 Module analytics update for user ${newRow.user_id}`);
+          console.log(`📡 Module analytics update for machine ${newRow.machine_id}`);
         },
       )
       .subscribe((status) => {
