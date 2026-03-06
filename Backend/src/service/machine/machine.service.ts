@@ -408,4 +408,37 @@ export class MachineService {
       return { ok: false, error: 'Database error' };
     }
   }
+
+  async completeUpdate(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const result = await client.query(
+        `
+        UPDATE public.machines
+        SET firmware_version = target_firmware_version,
+            update_status = 'success',
+            update_progress = '100',
+            last_update_attempt = now()
+        WHERE machine_id = $1 AND target_firmware_version IS NOT NULL
+        RETURNING firmware_version, update_status
+        `,
+        [machineId],
+      );
+
+      if (result.rowCount === 0) {
+        return { ok: false, error: 'Machine not found or no target version set' };
+      }
+
+      return {
+        ok: true,
+        message: 'Update completed successfully',
+        firmwareVersion: result.rows[0].firmware_version,
+        updateStatus: result.rows[0].update_status,
+      };
+    } catch (err) {
+      console.error('Error completing update:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
 }

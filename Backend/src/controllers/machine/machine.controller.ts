@@ -69,10 +69,21 @@ export class MachineController {
     @Body('updateProgress') updateProgress: string,
   ) {
     if (!machineId || updateProgress === undefined) {
-      throw new BadRequestException('machineId and updateProgress are required');
+      throw new BadRequestException(
+        'machineId and updateProgress are required',
+      );
     }
 
     return this.machineService.updateProgress(machineId, updateProgress);
+  }
+
+  @Post('complete-update')
+  async completeUpdate(@Body('machineId') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('machineId is required');
+    }
+
+    return this.machineService.completeUpdate(machineId);
   }
 
   @Post('add-machine')
