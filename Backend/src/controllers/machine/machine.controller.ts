@@ -51,6 +51,15 @@ export class MachineController {
     return this.machineService.checkFirmwareUpdate(machineId);
   }
 
+  @Get('firmware-versions/:machineId')
+  async getFirmwareVersions(@Param('machineId') machineId: string) {
+    if (!machineId) {
+      throw new BadRequestException('Machine ID is required');
+    }
+
+    return this.machineService.getAllFirmwareVersions(machineId);
+  }
+
   @Post('update-firmware')
   async updateFirmware(
     @Body('machineId') machineId: string,

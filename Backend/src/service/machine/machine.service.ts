@@ -253,6 +253,53 @@ export class MachineService {
     };
   }
 
+  async getAllFirmwareVersions(machineId: string) {
+    const client = this.databaseService.getClient();
+
+    try {
+      // 1. Get the machine model
+      const machineResult = await client.query(
+        `
+        SELECT ms.model
+        FROM public.machines m
+        JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
+        WHERE m.machine_id = $1
+        `,
+        [machineId],
+      );
+
+      if (machineResult.rowCount === 0) {
+        return { ok: false, error: 'Machine not found' };
+      }
+
+      const { model } = machineResult.rows[0];
+
+      // 2. Fetch all stable firmware versions compatible with this model
+      const firmwareResult = await client.query(
+        `
+        SELECT version, release_notes, release_date, created_at
+        FROM public.firmware
+        WHERE status = 'Stable'
+        AND $1 = ANY(target_models)
+        ORDER BY release_date DESC, created_at DESC
+        `,
+        [model],
+      );
+
+      return {
+        ok: true,
+        versions: firmwareResult.rows.map((row) => ({
+          version: row.version,
+          releaseNotes: row.release_notes,
+          releaseDate: row.release_date,
+        })),
+      };
+    } catch (err) {
+      console.error('Error fetching all firmware versions:', err);
+      return { ok: false, error: 'Database error' };
+    }
+  }
+
   async checkFirmwareUpdate(machineId: string) {
     const client = this.databaseService.getClient();
 
