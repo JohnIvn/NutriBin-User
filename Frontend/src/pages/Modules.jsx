@@ -387,7 +387,7 @@ export default function Modules() {
               <div>
                 <p className="text-sm font-semibold text-[#3A4D39]">Active</p>
                 <p className="text-xs font-medium text-[#739072]">
-                  {!modules?.is_active ? "Yes" : "No"}
+                  {modules?.is_active ? "Yes" : "No"}
                 </p>
               </div>
             </div>

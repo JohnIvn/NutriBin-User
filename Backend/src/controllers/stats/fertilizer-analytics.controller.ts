@@ -84,7 +84,7 @@ export class FertilizerAnalyticsController {
           `
         SELECT is_active
         FROM machines
-        WHERE machine_id
+        WHERE machine_id = $1
         LIMIT 1
         `,
           [machineId],
