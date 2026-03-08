@@ -32,12 +32,11 @@ export default function Fertilizer() {
   const hasData = analytics !== null;
 
   const { user, selectedMachine } = useUser();
-  const customerId = user?.customer_id;
   const machineId = selectedMachine?.machine_id;
   const socketRef = useRef(null);
 
   useEffect(() => {
-    if (!customerId || !machineId) {
+    if (!machineId) {
       setAnalytics(null);
       setLoading(false);
       return;
@@ -50,8 +49,7 @@ export default function Fertilizer() {
         setLoading(true);
 
         const res = await Requests({
-          url: `/fertilizer-analytics/${customerId}`,
-          params: { machineId },
+          url: `/fertilizer-analytics/${machineId}`
         });
 
         if (isMounted && res.data.ok && res.data.analytics.length > 0) {
@@ -87,7 +85,6 @@ export default function Fertilizer() {
       console.log("✅ Connected to fertilizer realtime");
 
       socket.emit("joinFertilizerRoom", {
-        customerId,
         machineId,
       });
     });
@@ -118,7 +115,7 @@ export default function Fertilizer() {
         socketRef.current = null;
       }
     };
-  }, [customerId, machineId]);
+  }, [machineId]);
 
   const convertTemp = (celsius, unit) => {
     if (!celsius) return "-";

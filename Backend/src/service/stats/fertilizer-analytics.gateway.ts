@@ -18,8 +18,6 @@ import ws from 'ws';
 
 (global as typeof globalThis & { WebSocket: any }).WebSocket = ws;
 
-// ─── Domain Types ────────────────────────────────────────────────────────────
-
 interface FertilizerAnalyticsRow {
   fertilizer_analytics_id: string;
   user_id: string;
@@ -40,11 +38,7 @@ interface FertilizerAnalyticsRow {
   date_created: string;
 }
 
-// ─── Payload emitted to client ──────────────────────────────────────────────
-
 type FertilizerAnalyticsPayload = ReturnType<typeof mapFertilizerAnalytics>;
-
-// ─── Socket Event Maps ──────────────────────────────────────────────────────
 
 interface ServerToClientEvents {
   fertilizer_analytics_update: (payload: FertilizerAnalyticsPayload) => void;
@@ -55,11 +49,8 @@ interface ClientToServerEvents {
 }
 
 interface JoinFertilizerDto {
-  customerId: string;
-  machineId?: string;
+  machineId: string;
 }
-
-// ─── Supabase Schema ─────────────────────────────────────────────────────────
 
 interface Database {
   public: {
@@ -69,23 +60,21 @@ interface Database {
   };
 }
 
-// ─── Environment ─────────────────────────────────────────────────────────────
-
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_SERVICE_KEY =
   process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_KEY ?? '';
 
-// ─── Value Mapper (same as controller) ──────────────────────────────────────
-
 function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
   const invertValue = (val: any) => {
     if (val === null || val === undefined) return null;
+
     const isTruthy =
       val === true ||
       val === 1 ||
       String(val).toLowerCase() === 'true' ||
       String(val).toLowerCase() === '1' ||
       String(val).toLowerCase() === 't';
+
     return !isTruthy;
   };
 
@@ -108,8 +97,6 @@ function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
   };
 }
 
-// ─── Gateway ─────────────────────────────────────────────────────────────────
-
 @WebSocketGateway({ cors: true })
 export class FertilizerAnalyticsGateway
   implements OnGatewayInit, OnGatewayDisconnect
@@ -123,7 +110,7 @@ export class FertilizerAnalyticsGateway
     this.supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       realtime: {
         params: { eventsPerSecond: 10 },
-        heartbeatIntervalMs: 15_000,
+        heartbeatIntervalMs: 15000,
       },
     });
   }
@@ -134,26 +121,24 @@ export class FertilizerAnalyticsGateway
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleDisconnect(_client: Socket): void {
-    // Socket.IO handles room cleanup automatically
+    // Socket.IO auto cleans rooms
   }
 
-  // ─── Room Join ────────────────────────────────────────────────────────────
+  // ─── Join Machine Room ─────────────────────────────────────
 
   @SubscribeMessage('joinFertilizerRoom')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() { customerId, machineId }: JoinFertilizerDto,
+    @MessageBody() { machineId }: JoinFertilizerDto,
   ): void {
-    const room = machineId
-      ? `fertilizer_${customerId}_${machineId}`
-      : `fertilizer_${customerId}`;
+    const room = `fertilizer_${machineId}`;
 
     void client.join(room);
 
-    console.log(`Client joined room: ${room}`);
+    console.log(`Client joined machine room: ${room}`);
   }
 
-  // ─── Supabase Realtime Listener ───────────────────────────────────────────
+  // ─── Supabase Listener ─────────────────────────────────────
 
   private startRealtimeListener(): void {
     const channel: RealtimeChannel = this.supabase
@@ -166,23 +151,15 @@ export class FertilizerAnalyticsGateway
           table: 'fertilizer_analytics',
         },
         ({ new: newRow }) => {
+          if (!newRow.machine_id) return;
+
           const payload = mapFertilizerAnalytics(newRow);
 
-          // Emit to general customer room
           this.server
-            .to(`fertilizer_${newRow.user_id}`)
+            .to(`fertilizer_${newRow.machine_id}`)
             .emit('fertilizer_analytics_update', payload);
 
-          // Emit to machine-specific room (if exists)
-          if (newRow.machine_id) {
-            this.server
-              .to(`fertilizer_${newRow.user_id}_${newRow.machine_id}`)
-              .emit('fertilizer_analytics_update', payload);
-          }
-
-          console.log(
-            `📡 Fertilizer analytics update for user ${newRow.user_id}`,
-          );
+          console.log(`📡 Fertilizer update for machine ${newRow.machine_id}`);
         },
       )
       .subscribe((status) => {
@@ -194,7 +171,7 @@ export class FertilizerAnalyticsGateway
         if (status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
           console.error('❌ Supabase TIMED_OUT. Reconnecting...');
           void this.supabase.removeChannel(channel).then(() => {
-            setTimeout(() => this.startRealtimeListener(), 5_000);
+            setTimeout(() => this.startRealtimeListener(), 5000);
           });
           return;
         }
