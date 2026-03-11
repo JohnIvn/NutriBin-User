@@ -52,6 +52,10 @@ interface JoinFertilizerDto {
   machineId: string;
 }
 
+type MachineRow = {
+  is_active: boolean | null;
+};
+
 interface Database {
   public: {
     Tables: {
@@ -150,16 +154,40 @@ export class FertilizerAnalyticsGateway
           schema: 'public',
           table: 'fertilizer_analytics',
         },
-        ({ new: newRow }) => {
+        async ({ new: newRow }) => {
           if (!newRow.machine_id) return;
 
-          const payload = mapFertilizerAnalytics(newRow);
+          try {
+            const { data: machine, error } = await this.supabase
+              .from('machines')
+              .select('is_active')
+              .eq('machine_id', newRow.machine_id)
+              .single<MachineRow>();
 
-          this.server
-            .to(`fertilizer_${newRow.machine_id}`)
-            .emit('fertilizer_analytics_update', payload);
+            if (error) {
+              console.error('Machine lookup failed:', error);
+              return;
+            }
 
-          console.log(`📡 Fertilizer update for machine ${newRow.machine_id}`);
+            if (!machine?.is_active) {
+              console.log(
+                `⚠️ Machine ${newRow.machine_id} is inactive. Skipping realtime emit.`,
+              );
+              return;
+            }
+
+            const payload = mapFertilizerAnalytics(newRow);
+
+            this.server
+              .to(`fertilizer_${newRow.machine_id}`)
+              .emit('fertilizer_analytics_update', payload);
+
+            console.log(
+              `📡 Fertilizer update for machine ${newRow.machine_id}`,
+            );
+          } catch (err) {
+            console.error('Realtime processing error:', err);
+          }
         },
       )
       .subscribe((status) => {
