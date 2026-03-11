@@ -713,7 +713,12 @@ export default function Dashboard() {
                     <StatCard
                       key={cfg.key}
                       config={cfg}
-                      value={stats?.[cfg.key] ?? "--"}
+                      value={
+                        stats?.[cfg.key] !== null &&
+                        stats?.[cfg.key] !== undefined
+                          ? Number(stats[cfg.key]).toFixed(2)
+                          : "--"
+                      }
                       index={i}
                     />
                   ))}
