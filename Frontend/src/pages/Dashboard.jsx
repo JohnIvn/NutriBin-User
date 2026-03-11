@@ -386,7 +386,11 @@ function LogRow({ log, index }) {
       ))}
       <td className="px-5 py-3.5">
         <span className="text-[13px] font-mono font-semibold text-blue-600">
-          {log.moisture ?? <span className="text-[#C4BDB0]">—</span>}
+          {log.moisture !== null && log.moisture !== undefined ? (
+            Number(log.moisture).toFixed(2)
+          ) : (
+            <span className="text-[#C4BDB0]">—</span>
+          )}
         </span>
       </td>
       <td className="px-5 py-3.5">
