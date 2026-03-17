@@ -27,6 +27,7 @@ import DataScience from "@/pages/DataScience";
 import Support from "@/pages/Support";
 import DownloadApp from "@/pages/Download";
 import Firmware from "@/pages/Firmware";
+import Bluetooth from "@/pages/Bluetooth";
 
 function FallbackRoute() {
   const { user } = useUser();
@@ -60,6 +61,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/bluetooth"
+        element={
+          <ProtectedRoute>
+            <Bluetooth />
           </ProtectedRoute>
         }
       />

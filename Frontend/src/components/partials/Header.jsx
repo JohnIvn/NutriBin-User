@@ -1353,6 +1353,14 @@ const UserMenu = ({
                 Firmware
               </Link>
               <Link
+                to="/bluetooth"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
+                         hover:bg-[#ECE3CE]/50 transition-colors"
+              >
+                Connect Via Bluetooth
+              </Link>
+              <Link
                 to="/settings"
                 onClick={() => setUserMenuOpen(false)}
                 className="flex items-center px-4 py-2.5 text-sm font-medium text-[#3A4D39] 
