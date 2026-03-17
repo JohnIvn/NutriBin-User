@@ -182,7 +182,7 @@ export default function Bluetooth() {
   return (
     <div className="min-h-screen min-w-screen flex flex-col items-center font-sans text-[#3A4D39] pb-12 overflow-x-hidden">
       {/* Header */}
-      <header className="w-full pt-16 pb-24 text-center bg-gradient-to-b from-[#f0f4ef] to-[#FAF9F6] relative">
+      <header className="w-full pt-16 pb-24 text-center bg-white relative">
         <div className="flex justify-center mb-5">
           <div className="bg-[#3A4D39]/[0.08] rounded-full p-4 border border-[#3A4D39]/15">
             <BluetoothIcon size={36} color="#4F6F52" />
@@ -197,7 +197,7 @@ export default function Bluetooth() {
       </header>
 
       {/* Card */}
-      <main className="w-full max-w-4xl -mt-16 px-4 sm:px-6 relative z-10">
+      <main className="w-full max-w-4xl -mt-16 px-4 sm:px-6 relative z-10" >
         <div className="bg-white rounded-2xl shadow-2xl shadow-[#3A4D39]/10 overflow-hidden">
           {!connected ? (
             <div className="p-8 md:p-12">
