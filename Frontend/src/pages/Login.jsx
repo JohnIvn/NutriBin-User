@@ -18,7 +18,7 @@ import { useState, useEffect } from "react";
 import request from "@/utils/Requests";
 import { useUser } from "@/contexts/UserContextHook";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { Sprout, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Sprout, ArrowRight, Eye, EyeOff, LogOut } from "lucide-react";
 
 export function Login() {
   const [showPass, setShowPass] = useState(false);
@@ -26,7 +26,7 @@ export function Login() {
   const [loginError, setLoginError] = useState(null);
   const [mfaMessage, setMfaMessage] = useState(null);
   const [mfaCustomerId, setMfaCustomerId] = useState(null);
-  const { login } = useUser();
+  const { login, user, logout } = useUser();
   const navigate = useNavigate();
 
   const form = useForm({
@@ -37,6 +37,13 @@ export function Login() {
       password: "",
     },
   });
+
+  // Redirect if user is already signed in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (!mfaCustomerId) return;
@@ -140,8 +147,73 @@ export function Login() {
     }
   }
 
+  const handleContinueAs = () => {
+    navigate("/dashboard");
+  };
+
+  const handleSwitchAccount = () => {
+    logout();
+    setLoginError(null);
+    setLoginMessage(null);
+    form.reset();
+  };
+
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      {/* Continue as fallback screen - shows when user visits login while authenticated */}
+      {user && (
+        <div className="w-full h-screen flex items-center justify-center bg-[#ECE3CE]/30 font-sans px-4">
+          <div className="bg-white p-8 md:p-12 rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 max-w-md w-full border border-[#3A4D39]/5">
+            <div className="text-center space-y-6">
+              {/* user icon */}
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#3A4D39] to-[#4F6F52] flex items-center justify-center shadow-lg">
+                <span className="text-3xl font-bold text-[#ECE3CE]">
+                  {user.email?.[0]?.toUpperCase() || "U"}
+                </span>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-[#3A4D39] mb-2">
+                  Welcome Back!
+                </h2>
+                <p className="text-sm text-[#4F6F52] font-medium">
+                  {user.email || "User"}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Continue as button */}
+                <Button
+                  onClick={handleContinueAs}
+                  className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
+                >
+                  Continue as {user.email?.split("@")[0]}
+                </Button>
+
+                {/* Switch account button */}
+                <Button
+                  onClick={handleSwitchAccount}
+                  className="w-full h-12 bg-[#ECE3CE] hover:bg-[#ECE3CE]/80 text-[#3A4D39] font-bold text-base rounded-xl transition-all border-2 border-[#3A4D39]/20 flex items-center justify-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Switch Account
+                </Button>
+              </div>
+
+              <p className="text-xs text-[#739072] pt-2">
+                Not {user.email?.split("@")[0]}?{" "}
+                <button
+                  onClick={handleSwitchAccount}
+                  className="font-bold text-[#3A4D39] hover:underline"
+                >
+                  Use a different account
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {mfaMessage ? (
         // MFA Verification Message Screen
         <div className="w-full h-[calc(100vh-48px)] flex items-center justify-center bg-linear-to-br from-amber-50 to-orange-50">
@@ -181,204 +253,206 @@ export function Login() {
           </div>
         </div>
       ) : (
-        <div className="min-h-screen w-full bg-[#ECE3CE]/30 font-sans flex items-center justify-center px-4 pt-28 pb-12">
-          {/* floating card container */}
-          <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-150 border border-[#3A4D39]/5">
-            {/* left column */}
-            <div className="hidden lg:flex w-1/2 bg-[#3A4D39] relative flex-col justify-between p-12 text-[#ECE3CE]">
-              {/* decorative pattern */}
-              <div
-                className="absolute inset-0 opacity-10 pointer-events-none"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 2px 2px, #ECE3CE 1px, transparent 0)",
-                  backgroundSize: "32px 32px",
-                }}
-              ></div>
+        !user && (
+          <div className="min-h-screen w-full bg-[#ECE3CE]/30 font-sans flex items-center justify-center px-4 pt-28 pb-12">
+            {/* floating card container */}
+            <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-[#3A4D39]/10 overflow-hidden flex flex-col lg:flex-row min-h-150 border border-[#3A4D39]/5">
+              {/* left column */}
+              <div className="hidden lg:flex w-1/2 bg-[#3A4D39] relative flex-col justify-between p-12 text-[#ECE3CE]">
+                {/* decorative pattern */}
+                <div
+                  className="absolute inset-0 opacity-10 pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 2px 2px, #ECE3CE 1px, transparent 0)",
+                    backgroundSize: "32px 32px",
+                  }}
+                ></div>
 
-              {/* glowing orb */}
-              <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#4F6F52] rounded-full blur-[100px] opacity-60"></div>
+                {/* glowing orb */}
+                <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#4F6F52] rounded-full blur-[100px] opacity-60"></div>
 
-              {/* logo area */}
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="p-2 bg-[#ECE3CE] rounded-lg text-[#3A4D39]">
-                  <Sprout className="w-6 h-6" />
+                {/* logo area */}
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="p-2 bg-[#ECE3CE] rounded-lg text-[#3A4D39]">
+                    <Sprout className="w-6 h-6" />
+                  </div>
+                  <span className="text-2xl font-bold tracking-tight">
+                    NutriBin
+                  </span>
                 </div>
-                <span className="text-2xl font-bold tracking-tight">
-                  NutriBin
-                </span>
-              </div>
 
-              {/* value prop */}
-              <div className="relative z-10 max-w-md space-y-6 my-auto">
-                <h1 className="text-5xl font-black leading-tight">
-                  Turn Waste <br />
-                  <span className="text-[#739072]">Into Life.</span>
-                </h1>
-                <p className="text-lg text-[#ECE3CE]/80 font-medium leading-relaxed">
-                  Join the ecosystem bridging household waste and sustainable
-                  agriculture. Monitor, compost, and grow.
-                </p>
-              </div>
-
-              {/* internal copyright */}
-              <div className="relative z-10 text-xs text-[#ECE3CE]/50 font-medium tracking-wide uppercase">
-                Secure Login Portal
-              </div>
-            </div>
-
-            {/* right column */}
-            <div className="flex-1 flex items-center justify-center p-8 md:p-12 bg-white">
-              <div className="w-full max-w-100 space-y-8">
-                {/* form header */}
-                <div className="text-center space-y-2">
-                  <h2 className="text-3xl font-bold text-[#3A4D39]">
-                    Welcome Back
-                  </h2>
-                  <p className="text-[#4F6F52] text-sm">
-                    Sign in to access your dashboard
+                {/* value prop */}
+                <div className="relative z-10 max-w-md space-y-6 my-auto">
+                  <h1 className="text-5xl font-black leading-tight">
+                    Turn Waste <br />
+                    <span className="text-[#739072]">Into Life.</span>
+                  </h1>
+                  <p className="text-lg text-[#ECE3CE]/80 font-medium leading-relaxed">
+                    Join the ecosystem bridging household waste and sustainable
+                    agriculture. Monitor, compost, and grow.
                   </p>
                 </div>
 
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-5"
-                  >
-                    {/* email field */}
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[#3A4D39] font-semibold">
-                            Email Address
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="name@example.com"
-                              className="h-12 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] placeholder:text-[#3A4D39]/40 rounded-xl"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-red-500 text-xs" />
-                        </FormItem>
-                      )}
-                    />
+                {/* internal copyright */}
+                <div className="relative z-10 text-xs text-[#ECE3CE]/50 font-medium tracking-wide uppercase">
+                  Secure Login Portal
+                </div>
+              </div>
 
-                    {/* password field */}
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[#3A4D39] font-semibold">
-                            Password
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
+              {/* right column */}
+              <div className="flex-1 flex items-center justify-center p-8 md:p-12 bg-white">
+                <div className="w-full max-w-100 space-y-8">
+                  {/* form header */}
+                  <div className="text-center space-y-2">
+                    <h2 className="text-3xl font-bold text-[#3A4D39]">
+                      Welcome Back
+                    </h2>
+                    <p className="text-[#4F6F52] text-sm">
+                      Sign in to access your dashboard
+                    </p>
+                  </div>
+
+                  <Form {...form}>
+                    <form
+                      onSubmit={form.handleSubmit(onSubmit)}
+                      className="space-y-5"
+                    >
+                      {/* email field */}
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[#3A4D39] font-semibold">
+                              Email Address
+                            </FormLabel>
+                            <FormControl>
                               <Input
-                                type={showPass ? "text" : "password"}
-                                placeholder="••••••••"
-                                className="h-12 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] placeholder:text-[#3A4D39]/40 rounded-xl pr-10"
+                                placeholder="name@example.com"
+                                className="h-12 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] placeholder:text-[#3A4D39]/40 rounded-xl"
                                 {...field}
                               />
-                              <button
-                                type="button"
-                                onClick={() => setShowPass(!showPass)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#4F6F52] hover:text-[#3A4D39] transition-colors cursor-pointer"
+                            </FormControl>
+                            <FormMessage className="text-red-500 text-xs" />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* password field */}
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[#3A4D39] font-semibold">
+                              Password
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  type={showPass ? "text" : "password"}
+                                  placeholder="••••••••"
+                                  className="h-12 bg-[#ECE3CE]/20 border-[#3A4D39]/20 focus-visible:ring-[#4F6F52] text-[#3A4D39] placeholder:text-[#3A4D39]/40 rounded-xl pr-10"
+                                  {...field}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPass(!showPass)}
+                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#4F6F52] hover:text-[#3A4D39] transition-colors cursor-pointer"
+                                >
+                                  {showPass ? (
+                                    <EyeOff className="w-5 h-5" />
+                                  ) : (
+                                    <Eye className="w-5 h-5" />
+                                  )}
+                                </button>
+                              </div>
+                            </FormControl>
+                            <div className="flex justify-start mt-2">
+                              <Link
+                                to="/forgot-password"
+                                className="text-xs font-bold text-[#4F6F52] hover:underline"
                               >
-                                {showPass ? (
-                                  <EyeOff className="w-5 h-5" />
-                                ) : (
-                                  <Eye className="w-5 h-5" />
-                                )}
-                              </button>
+                                Forgot password?
+                              </Link>
                             </div>
-                          </FormControl>
-                          <div className="flex justify-start mt-2">
-                            <Link
-                              to="/forgot-password"
-                              className="text-xs font-bold text-[#4F6F52] hover:underline"
-                            >
-                              Forgot password?
-                            </Link>
-                          </div>
-                          <FormMessage className="text-red-500 text-xs" />
-                        </FormItem>
+                            <FormMessage className="text-red-500 text-xs" />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* submit button */}
+                      <Button
+                        type="submit"
+                        className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
+                      >
+                        Sign In <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+
+                      {/* feedback messages */}
+                      {loginError && (
+                        <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center font-medium border border-red-100 flex items-center justify-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-600" />{" "}
+                          {loginError}
+                        </div>
                       )}
-                    />
+                      {loginMessage && (
+                        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm text-center font-medium border border-green-100 flex items-center justify-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-600" />{" "}
+                          {loginMessage}
+                        </div>
+                      )}
 
-                    {/* submit gutton */}
-                    <Button
-                      type="submit"
-                      className="w-full h-12 bg-[#3A4D39] hover:bg-[#4F6F52] text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
+                      {/* divider */}
+                      <div className="relative py-2">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-[#3A4D39]/10" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-white px-2 text-[#739072] font-semibold">
+                            Or continue with
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* google */}
+                      <div className="flex justify-center">
+                        <div className="flex justify-center w-full max-w-[400px] mx-auto">
+                          <GoogleLogin
+                            width={400}
+                            logo_alignment="center"
+                            shape="pill"
+                            theme="outline"
+                            size="large"
+                            text="continue_with"
+                            onSuccess={(res) =>
+                              handleGoogleSignup(res.credential)
+                            }
+                            onError={() =>
+                              setLoginError("Google authentication failed")
+                            }
+                          />
+                        </div>
+                      </div>
+                    </form>
+                  </Form>
+
+                  {/* signup link */}
+                  <div className="text-center text-sm text-[#739072]">
+                    Don't have an account?{" "}
+                    <Link
+                      to="/register"
+                      className="font-bold text-[#3A4D39] hover:underline hover:text-[#4F6F52]"
                     >
-                      Sign In <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-
-                    {/* feedback messages */}
-                    {loginError && (
-                      <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center font-medium border border-red-100 flex items-center justify-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-600" />{" "}
-                        {loginError}
-                      </div>
-                    )}
-                    {loginMessage && (
-                      <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm text-center font-medium border border-green-100 flex items-center justify-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-600" />{" "}
-                        {loginMessage}
-                      </div>
-                    )}
-
-                    {/* divider */}
-                    <div className="relative py-2">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-[#3A4D39]/10" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-2 text-[#739072] font-semibold">
-                          Or continue with
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* google */}
-                    <div className="flex justify-center">
-                      <div className="flex justify-center w-full max-w-[400px] mx-auto">
-                        <GoogleLogin
-                          width={400}
-                          logo_alignment="center"
-                          shape="pill"
-                          theme="outline"
-                          size="large"
-                          text="continue_with"
-                          onSuccess={(res) =>
-                            handleGoogleSignup(res.credential)
-                          }
-                          onError={() =>
-                            setLoginError("Google authentication failed")
-                          }
-                        />
-                      </div>
-                    </div>
-                  </form>
-                </Form>
-
-                {/* signup link */}
-                <div className="text-center text-sm text-[#739072]">
-                  Don't have an account?{" "}
-                  <Link
-                    to="/register"
-                    className="font-bold text-[#3A4D39] hover:underline hover:text-[#4F6F52]"
-                  >
-                    Create one now
-                  </Link>
+                      Create one now
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )
       )}
     </GoogleOAuthProvider>
   );
