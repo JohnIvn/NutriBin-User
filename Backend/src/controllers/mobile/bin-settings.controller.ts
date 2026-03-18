@@ -23,7 +23,7 @@ export class BinSettingsController {
     try {
       // Fetch details from 'machines', 'machine_customers', and 'machine_serial'
       const result = await client.query(
-        `SELECT m.machine_id, mc.nickname, m.is_active, m.firmware_version, ms.serial_number, ms.model 
+        `SELECT m.machine_id, mc.nickname, m.is_active, m.firmware_version, ms.serial_number, ms.model, m.wifi_ssid, m.ip_address 
          FROM machines m
          LEFT JOIN machine_customers mc ON m.machine_id = mc.machine_id
          LEFT JOIN public.machine_serial ms ON m.machine_id = ms.machine_serial_id
