@@ -156,19 +156,6 @@ export default function Modules() {
 
   const stats = getModuleStats();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6]">
-        <Motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-        >
-          <RefreshCw className="w-12 h-12 text-[#4F6F52]" />
-        </Motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] font-sans">
       {/* ─── Repair Confirmation Modal ─── */}
@@ -344,453 +331,476 @@ export default function Modules() {
           })}
         </div>
 
+        {/* ─── Loading State (inline, body-scoped) ─── */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-32 gap-4">
+            <Motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            >
+              <RefreshCw className="w-10 h-10 text-[#4F6F52]" />
+            </Motion.div>
+            <p className="text-sm font-semibold text-[#739072] animate-pulse">
+              Loading module data...
+            </p>
+          </div>
+        )}
+
         {/* ─── Tab Panels ─── */}
-        <AnimatePresence mode="wait">
-          {/* ══ Machine Info & Settings ══ */}
-          {activeTab === "info" && (
-            <Motion.div
-              key="info"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-6"
-            >
-              {/* Machine Info Card */}
-              <div className="bg-white/90 backdrop-blur-md border border-[#3A4D39]/10 rounded-3xl p-6 shadow-lg">
-                <h2 className="text-2xl font-black text-[#3A4D39] mb-4">
-                  Machine Info
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-[#E6F5E9] rounded-xl border border-green-200 shadow-sm">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Active
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.is_active ? "Yes" : "No"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#F0F4FF] rounded-xl border border-blue-200 shadow-sm">
-                    <Server className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Firmware
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.firmware_version || "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
-                    <Cog className="w-5 h-5 text-amber-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Target Firmware
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.target_firmware_version || "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#F9EBF0] rounded-xl border border-pink-200 shadow-sm">
-                    <Activity className="w-5 h-5 text-pink-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Update Status
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.update_status || "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#E8F0F8] rounded-xl border border-blue-100 shadow-sm">
-                    <RefreshCw className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Last Update
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.last_update_attempt
-                          ? new Date(
-                              modules.last_update_attempt,
-                            ).toLocaleString()
-                          : "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#FFF4E6] rounded-xl border border-orange-200 shadow-sm">
-                    <Eye className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Last Seen
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.last_seen
-                          ? new Date(modules.last_seen).toLocaleString()
-                          : "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#d9f0ff] rounded-xl border border-blue-300 shadow-sm">
-                    <Wifi className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        Wifi
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.wifi_ssid || "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
-                    <Wifi className="w-5 h-5 text-amber-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#3A4D39]">
-                        IP Address
-                      </p>
-                      <p className="text-xs font-medium text-[#739072]">
-                        {modules?.ip_address || "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ─── Machine Settings Card ─── */}
-              <div className="bg-white/90 backdrop-blur-md border border-[#3A4D39]/10 rounded-3xl p-6 shadow-lg">
-                <h2 className="text-2xl font-black text-[#3A4D39] mb-2">
-                  Machine Settings
-                </h2>
-                <p className="text-sm text-[#739072] font-medium mb-6">
-                  Manage firmware updates and machine operations.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Firmware Update Button */}
-                  <button
-                    onClick={() => navigate("/firmware")}
-                    className="group flex items-center gap-4 p-5 bg-gradient-to-br from-[#3A4D39]/5 to-[#4F6F52]/10 border border-[#3A4D39]/15 rounded-2xl hover:border-[#4F6F52]/40 hover:shadow-lg hover:shadow-[#3A4D39]/10 transition-all duration-200"
-                  >
-                    <div className="p-3 bg-[#3A4D39] rounded-xl shadow-md group-hover:bg-[#4F6F52] transition-colors duration-200 shrink-0">
-                      <Upload className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-black text-[#3A4D39]">
-                        Firmware Update
-                      </p>
-                      <p className="text-xs text-[#739072] font-medium mt-0.5">
-                        Upload & manage firmware versions
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Restart Machine Button */}
-                  <button
-                    onClick={restartMachine}
-                    disabled={isRestartLoading}
-                    className="group flex items-center gap-4 p-5 bg-gradient-to-br from-red-50 to-red-100/60 border border-red-200/60 rounded-2xl hover:border-red-300 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div className="p-3 bg-red-500 rounded-xl shadow-md group-hover:bg-red-600 transition-colors duration-200 shrink-0">
-                      {isRestartLoading ? (
-                        <RefreshCw className="w-5 h-5 text-white animate-spin" />
-                      ) : (
-                        <RotateCcw className="w-5 h-5 text-white" />
-                      )}
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-black text-red-700">
-                        {isRestartLoading ? "Restarting..." : "Restart Machine"}
-                      </p>
-                      <p className="text-xs text-red-400 font-medium mt-0.5">
-                        Restart the machine
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </Motion.div>
-          )}
-
-          {/* ══ Module Diagnostics ══ */}
-          {activeTab === "modules" && (
-            <Motion.div
-              key="modules"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {/* ── Controllers ── */}
+        {!loading && (
+          <AnimatePresence mode="wait">
+            {/* ══ Machine Info & Settings ══ */}
+            {activeTab === "info" && (
               <Motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.05 }}
-                className="flex flex-col gap-4"
-              >
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-[#3A4D39]/10 to-[#4F6F52]/10 rounded-xl shadow-sm">
-                      <Cpu className="w-5 h-5 text-[#3A4D39]" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-black text-[#3A4D39]">
-                        Controllers
-                      </h2>
-                      <p className="text-xs text-[#739072] font-medium">
-                        Processing Units
-                      </p>
-                    </div>
-                  </div>
-                  <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
-                    <span className="text-xs font-black text-[#739072]">
-                      4 Units
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
-                  <ModuleCard
-                    title="Arduino Q"
-                    icon={Cpu}
-                    offline={modules?.arduino_q}
-                    subtext="Main Logic Unit"
-                    onClick={() => handleCardClick("Repair need for Arduino Q")}
-                  />
-                  <ModuleCard
-                    title="ESP32 Filter"
-                    icon={Cpu}
-                    offline={modules?.esp32_filter}
-                    subtext="Filterings"
-                    onClick={() =>
-                      handleCardClick("Repair need for ESP32 Filter")
-                    }
-                  />
-                  <ModuleCard
-                    title="ESP32 Sensors"
-                    icon={Cpu}
-                    offline={modules?.esp32_sensors}
-                    subtext="Processing Unit"
-                    onClick={() =>
-                      handleCardClick("Repair need for ESP32 sensors")
-                    }
-                  />
-                  <ModuleCard
-                    title="ESP32 Servo"
-                    icon={Cpu}
-                    offline={modules?.esp32_servo}
-                    subtext="Ventilation Control"
-                    onClick={() =>
-                      handleCardClick("Repair need for ESP32 Servo")
-                    }
-                  />
-                </div>
-              </Motion.div>
-
-              {/* ── Actuators ── */}
-              <Motion.div
-                initial={{ opacity: 0, y: 20 }}
+                key="info"
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="flex flex-col gap-4"
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-6"
               >
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm">
-                      <Cog className="w-5 h-5 text-orange-700" />
+                {/* Machine Info Card */}
+                <div className="bg-white/90 backdrop-blur-md border border-[#3A4D39]/10 rounded-3xl p-6 shadow-lg">
+                  <h2 className="text-2xl font-black text-[#3A4D39] mb-4">
+                    Machine Info
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-[#E6F5E9] rounded-xl border border-green-200 shadow-sm">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Active
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.is_active ? "Yes" : "No"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-black text-[#3A4D39]">
-                        Actuators
-                      </h2>
-                      <p className="text-xs text-[#739072] font-medium">
-                        Mechanical Systems
-                      </p>
+                    <div className="flex items-center gap-3 p-3 bg-[#F0F4FF] rounded-xl border border-blue-200 shadow-sm">
+                      <Server className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Firmware
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.firmware_version || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
+                      <Cog className="w-5 h-5 text-amber-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Target Firmware
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.target_firmware_version || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#F9EBF0] rounded-xl border border-pink-200 shadow-sm">
+                      <Activity className="w-5 h-5 text-pink-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Update Status
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.update_status || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#E8F0F8] rounded-xl border border-blue-100 shadow-sm">
+                      <RefreshCw className="w-5 h-5 text-blue-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Last Update
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.last_update_attempt
+                            ? new Date(
+                                modules.last_update_attempt,
+                              ).toLocaleString()
+                            : "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#FFF4E6] rounded-xl border border-orange-200 shadow-sm">
+                      <Eye className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Last Seen
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.last_seen
+                            ? new Date(modules.last_seen).toLocaleString()
+                            : "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#d9f0ff] rounded-xl border border-blue-300 shadow-sm">
+                      <Wifi className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          Wifi
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.wifi_ssid || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
+                      <Wifi className="w-5 h-5 text-amber-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#3A4D39]">
+                          IP Address
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.ip_address || "-"}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
-                    <span className="text-xs font-black text-[#739072]">
-                      5 Units
-                    </span>
-                  </div>
                 </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
-                  <ModuleCard
-                    title="Servo A"
-                    icon={Cog}
-                    offline={modules?.servo_a}
-                    subtext="Gate Control"
-                    onClick={() => handleCardClick("Repair need for Servo A")}
-                  />
-                  <ModuleCard
-                    title="Servo B"
-                    icon={Cog}
-                    offline={modules?.servo_b}
-                    subtext="Valve Control"
-                    onClick={() => handleCardClick("Repair need for Servo B")}
-                  />
-                  <ModuleCard
-                    title="Servo Diverter"
-                    icon={Cog}
-                    offline={modules?.servo_mixer}
-                    subtext="Mixing of materials"
-                    onClick={() =>
-                      handleCardClick("Repair need for Servo Mixer")
-                    }
-                  />
-                  <ModuleCard
-                    title="Grinder Motor"
-                    icon={Cog}
-                    offline={modules?.grinder}
-                    subtext="High Torque Grinder"
-                    onClick={() => handleCardClick("Repair need for Grinder")}
-                  />
-                  <ModuleCard
-                    title="Exhaust Fan"
-                    icon={Fan}
-                    offline={modules?.exhaust}
-                    subtext="Air Out"
-                    onClick={() =>
-                      handleCardClick("Repair need for Exhaust Fan")
-                    }
-                  />
-                </div>
-              </Motion.div>
 
-              {/* ── Sensors ── */}
-              <Motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-                className="flex flex-col gap-4"
-              >
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm">
-                      <Eye className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-black text-[#3A4D39]">
-                        Sensors
-                      </h2>
-                      <p className="text-xs text-[#739072] font-medium">
-                        Data Collection
-                      </p>
-                    </div>
+                {/* ─── Machine Settings Card ─── */}
+                <div className="bg-white/90 backdrop-blur-md border border-[#3A4D39]/10 rounded-3xl p-6 shadow-lg">
+                  <h2 className="text-2xl font-black text-[#3A4D39] mb-2">
+                    Machine Settings
+                  </h2>
+                  <p className="text-sm text-[#739072] font-medium mb-6">
+                    Manage firmware updates and machine operations.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Firmware Update Button */}
+                    <button
+                      onClick={() => navigate("/firmware")}
+                      className="group flex items-center gap-4 p-5 bg-gradient-to-br from-[#3A4D39]/5 to-[#4F6F52]/10 border border-[#3A4D39]/15 rounded-2xl hover:border-[#4F6F52]/40 hover:shadow-lg hover:shadow-[#3A4D39]/10 transition-all duration-200"
+                    >
+                      <div className="p-3 bg-[#3A4D39] rounded-xl shadow-md group-hover:bg-[#4F6F52] transition-colors duration-200 shrink-0">
+                        <Upload className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-black text-[#3A4D39]">
+                          Firmware Update
+                        </p>
+                        <p className="text-xs text-[#739072] font-medium mt-0.5">
+                          Upload & manage firmware versions
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Restart Machine Button */}
+                    <button
+                      onClick={restartMachine}
+                      disabled={isRestartLoading}
+                      className="group flex items-center gap-4 p-5 bg-gradient-to-br from-red-50 to-red-100/60 border border-red-200/60 rounded-2xl hover:border-red-300 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="p-3 bg-red-500 rounded-xl shadow-md group-hover:bg-red-600 transition-colors duration-200 shrink-0">
+                        {isRestartLoading ? (
+                          <RefreshCw className="w-5 h-5 text-white animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-5 h-5 text-white" />
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-black text-red-700">
+                          {isRestartLoading
+                            ? "Restarting..."
+                            : "Restart Machine"}
+                        </p>
+                        <p className="text-xs text-red-400 font-medium mt-0.5">
+                          Restart the machine
+                        </p>
+                      </div>
+                    </button>
                   </div>
-                  <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
-                    <span className="text-xs font-black text-[#739072]">
-                      11 Units
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
-                  <ModuleCard
-                    title="Camera"
-                    icon={Eye}
-                    offline={modules?.camera}
-                    subtext="Input Monitoring"
-                    onClick={() => handleCardClick("Repair need for Camera")}
-                  />
-                  <ModuleCard
-                    title="Humidity Sensor"
-                    icon={Droplets}
-                    offline={modules?.humidity}
-                    subtext="DHT22"
-                    onClick={() =>
-                      handleCardClick("Repair need for Humidity Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Methane Sensor"
-                    icon={Wind}
-                    offline={modules?.methane}
-                    subtext="MQ-4 Gas Sensor"
-                    onClick={() =>
-                      handleCardClick("Repair need for Methane Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Carbon Monoxide"
-                    icon={AlertTriangle}
-                    offline={modules?.carbon_monoxide}
-                    subtext="MQ-7 CO Sensor"
-                    onClick={() =>
-                      handleCardClick("Repair need for Carbon Monoxide Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Air Quality"
-                    icon={Wind}
-                    offline={modules?.air_quality}
-                    subtext="MQ-135"
-                    onClick={() =>
-                      handleCardClick("Repair need for Air Quality Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Combustible Gas"
-                    icon={Flame}
-                    offline={modules?.combustible_gasses}
-                    subtext="MQ-2 Sensor"
-                    onClick={() =>
-                      handleCardClick(
-                        "Repair need for Combustible Gassses Sensor",
-                      )
-                    }
-                  />
-                  <ModuleCard
-                    title="NPK Sensor"
-                    icon={Activity}
-                    offline={modules?.npk}
-                    subtext="Soil Analysis"
-                    onClick={() =>
-                      handleCardClick("Repair need for NPK Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Moisture Sensor"
-                    icon={Droplets}
-                    offline={modules?.moisture}
-                    subtext="Capacitive Probe"
-                    onClick={() =>
-                      handleCardClick("Repair need for Moisture Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Reed Switch"
-                    icon={CheckCircle2}
-                    offline={modules?.reed}
-                    subtext="Door / Lid Detection"
-                    onClick={() =>
-                      handleCardClick("Repair need for Reed Switch Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Ultrasonic"
-                    icon={Activity}
-                    offline={modules?.ultrasonic}
-                    subtext="Distance Measurement"
-                    onClick={() =>
-                      handleCardClick("Repair need for Ultrasonic Sensor")
-                    }
-                  />
-                  <ModuleCard
-                    title="Weight Sensor"
-                    icon={Activity}
-                    offline={modules?.weight}
-                    subtext="Load Cell"
-                    onClick={() =>
-                      handleCardClick("Repair need for Weight Sensor")
-                    }
-                  />
                 </div>
               </Motion.div>
-            </Motion.div>
-          )}
-        </AnimatePresence>
+            )}
+
+            {/* ══ Module Diagnostics ══ */}
+            {activeTab === "modules" && (
+              <Motion.div
+                key="modules"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {/* ── Controllers ── */}
+                <Motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.05 }}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-gradient-to-br from-[#3A4D39]/10 to-[#4F6F52]/10 rounded-xl shadow-sm">
+                        <Cpu className="w-5 h-5 text-[#3A4D39]" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black text-[#3A4D39]">
+                          Controllers
+                        </h2>
+                        <p className="text-xs text-[#739072] font-medium">
+                          Processing Units
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
+                      <span className="text-xs font-black text-[#739072]">
+                        4 Units
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
+                    <ModuleCard
+                      title="Arduino Q"
+                      icon={Cpu}
+                      offline={modules?.arduino_q}
+                      subtext="Main Logic Unit"
+                      onClick={() =>
+                        handleCardClick("Repair need for Arduino Q")
+                      }
+                    />
+                    <ModuleCard
+                      title="ESP32 Filter"
+                      icon={Cpu}
+                      offline={modules?.esp32_filter}
+                      subtext="Filterings"
+                      onClick={() =>
+                        handleCardClick("Repair need for ESP32 Filter")
+                      }
+                    />
+                    <ModuleCard
+                      title="ESP32 Sensors"
+                      icon={Cpu}
+                      offline={modules?.esp32_sensors}
+                      subtext="Processing Unit"
+                      onClick={() =>
+                        handleCardClick("Repair need for ESP32 sensors")
+                      }
+                    />
+                    <ModuleCard
+                      title="ESP32 Servo"
+                      icon={Cpu}
+                      offline={modules?.esp32_servo}
+                      subtext="Ventilation Control"
+                      onClick={() =>
+                        handleCardClick("Repair need for ESP32 Servo")
+                      }
+                    />
+                  </div>
+                </Motion.div>
+
+                {/* ── Actuators ── */}
+                <Motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm">
+                        <Cog className="w-5 h-5 text-orange-700" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black text-[#3A4D39]">
+                          Actuators
+                        </h2>
+                        <p className="text-xs text-[#739072] font-medium">
+                          Mechanical Systems
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
+                      <span className="text-xs font-black text-[#739072]">
+                        5 Units
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
+                    <ModuleCard
+                      title="Servo A"
+                      icon={Cog}
+                      offline={modules?.servo_a}
+                      subtext="Gate Control"
+                      onClick={() => handleCardClick("Repair need for Servo A")}
+                    />
+                    <ModuleCard
+                      title="Servo B"
+                      icon={Cog}
+                      offline={modules?.servo_b}
+                      subtext="Valve Control"
+                      onClick={() => handleCardClick("Repair need for Servo B")}
+                    />
+                    <ModuleCard
+                      title="Servo Diverter"
+                      icon={Cog}
+                      offline={modules?.servo_mixer}
+                      subtext="Mixing of materials"
+                      onClick={() =>
+                        handleCardClick("Repair need for Servo Mixer")
+                      }
+                    />
+                    <ModuleCard
+                      title="Grinder Motor"
+                      icon={Cog}
+                      offline={modules?.grinder}
+                      subtext="High Torque Grinder"
+                      onClick={() => handleCardClick("Repair need for Grinder")}
+                    />
+                    <ModuleCard
+                      title="Exhaust Fan"
+                      icon={Fan}
+                      offline={modules?.exhaust}
+                      subtext="Air Out"
+                      onClick={() =>
+                        handleCardClick("Repair need for Exhaust Fan")
+                      }
+                    />
+                  </div>
+                </Motion.div>
+
+                {/* ── Sensors ── */}
+                <Motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.15 }}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm">
+                        <Eye className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black text-[#3A4D39]">
+                          Sensors
+                        </h2>
+                        <p className="text-xs text-[#739072] font-medium">
+                          Data Collection
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1 bg-[#ECE3CE]/60 border border-[#3A4D39]/10 rounded-full">
+                      <span className="text-xs font-black text-[#739072]">
+                        11 Units
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-xl border border-[#3A4D39]/10 space-y-3 hover:shadow-2xl transition-shadow duration-300">
+                    <ModuleCard
+                      title="Camera"
+                      icon={Eye}
+                      offline={modules?.camera}
+                      subtext="Input Monitoring"
+                      onClick={() => handleCardClick("Repair need for Camera")}
+                    />
+                    <ModuleCard
+                      title="Humidity Sensor"
+                      icon={Droplets}
+                      offline={modules?.humidity}
+                      subtext="DHT22"
+                      onClick={() =>
+                        handleCardClick("Repair need for Humidity Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Methane Sensor"
+                      icon={Wind}
+                      offline={modules?.methane}
+                      subtext="MQ-4 Gas Sensor"
+                      onClick={() =>
+                        handleCardClick("Repair need for Methane Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Carbon Monoxide"
+                      icon={AlertTriangle}
+                      offline={modules?.carbon_monoxide}
+                      subtext="MQ-7 CO Sensor"
+                      onClick={() =>
+                        handleCardClick(
+                          "Repair need for Carbon Monoxide Sensor",
+                        )
+                      }
+                    />
+                    <ModuleCard
+                      title="Air Quality"
+                      icon={Wind}
+                      offline={modules?.air_quality}
+                      subtext="MQ-135"
+                      onClick={() =>
+                        handleCardClick("Repair need for Air Quality Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Combustible Gas"
+                      icon={Flame}
+                      offline={modules?.combustible_gasses}
+                      subtext="MQ-2 Sensor"
+                      onClick={() =>
+                        handleCardClick(
+                          "Repair need for Combustible Gassses Sensor",
+                        )
+                      }
+                    />
+                    <ModuleCard
+                      title="NPK Sensor"
+                      icon={Activity}
+                      offline={modules?.npk}
+                      subtext="Soil Analysis"
+                      onClick={() =>
+                        handleCardClick("Repair need for NPK Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Moisture Sensor"
+                      icon={Droplets}
+                      offline={modules?.moisture}
+                      subtext="Capacitive Probe"
+                      onClick={() =>
+                        handleCardClick("Repair need for Moisture Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Reed Switch"
+                      icon={CheckCircle2}
+                      offline={modules?.reed}
+                      subtext="Door / Lid Detection"
+                      onClick={() =>
+                        handleCardClick("Repair need for Reed Switch Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Ultrasonic"
+                      icon={Activity}
+                      offline={modules?.ultrasonic}
+                      subtext="Distance Measurement"
+                      onClick={() =>
+                        handleCardClick("Repair need for Ultrasonic Sensor")
+                      }
+                    />
+                    <ModuleCard
+                      title="Weight Sensor"
+                      icon={Activity}
+                      offline={modules?.weight}
+                      subtext="Load Cell"
+                      onClick={() =>
+                        handleCardClick("Repair need for Weight Sensor")
+                      }
+                    />
+                  </div>
+                </Motion.div>
+              </Motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );
