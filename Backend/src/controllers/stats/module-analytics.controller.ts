@@ -36,6 +36,8 @@ type MachineAnalyticsRow = {
   m5: boolean | null;
   date_created: string;
   firmware_version: string | null;
+  wifi_ssid: string | null;
+  ip_address: string | null;
   target_firmware_version: string | null;
   update_status: string | null;
   last_update_attempt: string | null;
@@ -68,6 +70,8 @@ function mapMachineAnalytics(row: MachineAnalyticsRow) {
       grinder: row.m4,
       exhaust: row.m5,
       firmware_version: row.firmware_version,
+      wifi_ssid: row.wifi_ssid,
+      ip_address: row.ip_address,
       target_firmware_version: row.target_firmware_version,
       update_status: row.update_status,
       last_update_attempt: row.last_update_attempt,
@@ -100,6 +104,8 @@ export class ModuleAnalyticsController {
           ma.m1, ma.m2, ma.m3, ma.m4, ma.m5,
           ma.firmware_version,
           ma.target_firmware_version,
+          ma.wifi_ssid,
+          ma.ip_address,
           ma.update_status,
           ma.last_update_attempt,
           ma.last_seen,
