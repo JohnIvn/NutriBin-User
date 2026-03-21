@@ -153,14 +153,14 @@ export default function Bluetooth() {
     try {
       const dev = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: ["12345678-1234-1234-1234-123456789abc"],
+        optionalServices: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
       });
       const server = await dev.gatt.connect();
       const service = await server.getPrimaryService(
         "12345678-1234-1234-1234-123456789abc",
       );
       characteristic = await service.getCharacteristic(
-        "abcd1234-ab12-cd34-ef56-1234567890ab",
+        "beb5483e-36e1-4688-b7f5-ea07361b26a8",
       );
       setDevice(dev);
       setConnected(true);
