@@ -155,7 +155,10 @@ export default function Bluetooth() {
     try {
       const dev = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
+        optionalServices: [
+          "4fafc201-1fb5-459e-8fcc-c5c9c331914b",
+          "12345678-1234-1234-1234-123456789abc",
+        ],
       });
       const server = await dev.gatt.connect();
       const service = await server.getPrimaryService(
