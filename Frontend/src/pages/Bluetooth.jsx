@@ -155,10 +155,7 @@ export default function Bluetooth() {
     try {
       const dev = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: [
-          "4fafc201-1fb5-459e-8fcc-c5c9c331914b",
-          "12345678-1234-1234-1234-123456789abc",
-        ],
+        optionalServices: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
       });
       const server = await dev.gatt.connect();
       const service = await server.getPrimaryService(
@@ -255,7 +252,7 @@ export default function Bluetooth() {
                 <p className="text-sm text-[#739072] leading-relaxed">
                   Make sure your device firmware supports BLE with service UUID{" "}
                   <code className="bg-[#ECE3CE] text-[#3A4D39] px-1.5 py-0.5 rounded text-xs font-mono">
-                    12345678-…-abc
+                    4fafc201-…-914b
                   </code>
                   . The device must be in pairing mode before scanning.
                 </p>
