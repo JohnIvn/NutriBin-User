@@ -39,13 +39,13 @@ export default function DownloadApp() {
             </div>
 
             <a
-              href="https://drive.google.com/file/d/1Tegj02ZRRi9io3IW7IzfCguF4hgyWi2N/view?usp=sharing"
+              href="https://drive.google.com/file/d/1BKTmxroTxqaljZK1LPGKUPdObjWF8zvL/view?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
             >
               <Button className="bg-white text-[#3A4D39] hover:bg-[#ECE3CE] px-10 py-6 rounded-xl text-lg font-bold flex items-center gap-3 shadow-xl">
                 <ArrowDownCircle className="w-6 h-6" />
-                Download APK (v2.4.6)
+                Download APK (v2.5.0)
               </Button>
             </a>
           </div>
@@ -137,24 +137,6 @@ export default function DownloadApp() {
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* Final CTA */}
-          <div className="text-center space-y-6">
-            <h3 className="text-3xl font-black text-[#3A4D39]">
-              Ready to Upgrade Your Composting Experience?
-            </h3>
-
-            <a
-              href="https://www.mediafire.com/file/p8t2lg3f25wm8r7/app-release.apk/file"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button className="bg-[#739072] hover:bg-[#4F6F52] text-white px-12 py-6 rounded-xl text-lg font-bold flex items-center gap-3 mx-auto shadow-lg">
-                <Download className="w-6 h-6" />
-                Download Now
-              </Button>
-            </a>
           </div>
         </div>
       </section>
