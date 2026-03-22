@@ -178,7 +178,7 @@ export default function Bluetooth() {
   const sendWifiCredentials = async () => {
     // ✅ Read from the ref, not a local variable
     if (!characteristicRef.current) return;
-    const data = JSON.stringify({ type: "wifi_config", ssid, password });
+    const data = JSON.stringify({ ssid, password });
     const encoder = new TextEncoder();
     await characteristicRef.current.writeValue(encoder.encode(data));
     setSent(true);
