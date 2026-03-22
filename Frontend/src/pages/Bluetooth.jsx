@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 const BluetoothIcon = ({ size = 24, color = "currentColor" }) => (
   <svg
@@ -146,7 +146,9 @@ export default function Bluetooth() {
   const [password, setPassword] = useState("");
   const [sent, setSent] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  let characteristic = null;
+
+  // ✅ Store characteristic in a ref so it persists across renders
+  const characteristicRef = useRef(null);
 
   const connectBluetooth = async () => {
     setConnecting(true);
@@ -159,9 +161,11 @@ export default function Bluetooth() {
       const service = await server.getPrimaryService(
         "12345678-1234-1234-1234-123456789abc",
       );
-      characteristic = await service.getCharacteristic(
+      const char = await service.getCharacteristic(
         "beb5483e-36e1-4688-b7f5-ea07361b26a8",
       );
+      // ✅ Persist the characteristic in the ref
+      characteristicRef.current = char;
       setDevice(dev);
       setConnected(true);
     } catch (err) {
@@ -172,10 +176,11 @@ export default function Bluetooth() {
   };
 
   const sendWifiCredentials = async () => {
-    if (!characteristic) return;
+    // ✅ Read from the ref, not a local variable
+    if (!characteristicRef.current) return;
     const data = JSON.stringify({ type: "wifi_config", ssid, password });
     const encoder = new TextEncoder();
-    await characteristic.writeValue(encoder.encode(data));
+    await characteristicRef.current.writeValue(encoder.encode(data));
     setSent(true);
   };
 
@@ -197,7 +202,7 @@ export default function Bluetooth() {
       </header>
 
       {/* Card */}
-      <main className="w-full max-w-4xl -mt-16 px-4 sm:px-6 relative z-10" >
+      <main className="w-full max-w-4xl -mt-16 px-4 sm:px-6 relative z-10">
         <div className="bg-white rounded-2xl shadow-2xl shadow-[#3A4D39]/10 overflow-hidden">
           {!connected ? (
             <div className="p-8 md:p-12">
@@ -213,9 +218,7 @@ export default function Bluetooth() {
 
               {/* Steps grid */}
               <div className="bg-[#FAF9F6] border border-[#ECE3CE] rounded-2xl p-8 mb-8 relative">
-                {/* connector line */}
                 <div className="hidden md:block absolute top-[68px] left-[calc(16.66%+20px)] right-[calc(16.66%+20px)] h-0.5 bg-gradient-to-r from-[#3A4D39]/15 via-[#3A4D39] to-[#3A4D39]/15" />
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {steps.map((s) => (
                     <div
@@ -301,7 +304,6 @@ export default function Bluetooth() {
 
               <hr className="border-[#ECE3CE] mb-8" />
 
-              {/* Two-column layout for the form */}
               {!sent ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   {/* Left — intro & tips */}
@@ -320,7 +322,6 @@ export default function Bluetooth() {
                       </p>
                     </div>
 
-                    {/* tips */}
                     <div className="bg-[#FAF9F6] border border-[#ECE3CE] rounded-xl p-5 space-y-3">
                       <p className="text-xs font-bold text-[#3A4D39] uppercase tracking-widest mb-1">
                         Tips
@@ -339,7 +340,6 @@ export default function Bluetooth() {
                       ))}
                     </div>
 
-                    {/* privacy note */}
                     <div className="flex gap-3 p-4 bg-[#4F6F52]/5 border border-[#4F6F52]/15 rounded-xl">
                       <span className="text-[#4F6F52] shrink-0 mt-0.5">
                         <LeafIcon size={14} />
@@ -417,7 +417,6 @@ export default function Bluetooth() {
                   </div>
                 </div>
               ) : (
-                /* Success */
                 <div className="text-center py-10 max-w-md mx-auto">
                   <div className="w-20 h-20 rounded-full bg-[#4F6F52]/10 border-2 border-[#4F6F52]/30 flex items-center justify-center text-[#4F6F52] mx-auto mb-6">
                     <CheckCircleIcon size={36} />
