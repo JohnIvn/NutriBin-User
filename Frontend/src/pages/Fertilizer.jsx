@@ -31,7 +31,7 @@ export default function Fertilizer() {
   const [loading, setLoading] = useState(true);
   const hasData = analytics !== null;
 
-  const { user, selectedMachine } = useUser();
+  const { selectedMachine } = useUser();
   const machineId = selectedMachine?.machine_id;
   const socketRef = useRef(null);
 

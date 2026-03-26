@@ -8,6 +8,17 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from 'src/service/database/database.service';
 
+type BinSettingsRow = {
+  machine_id: string;
+  nickname: string | null;
+  is_active: boolean;
+  firmware_version: string;
+  serial_number: string | null;
+  model: string | null;
+  wifi_ssid: string | null;
+  ip_address: string | null;
+};
+
 @Controller('mobile/bin-settings')
 export class BinSettingsController {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -22,7 +33,7 @@ export class BinSettingsController {
 
     try {
       // Fetch details from 'machines', 'machine_customers', and 'machine_serial'
-      const result = await client.query(
+      const result = await client.query<BinSettingsRow>(
         `SELECT m.machine_id, mc.nickname, m.is_active, m.firmware_version, ms.serial_number, ms.model, m.wifi_ssid, m.ip_address 
          FROM machines m
          LEFT JOIN machine_customers mc ON m.machine_id = mc.machine_id

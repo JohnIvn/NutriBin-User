@@ -190,7 +190,9 @@ export class FertilizerAnalyticsGateway
           }
         },
       )
-      .subscribe((status) => {
+      .subscribe((_status: `${REALTIME_SUBSCRIBE_STATES}` | 'error'): void => {
+        const status = _status;
+
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
           console.log('✅ Connected to Supabase Fertilizer Realtime');
           return;

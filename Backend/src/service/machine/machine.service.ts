@@ -42,6 +42,39 @@ type HardwareStatusRow = {
   m7: boolean;
 };
 
+type MachineInfoRow = {
+  firmware_version: string;
+  target_firmware_version: string | null;
+  update_status: string | null;
+  update_progress: string | null;
+  is_active: boolean;
+  model: string;
+};
+
+type FirmwareRow = {
+  version: string;
+  release_notes: string;
+  release_date: string;
+  created_at?: string;
+};
+
+type ModelRow = {
+  model: string;
+};
+
+type FirmwareVersionRow = {
+  firmware_version: string;
+};
+
+type UpdateProgressRow = {
+  update_progress: string;
+};
+
+type CompleteUpdateRow = {
+  firmware_version: string;
+  update_status: string;
+};
+
 @Injectable()
 export class MachineService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -243,8 +276,6 @@ export class MachineService {
   }
 
   restartMachine(machineId: string) {
-    // In a real scenario, this would send a command to the machine via MQTT or similar
-    // For now, we'll simulate success and maybe log it
     console.log(`Restart command initiated for machine: ${machineId}`);
 
     return {
@@ -257,7 +288,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      const result = await client.query(
+      const result = await client.query<FirmwareVersionRow>(
         `
       SELECT firmware_version
       FROM public.machines
@@ -284,8 +315,10 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      // 1. Get machine info
-      const machineResult = await client.query(
+      const machineResult = await client.query<{
+        firmware_version: string;
+        model: string;
+      }>(
         `       SELECT m.firmware_version, ms.model
         FROM public.machines m
         JOIN public.machine_serial ms
@@ -301,8 +334,7 @@ export class MachineService {
 
       const { firmware_version: currentVersion, model } = machineResult.rows[0];
 
-      // 2. Get latest stable firmware
-      const firmwareResult = await client.query(
+      const firmwareResult = await client.query<FirmwareRow>(
         `
         SELECT version
         FROM public.firmware
@@ -320,9 +352,7 @@ export class MachineService {
 
       const latestVersion = firmwareResult.rows[0].version;
 
-      // 3. Compare versions
       if (compareVersions(currentVersion, latestVersion) < 0) {
-        // 4. Update machine firmware automatically
         await client.query(
           `
           UPDATE public.machines
@@ -360,8 +390,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      // 1. Get machine model
-      const machineResult = await client.query(
+      const machineResult = await client.query<ModelRow>(
         `       SELECT ms.model
       FROM public.machine_serial ms
       JOIN public.machines m
@@ -377,8 +406,7 @@ export class MachineService {
 
       const { model } = machineResult.rows[0];
 
-      // 2. Fetch all stable firmware for this model
-      const firmwareResult = await client.query(
+      const firmwareResult = await client.query<FirmwareRow>(
         `
         SELECT version, release_notes, release_date
         FROM public.firmware
@@ -404,8 +432,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      // 1. Get the machine model
-      const machineResult = await client.query(
+      const machineResult = await client.query<ModelRow>(
         `
         SELECT ms.model
         FROM public.machines m
@@ -421,8 +448,7 @@ export class MachineService {
 
       const { model } = machineResult.rows[0];
 
-      // 2. Fetch all stable firmware versions compatible with this model
-      const firmwareResult = await client.query(
+      const firmwareResult = await client.query<FirmwareRow>(
         `
         SELECT version, release_notes, release_date, created_at
         FROM public.firmware
@@ -451,8 +477,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      // 1. Get current firmware version, model, and status from machine and machine_serial
-      const machineResult = await client.query(
+      const machineResult = await client.query<MachineInfoRow>(
         `
         SELECT m.firmware_version, m.target_firmware_version, m.update_status, m.update_progress, m.is_active, ms.model
         FROM public.machines m
@@ -477,11 +502,7 @@ export class MachineService {
 
       const isOnline = isActive ? true : false;
 
-      // 2. Fetch all stable firmware compatible with this model
-      // We'll trust the database's version ordering if they follow a pattern,
-      // but for simplicity we'll fetch them and we could do semantic version comparison if needed.
-      // The requirement says: if users firmware is lower than the ver in firmware then available for update.
-      const firmwareResult = await client.query(
+      const firmwareResult = await client.query<FirmwareRow>(
         `
         SELECT version, release_notes, release_date
         FROM public.firmware
@@ -500,23 +521,20 @@ export class MachineService {
       const latestFirmware = firmwareResult.rows[0];
       const latestVersion = latestFirmware.version;
 
-      // Check if there's an active/failed/interrupted update first
       const hasActiveUpdate =
         updateStatus === 'pending' ||
         updateStatus === 'interrupted' ||
         updateStatus === 'failed';
 
-      // Simple string comparison for "lower than".
-      // In production, use a semver library if versions are like '1.2.3'
       if (currentVersion < latestVersion || hasActiveUpdate) {
         return {
           ok: true,
           updateAvailable: currentVersion < latestVersion,
           currentVersion,
           latestVersion,
-          targetFirmwareVersion: targetFirmwareVersion || latestVersion,
-          updateStatus: updateStatus || 'pending',
-          updateProgress: updateProgress || '0',
+          targetFirmwareVersion: targetFirmwareVersion ?? latestVersion,
+          updateStatus: updateStatus ?? 'pending',
+          updateProgress: updateProgress ?? '0',
           releaseNotes: latestFirmware.release_notes,
           releaseDate: latestFirmware.release_date,
           isOnline,
@@ -527,9 +545,9 @@ export class MachineService {
           updateAvailable: false,
           currentVersion,
           latestVersion,
-          targetFirmwareVersion: targetFirmwareVersion,
-          updateStatus: updateStatus,
-          updateProgress: updateProgress,
+          targetFirmwareVersion,
+          updateStatus,
+          updateProgress,
           isOnline,
         };
       }
@@ -543,9 +561,6 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      // Requirement: after create a 3 sec fake loading update (Handled in frontend)
-      // then after that write to machine table firmware_version
-
       const result = await client.query(
         `
         UPDATE public.machines
@@ -607,7 +622,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      const result = await client.query(
+      const result = await client.query<UpdateProgressRow>(
         `
         UPDATE public.machines
         SET update_progress = '100'
@@ -636,7 +651,7 @@ export class MachineService {
     const client = this.databaseService.getClient();
 
     try {
-      const result = await client.query(
+      const result = await client.query<CompleteUpdateRow>(
         `
         UPDATE public.machines
         SET firmware_version = target_firmware_version,
