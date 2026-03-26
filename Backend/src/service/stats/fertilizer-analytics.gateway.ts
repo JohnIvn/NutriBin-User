@@ -154,6 +154,7 @@ export class FertilizerAnalyticsGateway
           schema: 'public',
           table: 'fertilizer_analytics',
         },
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         async ({ new: newRow }) => {
           if (!newRow.machine_id) return;
 
@@ -190,9 +191,7 @@ export class FertilizerAnalyticsGateway
           }
         },
       )
-      .subscribe((_status: `${REALTIME_SUBSCRIBE_STATES}` | 'error'): void => {
-        const status = _status;
-
+      .subscribe((status) => {
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
           console.log('✅ Connected to Supabase Fertilizer Realtime');
           return;
