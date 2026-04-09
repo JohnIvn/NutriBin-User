@@ -165,13 +165,15 @@ export class ModuleAnalyticsController {
         `
         SELECT repair_id
         FROM repair
-        WHERE machine_id = $1 AND user_id = $2
+        WHERE machine_id = $1 AND user_id = $2 AND description = $3
         `,
-        [machineId, customerId],
+        [machineId, customerId, module],
       );
 
       if (result.rowCount) {
-        throw new BadRequestException('The repair has already been requested');
+        throw new BadRequestException(
+          'A repair for this module has already been requested',
+        );
       }
 
       await client.query(
