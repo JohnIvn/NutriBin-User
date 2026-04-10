@@ -30,6 +30,7 @@ import {
   Marker,
   Popup,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -657,6 +658,19 @@ export default function Settings() {
     };
   }, [pendingPhone]);
 
+  // Effect: When entering edit mode, geocode existing address to position marker
+  useEffect(() => {
+    if (editMode && savedProfile?.address && savedProfile.address.trim()) {
+      const geocodeAddress = async () => {
+        const coordinates = await forwardGeocode(savedProfile.address);
+        if (coordinates) {
+          setMarkerPosition(coordinates);
+        }
+      };
+      geocodeAddress();
+    }
+  }, [editMode, savedProfile?.address]);
+
   // Cleanup preview URL on unmount
   useEffect(() => {
     return () => {
@@ -690,6 +704,31 @@ export default function Settings() {
     }
   };
 
+  const forwardGeocode = async (address) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        {
+          headers: {
+            "Accept-Language": "en",
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        return [parseFloat(lat), parseFloat(lon)];
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Forward geocoding failed:", error);
+      return null;
+    }
+  };
+
   function MapClickHandler({ form, setMarkerPosition, reverseGeocode }) {
     useMapEvents({
       async click(e) {
@@ -704,6 +743,16 @@ export default function Settings() {
         form.setValue("address", readableAddress);
       },
     });
+
+    return null;
+  }
+
+  function MapViewUpdater({ markerPosition }) {
+    const map = useMap();
+
+    useEffect(() => {
+      map.setView(markerPosition, 13, { animate: true });
+    }, [map, markerPosition]);
 
     return null;
   }
@@ -1087,6 +1136,8 @@ export default function Settings() {
                                 attribution="&copy; OpenStreetMap contributors"
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                               />
+
+                              <MapViewUpdater markerPosition={markerPosition} />
 
                               <Marker position={markerPosition}>
                                 <Popup>Selected location</Popup>
