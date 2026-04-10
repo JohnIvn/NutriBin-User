@@ -46,8 +46,8 @@ type MachineAnalyticsRow = {
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
   return {
-    id: row.machine_id,
     modules: {
+      id: row.machine_id,
       is_active: row.is_active,
       arduino_q: row.c1,
       esp32_filter: row.c2,

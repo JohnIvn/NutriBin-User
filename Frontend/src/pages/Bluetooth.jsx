@@ -230,9 +230,9 @@ export default function Bluetooth() {
   };
 
   return (
-    <div className="min-h-screen min-w-screen flex flex-col items-center font-sans text-[#3A4D39] pb-12 overflow-x-hidden">
+    <div className="min-h-screen min-w-screen flex flex-col items-center font-sans text-[#3A4D39] pb-12 overflow-x-hidden bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6]">
       {/* Header */}
-      <header className="w-full pt-16 pb-24 text-center bg-white relative">
+      <header className="w-full pt-16 pb-24 text-center bg-transparent relative">
         <Motion.div
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -270,7 +270,7 @@ export default function Bluetooth() {
           initial="hidden"
           animate="show"
           custom={3}
-          className="bg-white rounded-2xl shadow-2xl shadow-[#3A4D39]/10 overflow-hidden"
+          className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl shadow-[#3A4D39]/15 overflow-hidden border border-white/40"
         >
           <AnimatePresence mode="wait">
             {!connected ? (
@@ -304,7 +304,7 @@ export default function Bluetooth() {
                   initial="hidden"
                   animate="show"
                   custom={1}
-                  className="bg-[#FAF9F6] border border-[#ECE3CE] rounded-2xl p-8 mb-8 relative"
+                  className="bg-gradient-to-br from-[#FAF9F6] to-[#ECE3CE]/20 border border-[#ECE3CE] rounded-2xl p-8 mb-8 relative shadow-sm"
                 >
                   <div className="hidden md:block absolute top-[68px] left-[calc(16.66%+20px)] right-[calc(16.66%+20px)] h-0.5 bg-gradient-to-r from-[#3A4D39]/15 via-[#3A4D39] to-[#3A4D39]/15" />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -458,7 +458,7 @@ export default function Bluetooth() {
                           initial="hidden"
                           animate="show"
                           custom={1}
-                          className="bg-[#FAF9F6] border border-[#ECE3CE] rounded-xl p-5 space-y-3"
+                          className="bg-gradient-to-br from-[#FAF9F6] to-[#ECE3CE]/20 border-2 border-[#ECE3CE] rounded-xl p-5 space-y-3 shadow-sm"
                         >
                           <p className="text-xs font-bold text-[#3A4D39] uppercase tracking-widest mb-1">
                             Tips
@@ -511,7 +511,7 @@ export default function Bluetooth() {
                       >
                         {/* SSID */}
                         <div>
-                          <label className="block text-[11px] font-bold text-[#739072] uppercase tracking-widest mb-2">
+                          <label className="block text-[11px] font-bold text-[#3A4D39] uppercase tracking-widest mb-2.5">
                             Network Name (SSID)
                           </label>
                           <div className="relative">
@@ -523,14 +523,14 @@ export default function Bluetooth() {
                               placeholder="e.g. HomeNetwork_2.4G"
                               value={ssid}
                               onChange={(e) => setSsid(e.target.value)}
-                              className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#ECE3CE] rounded-xl text-sm text-[#3A4D39] placeholder-[#C5B99A] outline-none transition-all focus:border-[#4F6F52] focus:bg-white"
+                              className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border-2 border-[#ECE3CE] rounded-xl text-sm text-[#3A4D39] placeholder-[#C5B99A] outline-none transition-all duration-200 focus:border-[#4F6F52] focus:bg-white focus:shadow-md shadow-sm"
                             />
                           </div>
                         </div>
 
                         {/* Password with eye toggle */}
                         <div>
-                          <label className="block text-[11px] font-bold text-[#739072] uppercase tracking-widest mb-2">
+                          <label className="block text-[11px] font-bold text-[#3A4D39] uppercase tracking-widest mb-2.5">
                             Password
                           </label>
                           <div className="relative">
@@ -542,7 +542,7 @@ export default function Bluetooth() {
                               placeholder="Enter Wi-Fi password"
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
-                              className="w-full pl-10 pr-11 py-3 bg-[#FAF9F6] border border-[#ECE3CE] rounded-xl text-sm text-[#3A4D39] placeholder-[#C5B99A] outline-none transition-all focus:border-[#4F6F52] focus:bg-white"
+                              className="w-full pl-10 pr-11 py-3 bg-[#FAF9F6] border-2 border-[#ECE3CE] rounded-xl text-sm text-[#3A4D39] placeholder-[#C5B99A] outline-none transition-all duration-200 focus:border-[#4F6F52] focus:bg-white focus:shadow-md shadow-sm"
                             />
                             <Motion.button
                               type="button"

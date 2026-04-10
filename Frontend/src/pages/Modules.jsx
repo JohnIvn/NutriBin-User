@@ -365,21 +365,32 @@ export default function Modules() {
                     Machine Info
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-[#E6F5E9] rounded-xl border border-green-200 shadow-sm">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100/60 rounded-xl border border-purple-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Server className="w-5 h-5 text-purple-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
-                          Active
+                        <p className="text-sm font-black text-[#3A4D39]">
+                          Machine ID
                         </p>
-                        <p className="text-xs font-medium text-[#739072]">
-                          {modules?.is_active ? "Yes" : "No"}
+                        <p className="text-xs font-medium text-[#739072] truncate">
+                          {modules?.id || "-"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#F0F4FF] rounded-xl border border-blue-200 shadow-sm">
-                      <Server className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100/60 rounded-xl border border-green-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
+                        <p className="text-sm font-black text-[#3A4D39]">
+                          Status
+                        </p>
+                        <p className="text-xs font-medium text-[#739072]">
+                          {modules?.is_active ? "Active" : "Inactive"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100/60 rounded-xl border border-blue-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Server className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-black text-[#3A4D39]">
                           Firmware
                         </p>
                         <p className="text-xs font-medium text-[#739072]">
@@ -387,74 +398,74 @@ export default function Modules() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
-                      <Cog className="w-5 h-5 text-amber-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-amber-50 to-amber-100/60 rounded-xl border border-amber-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Cog className="w-5 h-5 text-amber-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
-                          Target Firmware
+                        <p className="text-sm font-black text-[#3A4D39]">
+                          Target FW
                         </p>
                         <p className="text-xs font-medium text-[#739072]">
                           {modules?.target_firmware_version || "-"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#F9EBF0] rounded-xl border border-pink-200 shadow-sm">
-                      <Activity className="w-5 h-5 text-pink-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-pink-50 to-pink-100/60 rounded-xl border border-pink-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Activity className="w-5 h-5 text-pink-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
+                        <p className="text-sm font-black text-[#3A4D39]">
                           Update Status
                         </p>
                         <p className="text-xs font-medium text-[#739072]">
-                          {modules?.update_status || "-"}
+                          {modules?.update_status || "—"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#E8F0F8] rounded-xl border border-blue-100 shadow-sm">
-                      <RefreshCw className="w-5 h-5 text-blue-500" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-cyan-50 to-cyan-100/60 rounded-xl border border-cyan-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <RefreshCw className="w-5 h-5 text-cyan-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
+                        <p className="text-sm font-black text-[#3A4D39]">
                           Last Update
                         </p>
                         <p className="text-xs font-medium text-[#739072]">
                           {modules?.last_update_attempt
                             ? new Date(
                                 modules.last_update_attempt,
-                              ).toLocaleString()
+                              ).toLocaleDateString()
                             : "-"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#FFF4E6] rounded-xl border border-orange-200 shadow-sm">
-                      <Eye className="w-5 h-5 text-orange-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-orange-50 to-orange-100/60 rounded-xl border border-orange-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Eye className="w-5 h-5 text-orange-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
+                        <p className="text-sm font-black text-[#3A4D39]">
                           Last Seen
                         </p>
                         <p className="text-xs font-medium text-[#739072]">
                           {modules?.last_seen
-                            ? new Date(modules.last_seen).toLocaleString()
+                            ? new Date(modules.last_seen).toLocaleDateString()
                             : "-"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#d9f0ff] rounded-xl border border-blue-300 shadow-sm">
-                      <Wifi className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-sky-50 to-sky-100/60 rounded-xl border border-sky-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Wifi className="w-5 h-5 text-sky-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
-                          Wifi
+                        <p className="text-sm font-black text-[#3A4D39]">
+                          WiFi SSID
                         </p>
-                        <p className="text-xs font-medium text-[#739072]">
+                        <p className="text-xs font-medium text-[#739072] truncate">
                           {modules?.wifi_ssid || "-"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-[#FFF7E6] rounded-xl border border-amber-200 shadow-sm">
-                      <Wifi className="w-5 h-5 text-amber-600" />
+                    <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-teal-50 to-teal-100/60 rounded-xl border border-teal-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200">
+                      <Wifi className="w-5 h-5 text-teal-600 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold text-[#3A4D39]">
+                        <p className="text-sm font-black text-[#3A4D39]">
                           IP Address
                         </p>
-                        <p className="text-xs font-medium text-[#739072]">
+                        <p className="text-xs font-medium text-[#739072] font-mono">
                           {modules?.ip_address || "-"}
                         </p>
                       </div>
@@ -473,30 +484,34 @@ export default function Modules() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Firmware Update Button */}
-                    <button
+                    <Motion.button
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => navigate("/firmware")}
-                      className="group flex items-center gap-4 p-5 bg-gradient-to-br from-[#3A4D39]/5 to-[#4F6F52]/10 border border-[#3A4D39]/15 rounded-2xl hover:border-[#4F6F52]/40 hover:shadow-lg hover:shadow-[#3A4D39]/10 transition-all duration-200"
+                      className="group flex items-center gap-4 p-5 bg-gradient-to-br from-[#3A4D39]/5 to-[#4F6F52]/10 border-2 border-[#3A4D39]/15 rounded-2xl hover:border-[#4F6F52]/40 hover:shadow-xl hover:shadow-[#3A4D39]/10 transition-all duration-300"
                     >
-                      <div className="p-3 bg-[#3A4D39] rounded-xl shadow-md group-hover:bg-[#4F6F52] transition-colors duration-200 shrink-0">
+                      <div className="p-3 bg-gradient-to-br from-[#3A4D39] to-[#4F6F52] rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 shrink-0">
                         <Upload className="w-5 h-5 text-white" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-black text-[#3A4D39]">
+                        <p className="text-sm font-black text-[#3A4D39] group-hover:text-[#4F6F52] transition-colors">
                           Firmware Update
                         </p>
                         <p className="text-xs text-[#739072] font-medium mt-0.5">
-                          Upload & manage firmware versions
+                          Upload & manage versions
                         </p>
                       </div>
-                    </button>
+                    </Motion.button>
 
                     {/* Restart Machine Button */}
-                    <button
+                    <Motion.button
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={restartMachine}
                       disabled={isRestartLoading}
-                      className="group flex items-center gap-4 p-5 bg-gradient-to-br from-red-50 to-red-100/60 border border-red-200/60 rounded-2xl hover:border-red-300 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="group flex items-center gap-4 p-5 bg-gradient-to-br from-red-50 to-red-100/60 border-2 border-red-200/60 rounded-2xl hover:border-red-300 hover:shadow-xl hover:shadow-red-500/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <div className="p-3 bg-red-500 rounded-xl shadow-md group-hover:bg-red-600 transition-colors duration-200 shrink-0">
+                      <div className="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 shrink-0">
                         {isRestartLoading ? (
                           <RefreshCw className="w-5 h-5 text-white animate-spin" />
                         ) : (
@@ -504,16 +519,16 @@ export default function Modules() {
                         )}
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-black text-red-700">
+                        <p className="text-sm font-black text-red-700 group-hover:text-red-800 transition-colors">
                           {isRestartLoading
                             ? "Restarting..."
                             : "Restart Machine"}
                         </p>
-                        <p className="text-xs text-red-400 font-medium mt-0.5">
-                          Restart the machine
+                        <p className="text-xs text-red-500 font-medium mt-0.5">
+                          Restart the machine safely
                         </p>
                       </div>
-                    </button>
+                    </Motion.button>
                   </div>
                 </div>
               </Motion.div>
