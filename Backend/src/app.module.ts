@@ -36,7 +36,7 @@ import { MachineNotificationsController } from './controllers/stats/machine-noti
 import { SupportGateway } from './service/support/support.gateway';
 import { FertilizerAnalyticsGateway } from './service/stats/fertilizer-analytics.gateway';
 import { ModuleAnalyticsGateway } from './service/stats/module-analytics.gateway';
-import { DashboardGateway } from './service/stats/dashboard.gateway';
+import { DashboardGateway } from './service/stats/Dashboard.gateway';
 import { QrController } from './controllers/qr/qr.controller';
 import { BinSettingsController } from './controllers/mobile/bin-settings.controller';
 import { UserBanGateway } from './service/auth/user-ban.gateway';
