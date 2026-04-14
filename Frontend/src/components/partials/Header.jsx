@@ -288,6 +288,7 @@ const EmergencyModal = ({
 
               {messageType === "idle" && countdown > 0 && (
                 <Motion.div
+                  key={countdown}
                   initial={{ width: "100%" }}
                   animate={{ width: 0 }}
                   transition={{ duration: 1, ease: "linear" }}
@@ -1720,6 +1721,8 @@ export default function Header() {
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const userMenuRef = useRef(null);
   const emergencySocketRef = useRef(null);
+  const emergencyTriggeredRef = useRef(false);
+  const emergencyTimerRef = useRef(null);
 
   const fetchQRCode = async (machine) => {
     try {
@@ -1859,6 +1862,10 @@ export default function Header() {
       return;
     }
 
+    // Reset emergency state while connecting to the new machine
+    setIsEmergencyActive(false);
+    setEmergencyModalOpen(false);
+
     let isMounted = true;
 
     const baseUrl = getBaseUrl();
@@ -1879,16 +1886,19 @@ export default function Header() {
     socket.on("emergency_notification", (data) => {
       console.log("🚨 Emergency notification received:", data);
 
-      if (isMounted && data.isActive === true) {
-        setIsEmergencyActive(true);
-        // Auto-trigger emergency modal when notification received
-        setEmergencyCountdown(5);
-        setIsConfirmingEmergency(false);
-        setEmergencyMessage("");
-        setEmergencyMessageType("idle");
-        setEmergencyModalOpen(true);
-      } else {
-        setIsEmergencyActive(false);
+      if (isMounted) {
+        if (data.isActive === true) {
+          setIsEmergencyActive(true);
+        } else {
+          // Emergency has been resolved
+          setIsEmergencyActive(false);
+          setEmergencyModalOpen(false);
+          setEmergencyCountdown(5);
+          setIsConfirmingEmergency(false);
+          setEmergencyMessage("");
+          setEmergencyMessageType("idle");
+          emergencyTriggeredRef.current = false;
+        }
       }
     });
 
@@ -1907,11 +1917,22 @@ export default function Header() {
   }, [selectedMachine]);
 
   const triggerEmergency = useCallback(async () => {
+    console.log(
+      "[Emergency] Trigger called - Already triggered? Triggering...",
+      emergencyTriggeredRef.current,
+    );
+
+    if (emergencyTriggeredRef.current || isConfirmingEmergency) {
+      console.log("[Emergency] Skipping - already in progress or triggered");
+      return;
+    }
+
     if (!selectedMachine) {
       setEmergencyModalOpen(false);
       return;
     }
 
+    emergencyTriggeredRef.current = true;
     setIsConfirmingEmergency(true);
     setEmergencyMessage("Activating emergency mode...");
     setEmergencyMessageType("idle");
@@ -1920,16 +1941,24 @@ export default function Header() {
       const customerId = user?.id || user?.customer_id || user?.userId;
       const machineId = selectedMachine.machine_id;
 
+      console.log(
+        "[Emergency] Sending request with customerId:",
+        customerId,
+        "machineId:",
+        machineId,
+      );
+
       const response = await Requests({
         url: "/settings/emergency",
         method: "POST",
         data: {
           customerId,
-          machine_id: machineId,
+          machineId: machineId,
         },
       });
 
       if (response.data?.ok) {
+        console.log("[Emergency] Request successful");
         setEmergencyMessage("Emergency mode activated successfully!");
         setEmergencyMessageType("success");
         // Keep modal open briefly to show success
@@ -1952,10 +1981,15 @@ export default function Header() {
     }
   }, [selectedMachine, user]);
 
-  // Emergency countdown effect
+  // Emergency countdown effect - DO NOT include triggerEmergency in deps
   useEffect(() => {
     if (!emergencyModalOpen) {
       setEmergencyCountdown(5);
+      emergencyTriggeredRef.current = false;
+      if (emergencyTimerRef.current) {
+        clearInterval(emergencyTimerRef.current);
+        emergencyTimerRef.current = null;
+      }
       return;
     }
 
@@ -1963,21 +1997,35 @@ export default function Header() {
       return;
     }
 
-    let hasTriggered = false;
+    // If already triggered, don't start a new countdown
+    if (emergencyTriggeredRef.current) {
+      return;
+    }
+
     const timer = setInterval(() => {
       setEmergencyCountdown((prev) => {
-        if (prev <= 1 && !hasTriggered) {
-          // Trigger emergency when countdown reaches 0 (only once)
-          hasTriggered = true;
-          triggerEmergency();
+        const nextValue = prev - 1;
+
+        if (nextValue <= 0) {
+          clearInterval(timer);
+          emergencyTimerRef.current = null;
+
+          // Push the side-effect to the event loop to keep the React updater pure
+          setTimeout(() => triggerEmergency(), 0);
+
           return 0;
         }
-        return prev - 1;
+
+        return nextValue;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [emergencyModalOpen, isConfirmingEmergency, triggerEmergency]);
+    emergencyTimerRef.current = timer;
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [emergencyModalOpen, isConfirmingEmergency]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -2135,6 +2183,12 @@ export default function Header() {
       setNoMachineModalOpen(true);
       return;
     }
+    // Clear any existing timer
+    if (emergencyTimerRef.current) {
+      clearInterval(emergencyTimerRef.current);
+      emergencyTimerRef.current = null;
+    }
+    emergencyTriggeredRef.current = false;
     setEmergencyCountdown(5);
     setIsConfirmingEmergency(false);
     setEmergencyMessage("");
@@ -2148,6 +2202,11 @@ export default function Header() {
     setIsConfirmingEmergency(false);
     setEmergencyMessage("");
     setEmergencyMessageType("idle");
+    emergencyTriggeredRef.current = false;
+    if (emergencyTimerRef.current) {
+      clearInterval(emergencyTimerRef.current);
+      emergencyTimerRef.current = null;
+    }
   }, []);
 
   const getInitials = useCallback(

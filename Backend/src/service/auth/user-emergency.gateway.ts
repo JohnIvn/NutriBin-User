@@ -92,15 +92,41 @@ export class UserEmergencyGateway
   // ─── Join Emergency Room ─────────────────────────────────────
 
   @SubscribeMessage('joinEmergencyRoom')
-  handleJoinRoom(
+  async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() { machineId }: JoinEmergencyDto,
-  ): void {
+  ): Promise<void> {
     const room = `emergency_${machineId}`;
 
     void client.join(room);
 
     console.log(`Client joined emergency room: ${room}`);
+
+    try {
+      const { data, error } = await this.supabase
+        .from('emergency')
+        .select('*')
+        .eq('machine_id', machineId)
+        .eq('is_active', true)
+        .order('date_created', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        client.emit(
+          'emergency_notification',
+          mapEmergencyNotification(data[0] as EmergencyRow),
+        );
+      } else {
+        client.emit('emergency_notification', {
+          id: '',
+          machineId: machineId,
+          isActive: false,
+          dateCreated: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching initial emergency state:', err);
+    }
   }
 
   // ─── Supabase Listener ─────────────────────────────────────
@@ -149,6 +175,44 @@ export class UserEmergencyGateway
             console.log(
               `🚨 Emergency notification sent for machine ${newRow.machine_id}`,
             );
+          } catch (err) {
+            console.error('Realtime processing error:', err);
+          }
+        },
+      )
+      .on<EmergencyRow>(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'emergency',
+        },
+
+        ({ new: newRow, old: oldRow }) => {
+          if (!newRow.machine_id) return;
+
+          try {
+            // Emit notification when emergency is resolved (is_active changes from true to false)
+            // or when it's deactivated/updated
+            const payload = mapEmergencyNotification(newRow);
+
+            this.server
+              .to(`emergency_${newRow.machine_id}`)
+              .emit('emergency_notification', payload);
+
+            if (!newRow.is_active && oldRow?.is_active) {
+              console.log(
+                `✅ Emergency resolved for machine ${newRow.machine_id}`,
+              );
+            } else if (newRow.is_active && !oldRow?.is_active) {
+              console.log(
+                `🚨 Emergency re-activated for machine ${newRow.machine_id}`,
+              );
+            } else {
+              console.log(
+                `📝 Emergency updated for machine ${newRow.machine_id}`,
+              );
+            }
           } catch (err) {
             console.error('Realtime processing error:', err);
           }

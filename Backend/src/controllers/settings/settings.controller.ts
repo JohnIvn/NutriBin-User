@@ -139,7 +139,7 @@ export class SettingsController {
   @Post('emergency')
   async postEmergency(
     @Body('customerId') customerId: string,
-    @Body('machine_id') machineId: string,
+    @Body('machineId') machineId: string,
   ) {
     if (!customerId) {
       throw new BadRequestException('customerId is required');
@@ -151,12 +151,11 @@ export class SettingsController {
     const client = this.databaseService.getClient();
 
     try {
-      // Check if there's already an active emergency
       const existingEmergency = await client.query(
         `SELECT emergency_id FROM emergency 
-         WHERE user_id = $1 AND machine_id = $2 AND is_active = true
-         LIMIT 1`,
-        [customerId, machineId],
+         WHERE machine_id = $1 AND is_active = true
+         `,
+        [machineId],
       );
 
       if ((existingEmergency.rowCount ?? 0) > 0) {
