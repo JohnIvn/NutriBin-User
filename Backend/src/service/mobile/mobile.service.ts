@@ -55,15 +55,18 @@ export class MobileService {
 
     try {
       const machineResponse = await client.query<
-        FetchMachinesRow & { is_active: boolean }
+        FetchMachinesRow & { is_active: boolean; is_emergency: boolean }
       >(
         `
-    SELECT mc.machine_id, ms.serial_number, mc.nickname, m.is_active
+    SELECT mc.machine_id, ms.serial_number, mc.nickname, m.is_active, 
+           COALESCE(e.is_active, false) as is_emergency
     FROM machine_customers mc
     LEFT JOIN machine_serial ms
       ON mc.machine_id = ms.machine_serial_id
     LEFT JOIN machines m
       ON mc.machine_id = m.machine_id
+    LEFT JOIN emergency e
+      ON mc.machine_id = e.machine_id AND e.is_active = true
     WHERE mc.customer_id = $1
   `,
         [customerId],
