@@ -40,6 +40,7 @@ import { QrController } from './controllers/qr/qr.controller';
 import { BinSettingsController } from './controllers/mobile/bin-settings.controller';
 import { UserBanGateway } from './service/auth/user-ban.gateway';
 import { UserEmergencyGateway } from './service/auth/user-emergency.gateway';
+import { DashboardGateway } from './service/stats/dashboard.gateway';
 
 @Module({
   imports: [
