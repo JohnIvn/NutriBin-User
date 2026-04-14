@@ -18,48 +18,34 @@ import ws from 'ws';
 
 (global as typeof globalThis & { WebSocket: any }).WebSocket = ws;
 
-interface FertilizerAnalyticsRow {
-  fertilizer_analytics_id: string;
-  user_id: string;
-  machine_id: string | null;
-  nitrogen: string | null;
-  phosphorus: string | null;
-  potassium: string | null;
-  temperature: string | null;
-  ph: string | null;
-  humidity: string | null;
-  moisture: string | null;
-  methane: string | null;
-  air_quality: string | null;
-  carbon_monoxide: string | null;
-  combustible_gases: string | null;
-  weight_kg: string | null;
-  reed_switch: string | null;
+interface UserCustomerRow {
+  customer_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  status: 'active' | 'inactive' | 'banned';
   date_created: string;
+  last_updated: string;
 }
 
-type FertilizerAnalyticsPayload = ReturnType<typeof mapFertilizerAnalytics>;
+type BanNotificationPayload = ReturnType<typeof mapBanNotification>;
 
 interface ServerToClientEvents {
-  fertilizer_analytics_update: (payload: FertilizerAnalyticsPayload) => void;
+  user_ban_notification: (payload: BanNotificationPayload) => void;
 }
 
 interface ClientToServerEvents {
-  joinFertilizerRoom: (data: JoinFertilizerDto) => void;
+  joinUserBanRoom: (data: JoinUserBanDto) => void;
 }
 
-interface JoinFertilizerDto {
-  machineId: string;
+interface JoinUserBanDto {
+  customerId: string;
 }
-
-type MachineRow = {
-  is_active: boolean | null;
-};
 
 interface Database {
   public: {
     Tables: {
-      fertilizer_analytics: { Row: FertilizerAnalyticsRow };
+      user_customer: { Row: UserCustomerRow };
     };
   };
 }
@@ -68,43 +54,19 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_SERVICE_KEY =
   process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_KEY ?? '';
 
-function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
-  const invertValue = (val: any) => {
-    if (val === null || val === undefined) return null;
-
-    const isTruthy =
-      val === true ||
-      val === 1 ||
-      String(val).toLowerCase() === 'true' ||
-      String(val).toLowerCase() === '1' ||
-      String(val).toLowerCase() === 't';
-
-    return !isTruthy;
-  };
-
+function mapBanNotification(row: UserCustomerRow) {
   return {
-    id: row.fertilizer_analytics_id,
-    nitrogen: row.nitrogen,
-    phosphorus: row.phosphorus,
-    potassium: row.potassium,
-    temperature: row.temperature,
-    ph: row.ph,
-    humidity: row.humidity,
-    moisture: row.moisture,
-    methane: row.methane,
-    air_quality: row.air_quality,
-    carbon_monoxide: row.carbon_monoxide,
-    combustible_gases: row.combustible_gases,
-    weight_kg: row.weight_kg,
-    reed_switch: invertValue(row.reed_switch),
-    date_created: row.date_created,
+    customerId: row.customer_id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+    status: row.status,
+    lastUpdated: row.last_updated,
   };
 }
 
 @WebSocketGateway({ cors: true })
-export class FertilizerAnalyticsGateway
-  implements OnGatewayInit, OnGatewayDisconnect
-{
+export class UserBanGateway implements OnGatewayInit, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -122,6 +84,12 @@ export class FertilizerAnalyticsGateway
   }
 
   afterInit(): void {
+    // Configure Socket.IO to handle multiple listeners from multiple gateways
+    this.server.setMaxListeners(50);
+    // Set maxListeners on each connecting socket
+    this.server.on('connection', (socket) => {
+      socket.setMaxListeners(50);
+    });
     this.startRealtimeListener();
   }
 
@@ -130,18 +98,18 @@ export class FertilizerAnalyticsGateway
     // Socket.IO auto cleans rooms
   }
 
-  // ─── Join Machine Room ─────────────────────────────────────
+  // ─── Join User Ban Room ─────────────────────────────────────
 
-  @SubscribeMessage('joinFertilizerRoom')
+  @SubscribeMessage('joinUserBanRoom')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() { machineId }: JoinFertilizerDto,
+    @MessageBody() { customerId }: JoinUserBanDto,
   ): void {
-    const room = `fertilizer_${machineId}`;
+    const room = `user_ban_${customerId}`;
 
     void client.join(room);
 
-    console.log(`Client joined machine room: ${room}`);
+    console.log(`Client joined user ban room: ${room}`);
   }
 
   // ─── Supabase Listener ─────────────────────────────────────
@@ -163,45 +131,32 @@ export class FertilizerAnalyticsGateway
     }
 
     this.channel = this.supabase
-      .channel('fertilizer-analytics-changes')
-      .on<FertilizerAnalyticsRow>(
+      .channel('user-ban-changes')
+      .on<UserCustomerRow>(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: 'UPDATE',
           schema: 'public',
-          table: 'fertilizer_analytics',
+          table: 'user_customer',
         },
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        async ({ new: newRow }) => {
-          if (!newRow.machine_id) return;
+
+        ({ new: newRow }) => {
+          if (!newRow.customer_id) return;
 
           try {
-            const { data: machine, error } = await this.supabase
-              .from('machines')
-              .select('is_active')
-              .eq('machine_id', newRow.machine_id)
-              .single<MachineRow>();
-
-            if (error) {
-              console.error('Machine lookup failed:', error);
+            // Only emit if status is banned
+            if (newRow.status !== 'banned') {
               return;
             }
 
-            if (!machine?.is_active) {
-              console.log(
-                `⚠️ Machine ${newRow.machine_id} is inactive. Skipping realtime emit.`,
-              );
-              return;
-            }
-
-            const payload = mapFertilizerAnalytics(newRow);
+            const payload = mapBanNotification(newRow);
 
             this.server
-              .to(`fertilizer_${newRow.machine_id}`)
-              .emit('fertilizer_analytics_update', payload);
+              .to(`user_ban_${newRow.customer_id}`)
+              .emit('user_ban_notification', payload);
 
             console.log(
-              `📡 Fertilizer update for machine ${newRow.machine_id}`,
+              `🚫 Ban notification sent to user ${newRow.customer_id}`,
             );
           } catch (err) {
             console.error('Realtime processing error:', err);
@@ -210,7 +165,7 @@ export class FertilizerAnalyticsGateway
       )
       .subscribe((status) => {
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
-          console.log('✅ Connected to Supabase Fertilizer Realtime');
+          console.log('✅ Connected to Supabase User Ban Realtime');
           this.isReconnecting = false;
           return;
         }
@@ -233,7 +188,7 @@ export class FertilizerAnalyticsGateway
   }
 
   async onModuleDestroy(): Promise<void> {
-    console.log('Cleaning up Supabase Realtime connections...');
+    console.log('Cleaning up Supabase User Ban Realtime connections...');
     if (this.channel) {
       try {
         await this.supabase.removeChannel(this.channel);

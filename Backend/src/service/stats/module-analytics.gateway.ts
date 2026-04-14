@@ -143,6 +143,8 @@ export class ModuleAnalyticsGateway
   server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
   private readonly supabase: SupabaseClient<Database>;
+  private channel: RealtimeChannel | null = null;
+  private isReconnecting = false;
 
   constructor() {
     this.supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -182,8 +184,23 @@ export class ModuleAnalyticsGateway
   // Supabase Realtime Listener
   // ───────────────────────────────────────────────────────────
 
-  private startRealtimeListener(): void {
-    const channel: RealtimeChannel = this.supabase
+  private async startRealtimeListener(): Promise<void> {
+    // Prevent multiple simultaneous reconnection attempts
+    if (this.isReconnecting) {
+      return;
+    }
+
+    // Clean up existing channel before creating a new one
+    if (this.channel) {
+      try {
+        await this.supabase.removeChannel(this.channel);
+        this.channel = null;
+      } catch (err) {
+        console.error('Error removing old channel:', err);
+      }
+    }
+
+    this.channel = this.supabase
       .channel('machine-analytics-changes')
       .on<MachineAnalyticsRow>(
         'postgres_changes',
@@ -208,14 +225,16 @@ export class ModuleAnalyticsGateway
       .subscribe((status) => {
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
           console.log('✅ Connected to Supabase Module Realtime');
+          this.isReconnecting = false;
           return;
         }
 
         if (status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
           console.error('❌ Supabase TIMED_OUT. Reconnecting...');
-          void this.supabase.removeChannel(channel).then(() => {
-            setTimeout(() => this.startRealtimeListener(), 5_000);
-          });
+          this.isReconnecting = true;
+          setTimeout(() => {
+            void this.startRealtimeListener();
+          }, 5_000);
           return;
         }
 
@@ -225,16 +244,18 @@ export class ModuleAnalyticsGateway
           );
         }
       });
-
-    this.supabase.realtime.onHeartbeat((hbStatus) => {
-      if (hbStatus === 'timeout') {
-        console.warn('⚠️ Heartbeat timeout detected.');
-      }
-    });
   }
 
   async onModuleDestroy(): Promise<void> {
     console.log('Cleaning up Supabase Realtime connections...');
+    if (this.channel) {
+      try {
+        await this.supabase.removeChannel(this.channel);
+        this.channel = null;
+      } catch (err) {
+        console.error('Error removing channel during cleanup:', err);
+      }
+    }
     await this.supabase.removeAllChannels();
   }
 }

@@ -18,48 +18,31 @@ import ws from 'ws';
 
 (global as typeof globalThis & { WebSocket: any }).WebSocket = ws;
 
-interface FertilizerAnalyticsRow {
-  fertilizer_analytics_id: string;
-  user_id: string;
-  machine_id: string | null;
-  nitrogen: string | null;
-  phosphorus: string | null;
-  potassium: string | null;
-  temperature: string | null;
-  ph: string | null;
-  humidity: string | null;
-  moisture: string | null;
-  methane: string | null;
-  air_quality: string | null;
-  carbon_monoxide: string | null;
-  combustible_gases: string | null;
-  weight_kg: string | null;
-  reed_switch: string | null;
+interface EmergencyRow {
+  id: string;
+  machine_id: string;
+  is_active: boolean;
   date_created: string;
 }
 
-type FertilizerAnalyticsPayload = ReturnType<typeof mapFertilizerAnalytics>;
+type EmergencyNotificationPayload = ReturnType<typeof mapEmergencyNotification>;
 
 interface ServerToClientEvents {
-  fertilizer_analytics_update: (payload: FertilizerAnalyticsPayload) => void;
+  emergency_notification: (payload: EmergencyNotificationPayload) => void;
 }
 
 interface ClientToServerEvents {
-  joinFertilizerRoom: (data: JoinFertilizerDto) => void;
+  joinEmergencyRoom: (data: JoinEmergencyDto) => void;
 }
 
-interface JoinFertilizerDto {
+interface JoinEmergencyDto {
   machineId: string;
 }
-
-type MachineRow = {
-  is_active: boolean | null;
-};
 
 interface Database {
   public: {
     Tables: {
-      fertilizer_analytics: { Row: FertilizerAnalyticsRow };
+      emergency: { Row: EmergencyRow };
     };
   };
 }
@@ -68,41 +51,17 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_SERVICE_KEY =
   process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_KEY ?? '';
 
-function mapFertilizerAnalytics(row: FertilizerAnalyticsRow) {
-  const invertValue = (val: any) => {
-    if (val === null || val === undefined) return null;
-
-    const isTruthy =
-      val === true ||
-      val === 1 ||
-      String(val).toLowerCase() === 'true' ||
-      String(val).toLowerCase() === '1' ||
-      String(val).toLowerCase() === 't';
-
-    return !isTruthy;
-  };
-
+function mapEmergencyNotification(row: EmergencyRow) {
   return {
-    id: row.fertilizer_analytics_id,
-    nitrogen: row.nitrogen,
-    phosphorus: row.phosphorus,
-    potassium: row.potassium,
-    temperature: row.temperature,
-    ph: row.ph,
-    humidity: row.humidity,
-    moisture: row.moisture,
-    methane: row.methane,
-    air_quality: row.air_quality,
-    carbon_monoxide: row.carbon_monoxide,
-    combustible_gases: row.combustible_gases,
-    weight_kg: row.weight_kg,
-    reed_switch: invertValue(row.reed_switch),
-    date_created: row.date_created,
+    id: row.id,
+    machineId: row.machine_id,
+    isActive: row.is_active,
+    dateCreated: row.date_created,
   };
 }
 
 @WebSocketGateway({ cors: true })
-export class FertilizerAnalyticsGateway
+export class UserEmergencyGateway
   implements OnGatewayInit, OnGatewayDisconnect
 {
   @WebSocketServer()
@@ -130,18 +89,18 @@ export class FertilizerAnalyticsGateway
     // Socket.IO auto cleans rooms
   }
 
-  // ─── Join Machine Room ─────────────────────────────────────
+  // ─── Join Emergency Room ─────────────────────────────────────
 
-  @SubscribeMessage('joinFertilizerRoom')
+  @SubscribeMessage('joinEmergencyRoom')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() { machineId }: JoinFertilizerDto,
+    @MessageBody() { machineId }: JoinEmergencyDto,
   ): void {
-    const room = `fertilizer_${machineId}`;
+    const room = `emergency_${machineId}`;
 
     void client.join(room);
 
-    console.log(`Client joined machine room: ${room}`);
+    console.log(`Client joined emergency room: ${room}`);
   }
 
   // ─── Supabase Listener ─────────────────────────────────────
@@ -163,45 +122,32 @@ export class FertilizerAnalyticsGateway
     }
 
     this.channel = this.supabase
-      .channel('fertilizer-analytics-changes')
-      .on<FertilizerAnalyticsRow>(
+      .channel('emergency-changes')
+      .on<EmergencyRow>(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'fertilizer_analytics',
+          table: 'emergency',
         },
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        async ({ new: newRow }) => {
+
+        ({ new: newRow }) => {
           if (!newRow.machine_id) return;
 
           try {
-            const { data: machine, error } = await this.supabase
-              .from('machines')
-              .select('is_active')
-              .eq('machine_id', newRow.machine_id)
-              .single<MachineRow>();
-
-            if (error) {
-              console.error('Machine lookup failed:', error);
+            // Only emit if is_active is true
+            if (!newRow.is_active) {
               return;
             }
 
-            if (!machine?.is_active) {
-              console.log(
-                `⚠️ Machine ${newRow.machine_id} is inactive. Skipping realtime emit.`,
-              );
-              return;
-            }
-
-            const payload = mapFertilizerAnalytics(newRow);
+            const payload = mapEmergencyNotification(newRow);
 
             this.server
-              .to(`fertilizer_${newRow.machine_id}`)
-              .emit('fertilizer_analytics_update', payload);
+              .to(`emergency_${newRow.machine_id}`)
+              .emit('emergency_notification', payload);
 
             console.log(
-              `📡 Fertilizer update for machine ${newRow.machine_id}`,
+              `🚨 Emergency notification sent for machine ${newRow.machine_id}`,
             );
           } catch (err) {
             console.error('Realtime processing error:', err);
@@ -210,7 +156,7 @@ export class FertilizerAnalyticsGateway
       )
       .subscribe((status) => {
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
-          console.log('✅ Connected to Supabase Fertilizer Realtime');
+          console.log('✅ Connected to Supabase Emergency Realtime');
           this.isReconnecting = false;
           return;
         }
@@ -233,7 +179,7 @@ export class FertilizerAnalyticsGateway
   }
 
   async onModuleDestroy(): Promise<void> {
-    console.log('Cleaning up Supabase Realtime connections...');
+    console.log('Cleaning up Supabase Emergency Realtime connections...');
     if (this.channel) {
       try {
         await this.supabase.removeChannel(this.channel);

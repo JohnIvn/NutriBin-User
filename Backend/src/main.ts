@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import type { Server } from 'http';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,11 @@ async function bootstrap() {
       'https://nutribin.up.railway.app',
     ],
   });
+
+  // Increase maxListeners to prevent memory leak warnings with multiple socket connections
+  const server = app.getHttpServer() as Server;
+  server.setMaxListeners(50);
+
   await app.listen(process.env.PORT ?? 3000);
 }
 

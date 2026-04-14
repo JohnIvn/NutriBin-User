@@ -81,6 +81,8 @@ export class SupportGateway implements OnGatewayInit, OnGatewayDisconnect {
   server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
   private readonly supabase: SupabaseClient<Database>;
+  private channel: RealtimeChannel | null = null;
+  private isReconnecting = false;
 
   constructor() {
     this.supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -115,8 +117,23 @@ export class SupportGateway implements OnGatewayInit, OnGatewayDisconnect {
 
   // ─── Supabase Realtime ─────────────────────────────────────────────────────
 
-  private startSupabaseRealtimeListener(): void {
-    const channel: RealtimeChannel = this.supabase
+  private async startSupabaseRealtimeListener(): Promise<void> {
+    // Prevent multiple simultaneous reconnection attempts
+    if (this.isReconnecting) {
+      return;
+    }
+
+    // Clean up existing channel before creating a new one
+    if (this.channel) {
+      try {
+        await this.supabase.removeChannel(this.channel);
+        this.channel = null;
+      } catch (err) {
+        console.error('Error removing old channel:', err);
+      }
+    }
+
+    this.channel = this.supabase
       .channel('support-system-changes')
       // 1. New support messages
       .on<SupportMessage>(
@@ -143,14 +160,16 @@ export class SupportGateway implements OnGatewayInit, OnGatewayDisconnect {
       .subscribe((status) => {
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
           console.log('✅ Connected to Supabase Realtime');
+          this.isReconnecting = false;
           return;
         }
 
         if (status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
           console.error('❌ Supabase TIMED_OUT. Cleaning up...');
-          void this.supabase.removeChannel(channel).then(() => {
-            setTimeout(() => this.startSupabaseRealtimeListener(), 5_000);
-          });
+          this.isReconnecting = true;
+          setTimeout(() => {
+            void this.startSupabaseRealtimeListener();
+          }, 5_000);
           return;
         }
 
@@ -160,17 +179,18 @@ export class SupportGateway implements OnGatewayInit, OnGatewayDisconnect {
           );
         }
       });
-
-    // Warn on heartbeat timeouts — indicates an unstable network
-    this.supabase.realtime.onHeartbeat((hbStatus) => {
-      if (hbStatus === 'timeout') {
-        console.warn('⚠️ Heartbeat timeout detected. Network may be unstable.');
-      }
-    });
   }
 
   async onModuleDestroy(): Promise<void> {
     console.log('Cleaning up Supabase Realtime connections...');
+    if (this.channel) {
+      try {
+        await this.supabase.removeChannel(this.channel);
+        this.channel = null;
+      } catch (err) {
+        console.error('Error removing channel during cleanup:', err);
+      }
+    }
     await this.supabase.removeAllChannels();
   }
 }

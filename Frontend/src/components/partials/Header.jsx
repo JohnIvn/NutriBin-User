@@ -120,6 +120,302 @@ const QRCodeModal = ({ isOpen, onClose, qrData, isLoading }) => {
   );
 };
 
+// Emergency Modal Component
+const EmergencyModal = ({
+  isOpen,
+  onClose,
+  countdown,
+  isConfirming,
+  message,
+  messageType,
+}) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.overlay}
+            onClick={messageType === "error" ? onClose : undefined}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90]"
+          />
+
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.content}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                     w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[91] overflow-hidden"
+          >
+            {/* Header */}
+            <div
+              className={`px-6 py-5 bg-gradient-to-br border-b ${
+                messageType === "success"
+                  ? "from-green-50 to-green-50/50 border-green-200"
+                  : messageType === "error"
+                    ? "from-red-50 to-red-50/50 border-red-200"
+                    : "from-red-50 to-red-50/50 border-red-200"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <h2
+                  className={`text-xl font-black flex items-center gap-2 ${
+                    messageType === "success"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {messageType === "success"
+                    ? "Success"
+                    : messageType === "error"
+                      ? "Error"
+                      : "Emergency Mode"}
+                </h2>
+                {(messageType === "error" || messageType === "success") && (
+                  <Motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={onClose}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      messageType === "success"
+                        ? "hover:bg-green-100"
+                        : "hover:bg-red-100"
+                    }`}
+                    aria-label="Close"
+                  >
+                    <XMarkIcon
+                      className={`w-5 h-5 ${
+                        messageType === "success"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    />
+                  </Motion.button>
+                )}
+                {messageType === "idle" && (
+                  <Motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={onClose}
+                    disabled={isConfirming}
+                    className="p-1.5 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+                    aria-label="Cancel emergency"
+                  >
+                    <XMarkIcon className="w-5 h-5 text-red-600" />
+                  </Motion.button>
+                )}
+              </div>
+              {messageType === "idle" && (
+                <p className="text-sm text-red-600/70 mt-1">
+                  Press X to cancel
+                </p>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="p-8 flex flex-col items-center gap-6">
+              {messageType === "idle" && (
+                <>
+                  <Motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="flex items-center justify-center w-24 h-24 rounded-full bg-red-100 border-4 border-red-200"
+                  >
+                    <span className="text-5xl font-black text-red-600">
+                      {countdown}
+                    </span>
+                  </Motion.div>
+
+                  <div className="text-center space-y-2">
+                    <p className="text-lg font-bold text-[#3A4D39]">
+                      Emergency activated in
+                    </p>
+                    <p className="text-sm text-[#3A4D39]/70">
+                      Machine will enter emergency mode in {countdown} second
+                      {countdown !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {messageType === "success" && (
+                <>
+                  <Motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="flex items-center justify-center w-24 h-24 rounded-full bg-green-100 border-4 border-green-200"
+                  >
+                    <svg
+                      className="w-12 h-12 text-green-600"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </Motion.div>
+
+                  <div className="text-center space-y-2">
+                    <p className="text-lg font-bold text-green-600">
+                      Emergency Activated
+                    </p>
+                    <p className="text-sm text-[#3A4D39]/70">{message}</p>
+                  </div>
+                </>
+              )}
+
+              {messageType === "error" && (
+                <>
+                  <Motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="flex items-center justify-center w-24 h-24 rounded-full bg-red-100 border-4 border-red-200"
+                  >
+                    <XMarkIcon className="w-12 h-12 text-red-600" />
+                  </Motion.div>
+
+                  <div className="text-center space-y-2">
+                    <p className="text-lg font-bold text-red-600">
+                      Failed to Activate
+                    </p>
+                    <p className="text-sm text-[#3A4D39]/70">{message}</p>
+                  </div>
+                </>
+              )}
+
+              {messageType === "idle" && countdown > 0 && (
+                <Motion.div
+                  initial={{ width: "100%" }}
+                  animate={{ width: 0 }}
+                  transition={{ duration: 1, ease: "linear" }}
+                  className="absolute bottom-0 left-0 h-1 bg-red-500"
+                />
+              )}
+            </div>
+
+            {/* Footer Info */}
+            <div
+              className={`px-6 py-4 border-t ${
+                messageType === "success"
+                  ? "bg-green-50 border-green-100"
+                  : messageType === "error"
+                    ? "bg-red-50 border-red-100"
+                    : "bg-red-50 border-red-100"
+              }`}
+            >
+              <p
+                className={`text-xs text-center font-medium ${
+                  messageType === "success"
+                    ? "text-green-600/70"
+                    : messageType === "error"
+                      ? "text-red-600/70"
+                      : "text-red-600/70"
+                }`}
+              >
+                {messageType === "idle"
+                  ? "Click the X button above to cancel before countdown reaches zero"
+                  : messageType === "success"
+                    ? "The machine has entered emergency mode"
+                    : "Please try again or contact support"}
+              </p>
+            </div>
+          </Motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// No Machine Modal Component
+const NoMachineModal = ({ isOpen, onClose }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.overlay}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90]"
+          />
+
+          <Motion.div
+            {...ANIMATION_VARIANTS.modal.content}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                     w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-[91] overflow-hidden"
+          >
+            {/* Header */}
+            <div className="px-6 py-5 bg-gradient-to-br from-amber-50 to-amber-50/50 border-b border-amber-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-amber-600">
+                  No Machine Selected
+                </h2>
+                <Motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-amber-100 rounded-lg transition-colors"
+                  aria-label="Close"
+                >
+                  <XMarkIcon className="w-5 h-5 text-amber-600" />
+                </Motion.button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 flex flex-col items-center gap-6">
+              <Motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                className="flex items-center justify-center w-24 h-24 rounded-full bg-amber-100 border-4 border-amber-200"
+              >
+                <svg
+                  className="w-12 h-12 text-amber-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </Motion.div>
+
+              <div className="text-center space-y-2">
+                <p className="text-lg font-bold text-[#3A4D39]">
+                  Please select a machine
+                </p>
+                <p className="text-sm text-[#3A4D39]/70">
+                  You need to select an active machine before you can trigger
+                  emergency mode. Choose a machine from the machine selector.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-amber-50 border-t border-amber-100">
+              <Motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onClose}
+                className="w-full py-3 rounded-xl font-bold bg-[#3A4D39] text-[#ECE3CE] 
+                         hover:bg-[#4F6F52] transition-all duration-200"
+              >
+                OK
+              </Motion.button>
+            </div>
+          </Motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
 // Constants
 const NAVIGATION = {
   public: {
@@ -183,14 +479,18 @@ const ANIMATION_VARIANTS = {
 };
 
 // Extracted Components
-const NavLink = ({ to, children, currentPath }) => {
+const NavLink = ({ to, children, currentPath, isEmergency = false }) => {
   const isActive = currentPath === to;
 
   return (
     <Link
       to={to}
-      className="relative group text-[#3A4D39] font-bold text-sm uppercase tracking-wider 
-               hover:text-[#4F6F52] transition-colors py-1"
+      className={`relative group font-bold text-sm uppercase tracking-wider 
+               transition-colors py-1 ${
+                 isEmergency
+                   ? "text-white hover:text-gray-200"
+                   : "text-[#3A4D39] hover:text-[#4F6F52]"
+               }`}
     >
       {children}
       <Motion.span
@@ -199,8 +499,10 @@ const NavLink = ({ to, children, currentPath }) => {
           width: isActive ? "100%" : "0%",
           opacity: isActive ? 1 : 0,
         }}
-        className="absolute -bottom-1 left-0 h-0.5 bg-[#3A4D39] group-hover:w-full 
-                 group-hover:opacity-100 transition-all duration-300"
+        className={`absolute -bottom-1 left-0 h-0.5 group-hover:w-full 
+                 group-hover:opacity-100 transition-all duration-300 ${
+                   isEmergency ? "bg-white" : "bg-[#3A4D39]"
+                 }`}
       />
     </Link>
   );
@@ -1409,7 +1711,15 @@ export default function Header() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrData, setQrData] = useState(null);
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
+  const [emergencyCountdown, setEmergencyCountdown] = useState(5);
+  const [isConfirmingEmergency, setIsConfirmingEmergency] = useState(false);
+  const [emergencyMessage, setEmergencyMessage] = useState("");
+  const [emergencyMessageType, setEmergencyMessageType] = useState("idle"); // idle, success, error
+  const [noMachineModalOpen, setNoMachineModalOpen] = useState(false);
+  const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const userMenuRef = useRef(null);
+  const emergencySocketRef = useRef(null);
 
   const fetchQRCode = async (machine) => {
     try {
@@ -1537,6 +1847,137 @@ export default function Header() {
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
+
+  // Emergency socket listener
+  useEffect(() => {
+    if (!selectedMachine) {
+      setIsEmergencyActive(false);
+      if (emergencySocketRef.current) {
+        emergencySocketRef.current.disconnect();
+        emergencySocketRef.current = null;
+      }
+      return;
+    }
+
+    let isMounted = true;
+
+    const baseUrl = getBaseUrl();
+    const socket = io(baseUrl, {
+      transports: ["websocket"],
+    });
+
+    emergencySocketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("✅ Connected to emergency realtime");
+
+      socket.emit("joinEmergencyRoom", {
+        machineId: selectedMachine.machine_id,
+      });
+    });
+
+    socket.on("emergency_notification", (data) => {
+      console.log("🚨 Emergency notification received:", data);
+
+      if (isMounted && data.isActive === true) {
+        setIsEmergencyActive(true);
+        // Auto-trigger emergency modal when notification received
+        setEmergencyCountdown(5);
+        setIsConfirmingEmergency(false);
+        setEmergencyMessage("");
+        setEmergencyMessageType("idle");
+        setEmergencyModalOpen(true);
+      } else {
+        setIsEmergencyActive(false);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Disconnected from emergency realtime");
+    });
+
+    return () => {
+      isMounted = false;
+
+      if (emergencySocketRef.current) {
+        emergencySocketRef.current.disconnect();
+        emergencySocketRef.current = null;
+      }
+    };
+  }, [selectedMachine]);
+
+  const triggerEmergency = useCallback(async () => {
+    if (!selectedMachine) {
+      setEmergencyModalOpen(false);
+      return;
+    }
+
+    setIsConfirmingEmergency(true);
+    setEmergencyMessage("Activating emergency mode...");
+    setEmergencyMessageType("idle");
+
+    try {
+      const customerId = user?.id || user?.customer_id || user?.userId;
+      const machineId = selectedMachine.machine_id;
+
+      const response = await Requests({
+        url: "/settings/emergency",
+        method: "POST",
+        data: {
+          customerId,
+          machine_id: machineId,
+        },
+      });
+
+      if (response.data?.ok) {
+        setEmergencyMessage("Emergency mode activated successfully!");
+        setEmergencyMessageType("success");
+        // Keep modal open briefly to show success
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        setEmergencyModalOpen(false);
+      } else {
+        throw new Error(
+          response.data?.message || "Failed to activate emergency",
+        );
+      }
+    } catch (err) {
+      console.error("Emergency activation error:", err);
+      setEmergencyMessage(
+        err.message || "Failed to activate emergency mode. Please try again.",
+      );
+      setEmergencyMessageType("error");
+    } finally {
+      setIsConfirmingEmergency(false);
+      setEmergencyCountdown(5);
+    }
+  }, [selectedMachine, user]);
+
+  // Emergency countdown effect
+  useEffect(() => {
+    if (!emergencyModalOpen) {
+      setEmergencyCountdown(5);
+      return;
+    }
+
+    if (isConfirmingEmergency) {
+      return;
+    }
+
+    let hasTriggered = false;
+    const timer = setInterval(() => {
+      setEmergencyCountdown((prev) => {
+        if (prev <= 1 && !hasTriggered) {
+          // Trigger emergency when countdown reaches 0 (only once)
+          hasTriggered = true;
+          triggerEmergency();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [emergencyModalOpen, isConfirmingEmergency, triggerEmergency]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -1689,6 +2130,26 @@ export default function Header() {
     [user, selectedMachine, refreshMachines, setSelectedMachine],
   );
 
+  const handleEmergencyClick = useCallback(() => {
+    if (!selectedMachine) {
+      setNoMachineModalOpen(true);
+      return;
+    }
+    setEmergencyCountdown(5);
+    setIsConfirmingEmergency(false);
+    setEmergencyMessage("");
+    setEmergencyMessageType("idle");
+    setEmergencyModalOpen(true);
+  }, [selectedMachine]);
+
+  const handleCloseEmergencyModal = useCallback(() => {
+    setEmergencyModalOpen(false);
+    setEmergencyCountdown(5);
+    setIsConfirmingEmergency(false);
+    setEmergencyMessage("");
+    setEmergencyMessageType("idle");
+  }, []);
+
   const getInitials = useCallback(
     (first, last) => `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase(),
     [],
@@ -1705,9 +2166,11 @@ export default function Header() {
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          shouldShowSolid
-            ? "bg-[#ECE3CE]/95 backdrop-blur-lg shadow-lg shadow-[#3A4D39]/5"
-            : "bg-transparent"
+          isEmergencyActive
+            ? "bg-red-600 shadow-lg shadow-red-600/50 backdrop-blur-lg"
+            : shouldShowSolid
+              ? "bg-[#ECE3CE]/95 backdrop-blur-lg shadow-lg shadow-[#3A4D39]/5"
+              : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1719,6 +2182,7 @@ export default function Header() {
                   key={link.name}
                   to={link.href}
                   currentPath={location.pathname}
+                  isEmergency={isEmergencyActive}
                 >
                   {link.name}
                 </NavLink>
@@ -1730,10 +2194,13 @@ export default function Header() {
               <Motion.h1
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-2xl lg:text-3xl font-black text-[#3A4D39] tracking-tighter 
-                         border-2 border-[#3A4D39] px-4 py-1.5 rounded-xl 
-                         group-hover:bg-[#3A4D39] group-hover:text-[#ECE3CE] 
-                         transition-all duration-300 shadow-sm group-hover:shadow-md"
+                className={`text-2xl lg:text-3xl font-black tracking-tighter 
+                         border-2 px-4 py-1.5 rounded-xl 
+                         transition-all duration-300 shadow-sm group-hover:shadow-md ${
+                           isEmergencyActive
+                             ? "text-white border-white group-hover:bg-white group-hover:text-red-600"
+                             : "text-[#3A4D39] border-[#3A4D39] group-hover:bg-[#3A4D39] group-hover:text-[#ECE3CE]"
+                         }`}
               >
                 NutriBin
               </Motion.h1>
@@ -1751,7 +2218,9 @@ export default function Header() {
                       ease: "linear",
                     }}
                   >
-                    <RefreshCw className="w-6 h-6 text-[#4F6F52]" />
+                    <RefreshCw
+                      className={`w-6 h-6 ${isEmergencyActive ? "text-white" : "text-[#4F6F52]"}`}
+                    />
                   </Motion.div>
                 </div>
               ) : user ? (
@@ -1772,6 +2241,23 @@ export default function Header() {
                     notificationMenuRef={notificationMenuRef}
                   />
 
+                  <Motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleEmergencyClick}
+                    className={`px-4 py-2.5 rounded-xl font-bold text-sm
+                             border-2 transition-all duration-200 shadow-md hover:shadow-lg
+                             flex items-center gap-2 ${
+                               isEmergencyActive
+                                 ? "bg-white text-red-600 border-white hover:bg-red-50"
+                                 : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300"
+                             }`}
+                    aria-label="Emergency mode"
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+                    Emergency
+                  </Motion.button>
+
                   <UserMenu
                     user={user}
                     userMenuOpen={userMenuOpen}
@@ -1783,7 +2269,11 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <NavLink to="/login" currentPath={location.pathname}>
+                  <NavLink
+                    to="/login"
+                    currentPath={location.pathname}
+                    isEmergency={isEmergencyActive}
+                  >
                     Login
                   </NavLink>
                   <Motion.div
@@ -1883,6 +2373,23 @@ export default function Header() {
         isLoading={qrLoading}
       />
 
+      {/* Emergency Modal */}
+      <EmergencyModal
+        isOpen={emergencyModalOpen}
+        onClose={handleCloseEmergencyModal}
+        countdown={emergencyCountdown}
+        onConfirm={triggerEmergency}
+        isConfirming={isConfirmingEmergency}
+        message={emergencyMessage}
+        messageType={emergencyMessageType}
+      />
+
+      {/* No Machine Modal */}
+      <NoMachineModal
+        isOpen={noMachineModalOpen}
+        onClose={() => setNoMachineModalOpen(false)}
+      />
+
       {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -1900,22 +2407,40 @@ export default function Header() {
                        shadow-2xl z-50 flex flex-col lg:hidden overflow-y-auto"
             >
               {/* Header */}
-              <div className="flex justify-between items-center p-6 border-b border-[#3A4D39]/10 bg-[#ECE3CE]">
-                <span className="text-xl font-black text-[#3A4D39] tracking-tight">
+              <div
+                className={`flex justify-between items-center p-6 border-b transition-all ${
+                  isEmergencyActive
+                    ? "bg-red-600 border-red-700"
+                    : "bg-[#ECE3CE] border-[#3A4D39]/10"
+                }`}
+              >
+                <span
+                  className={`text-xl font-black tracking-tight ${
+                    isEmergencyActive ? "text-white" : "text-[#3A4D39]"
+                  }`}
+                >
                   Menu
                 </span>
                 <Motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 hover:bg-[#3A4D39]/10 rounded-xl transition-colors"
+                  className={`p-2 rounded-xl transition-colors ${
+                    isEmergencyActive
+                      ? "hover:bg-red-700 hover:text-white"
+                      : "hover:bg-[#3A4D39]/10 text-[#3A4D39]"
+                  }`}
                   aria-label="Close menu"
                 >
-                  <XMarkIcon className="w-6 h-6 text-[#3A4D39]" />
+                  <XMarkIcon
+                    className={`w-6 h-6 ${isEmergencyActive ? "text-white" : "text-[#3A4D39]"}`}
+                  />
                 </Motion.button>
               </div>
 
               {/* Navigation Links */}
-              <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div
+                className={`flex-1 overflow-y-auto px-6 py-6 ${isEmergencyActive ? "bg-red-500" : "bg-white"}`}
+              >
                 <div className="flex flex-col gap-2">
                   {(user
                     ? [
@@ -1934,9 +2459,13 @@ export default function Header() {
                         to={link.href}
                         onClick={() => setMobileMenuOpen(false)}
                         className={`block px-4 py-3 rounded-xl font-bold transition-all ${
-                          location.pathname === link.href
-                            ? "bg-[#3A4D39] text-[#ECE3CE] shadow-md"
-                            : "text-[#3A4D39] hover:bg-[#ECE3CE]/50"
+                          isEmergencyActive
+                            ? location.pathname === link.href
+                              ? "bg-red-700 text-white shadow-md"
+                              : "text-white hover:bg-red-600"
+                            : location.pathname === link.href
+                              ? "bg-[#3A4D39] text-[#ECE3CE] shadow-md"
+                              : "text-[#3A4D39] hover:bg-[#ECE3CE]/50"
                         }`}
                       >
                         {link.name}

@@ -68,6 +68,7 @@ export default function Repairs() {
         setRepairs([]);
       }
     } catch (err) {
+      console.error(err)
       setRepairs([]);
     } finally {
       setLoading(false);

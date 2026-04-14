@@ -33,8 +33,8 @@ const SUPABASE_SERVICE_KEY =
 @WebSocketGateway({ cors: true })
 export class MachineNotificationsGateway implements OnGatewayInit {
   @WebSocketServer()
-  server: Server;
-  private supabase: SupabaseClient<any, 'public'>;
+  server!: Server;
+  private supabase!: SupabaseClient<any, 'public'>;
 
   constructor() {
     this.supabase = createClient<any, 'public'>(

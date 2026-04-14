@@ -136,6 +136,65 @@ export class SettingsController {
     `);
   }
 
+  @Post('emergency')
+  async postEmergency(
+    @Body('customerId') customerId: string,
+    @Body('machine_id') machineId: string,
+  ) {
+    if (!customerId) {
+      throw new BadRequestException('customerId is required');
+    }
+    if (!machineId) {
+      throw new BadRequestException('machineId is required');
+    }
+
+    const client = this.databaseService.getClient();
+
+    try {
+      // Check if there's already an active emergency
+      const existingEmergency = await client.query(
+        `SELECT emergency_id FROM emergency 
+         WHERE user_id = $1 AND machine_id = $2 AND is_active = true
+         LIMIT 1`,
+        [customerId, machineId],
+      );
+
+      if ((existingEmergency.rowCount ?? 0) > 0) {
+        return {
+          ok: false,
+          message: 'Emergency mode is already active for this machine',
+        };
+      }
+
+      await client.query(
+        `INSERT INTO emergency
+        (user_id, machine_id)
+        VALUES ($1, $2)
+        `,
+        [customerId, machineId],
+      );
+      await client.query(
+        `
+        INSERT INTO machine_notifications
+        (machine_id, header, subheader, type, description)
+        VALUES ($1, 'Emergency mode', 'Emergency mode has been applied',
+        'Emergency', 'Emergency has been triggered for the machine')
+        `,
+        [machineId],
+      );
+
+      return {
+        ok: true,
+        message: 'Emergency has been sent',
+      };
+    } catch (err) {
+      console.error('Emergency went error', err);
+      throw new InternalServerErrorException(
+        'Failed to trigger emergency mode',
+      );
+    }
+  }
+
   @Get(':customerId')
   async getProfile(@Param('customerId') customerId: string) {
     if (!customerId) {
