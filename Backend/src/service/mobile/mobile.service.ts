@@ -58,7 +58,7 @@ export class MobileService {
         FetchMachinesRow & { is_active: boolean; is_emergency: boolean }
       >(
         `
-    SELECT mc.machine_id, ms.serial_number, mc.nickname, m.is_active, 
+    SELECT DISTINCT ON (mc.machine_id) mc.machine_id, ms.serial_number, mc.nickname, m.is_active, 
            COALESCE(e.is_active, false) as is_emergency
     FROM machine_customers mc
     LEFT JOIN machine_serial ms
@@ -68,6 +68,7 @@ export class MobileService {
     LEFT JOIN emergency e
       ON mc.machine_id = e.machine_id AND e.is_active = true
     WHERE mc.customer_id = $1
+    ORDER BY mc.machine_id
   `,
         [customerId],
       );
