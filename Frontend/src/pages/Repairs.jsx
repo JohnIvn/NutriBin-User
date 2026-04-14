@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import {
   RefreshCw,
   Search,
-  History,
+  Wrench,
   ClipboardList,
   RefreshCcw,
   Calendar,
   X,
-  Download,
   Filter,
   Database,
   ChevronLeft,
@@ -21,26 +20,28 @@ import { motion as Motion } from "framer-motion";
 
 const ITEMS_PER_PAGE = 10;
 
-export default function Logs() {
-  const { selectedMachine } = useUser();
-  const machineId = selectedMachine?.machine_id;
+export default function Repairs() {
+  const { user } = useUser();
+  const userId = user?.id || user?.customer_id;
 
-  const [logs, setLogs] = useState([]);
+  const [repairs, setRepairs] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // 🔄 Fetch logs from backend
-  const fetchLogs = async () => {
-    if (!machineId) return;
+  // 🔄 Fetch repairs from backend
+  const fetchRepairs = async () => {
+    if (!userId) {
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await Requests({
-        url: `/trash-logs/${machineId}`,
+        url: `/module-analytics/${userId}/all-repairs`,
         method: "GET",
         params: {
           page: currentPage,
@@ -48,51 +49,90 @@ export default function Logs() {
         },
       });
 
-      setLogs(res.data.logs || []);
-      setPagination(res.data.pagination);
+      // Handle different response wrapping formats
+      let logsData = null;
+      let paginationData = null;
+
+      if (res?.data?.logs) {
+        logsData = res.data.logs;
+        paginationData = res.data.pagination;
+      } else if (res?.logs) {
+        logsData = res.logs;
+        paginationData = res.pagination;
+      }
+
+      if (logsData && Array.isArray(logsData)) {
+        setRepairs(logsData);
+        setPagination(paginationData);
+      } else {
+        setRepairs([]);
+      }
     } catch (err) {
-      console.error("Failed to fetch trash logs", err);
+      setRepairs([]);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
   };
 
-  // 🚀 Initial load & machine change
+  // 🚀 Initial load & user change
   useEffect(() => {
     setCurrentPage(1);
-  }, [machineId]);
+  }, [userId]);
 
-  // 🔄 Fetch logs when page changes or machine changes
+  // 🔄 Fetch repairs when page changes or user changes
   useEffect(() => {
-    fetchLogs();
-  }, [currentPage, machineId]);
+    fetchRepairs();
+  }, [currentPage, userId]);
 
   // 🔍 Client-side filters
-  const filteredLogs = logs.filter((log) => {
+  const filteredRepairs = repairs.filter((repair) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
-      log.id.toLowerCase().includes(term) ||
-      log.date_created.toLowerCase().includes(term);
+      repair.id.toLowerCase().includes(term) ||
+      repair.machine_id.toLowerCase().includes(term) ||
+      (repair.description && repair.description.toLowerCase().includes(term));
 
-    const matchesDate = selectedDate
-      ? log.date_created.startsWith(selectedDate)
+    const matchesStatus = selectedStatus
+      ? repair.repair_status === selectedStatus
       : true;
 
-    return matchesSearch && matchesDate;
+    return matchesSearch && matchesStatus;
   });
 
   // 🔁 Refresh button
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchLogs();
+    fetchRepairs();
   };
 
   // Calculate filter stats
-  const hasActiveFilters = searchTerm || selectedDate;
+  const hasActiveFilters = searchTerm || selectedStatus;
+
+  // Get unique statuses for filter dropdown
+  const uniqueStatuses = [
+    ...new Set(repairs.map((r) => r.repair_status)),
+  ].filter(Boolean);
+
+  // Status color mapping
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return "bg-yellow-100 text-yellow-700";
+      case "completed":
+        return "bg-green-100 text-green-700";
+      case "cancelled":
+        return "bg-red-100 text-red-700";
+      case "pending":
+        return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
 
   // Handle direct page input
   const handlePageInput = (value) => {
+    if (!pagination) return;
     const pageNum = parseInt(value, 10);
     if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pagination.totalPages) {
       setCurrentPage(pageNum);
@@ -100,8 +140,8 @@ export default function Logs() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/30 via-white to-[#FAF9F6] font-sans">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#ECE3CE]/40 via-white to-[#FAF9F6] font-sans">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
         {/* Header */}
         <Motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -113,38 +153,42 @@ export default function Logs() {
             <div className="flex-1 border-l-4 border-[#3A4D39] pl-6 py-2">
               <div className="inline-block mb-3">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-[#4F6F52]/10 rounded-full">
-                  <Database className="w-4 h-4 text-[#4F6F52]" />
+                  <Wrench className="w-4 h-4 text-[#4F6F52]" />
                   <span className="text-xs font-bold text-[#4F6F52] uppercase tracking-wide">
-                    Historical Data
+                    Maintenance
                   </span>
                 </div>
               </div>
               <h1 className="text-4xl sm:text-5xl font-black text-[#3A4D39] tracking-tight mb-2">
-                Trash Analysis Logs
+                Repair Requests
               </h1>
               <p className="text-[#739072] font-medium text-base sm:text-lg max-w-2xl">
-                Complete historical record of NPK levels, moisture, and
-                environmental readings.
+                Track and manage all machine repair requests and maintenance
+                activities.
               </p>
             </div>
 
             <div className="flex flex-col gap-3">
               {/* Stats Card */}
-              <div className="px-5 py-3 bg-white border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5">
-                <div className="flex items-center gap-2.5">
-                  <div className="relative">
-                    <History className="w-6 h-6 text-[#4F6F52]" />
+              <Motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+                className="px-6 py-4 bg-gradient-to-br from-white to-[#FAF9F6] border-2 border-[#4F6F52]/20 rounded-2xl shadow-lg shadow-[#4F6F52]/5 hover:shadow-xl hover:border-[#4F6F52]/40 transition-all duration-300 group cursor-default"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative p-2 bg-[#4F6F52]/10 rounded-xl group-hover:bg-[#4F6F52]/20 transition-colors">
+                    <Wrench className="w-5 h-5 text-[#4F6F52] group-hover:scale-110 transition-transform" />
                   </div>
                   <div>
-                    <div className="text-xs text-[#739072] font-medium">
-                      Total Records
+                    <div className="text-xs text-[#739072] font-bold uppercase tracking-wide">
+                      Total Requests
                     </div>
-                    <div className="text-lg font-black text-[#3A4D39]">
-                      {pagination?.total ?? logs.length}
+                    <div className="text-2xl font-black text-[#3A4D39]">
+                      {pagination?.total ?? repairs.length}
                     </div>
                   </div>
                 </div>
-              </div>
+              </Motion.div>
 
               {/* Filtered Count */}
               {hasActiveFilters && (
@@ -156,8 +200,8 @@ export default function Logs() {
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-blue-600" />
                     <span className="text-xs font-bold text-blue-800">
-                      Showing {filteredLogs.length} filtered result
-                      {filteredLogs.length !== 1 ? "s" : ""}
+                      Showing {filteredRepairs.length} filtered result
+                      {filteredRepairs.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 </Motion.div>
@@ -179,8 +223,8 @@ export default function Logs() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#739072] group-hover:text-[#4F6F52] transition-colors" />
               <input
                 type="text"
-                placeholder="Search by Log ID or Date..."
-                className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-[#ECE3CE] hover:border-[#4F6F52]/30 focus:outline-none focus:ring-2 focus:ring-[#4F6F52]/30 focus:border-[#4F6F52] text-[#3A4D39] placeholder:text-[#739072]/50 bg-[#FAF9F6] font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                placeholder="Search by Repair ID, Machine ID, or Description..."
+                className="w-full pl-12 pr-4 py-3.5 rounded-xl border-2 border-[#ECE3CE] hover:border-[#4F6F52]/40 focus:outline-none focus:ring-2 focus:ring-[#4F6F52]/40 focus:border-[#4F6F52] focus:shadow-lg text-[#3A4D39] placeholder:text-[#739072]/60 bg-[#FAF9F6] font-medium transition-all duration-300 shadow-sm hover:shadow-md"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -196,20 +240,26 @@ export default function Logs() {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              {/* Date Filter */}
+              {/* Status Filter */}
               <div className="relative flex items-center bg-white border-2 border-[#3A4D39]/20 rounded-xl hover:border-[#4F6F52]/40 transition-all duration-200 shadow-sm hover:shadow-md group">
                 <div className="pl-4 pointer-events-none">
-                  <Calendar className="w-5 h-5 text-[#739072] group-hover:text-[#4F6F52] transition-colors" />
+                  <Filter className="w-5 h-5 text-[#739072] group-hover:text-[#4F6F52] transition-colors" />
                 </div>
-                <input
-                  type="date"
-                  className="pl-2 pr-3 py-3 bg-transparent text-[#3A4D39] text-sm font-bold outline-none cursor-pointer min-w-[140px] hover:bg-[#FAF9F6]/50 transition-colors"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-                {selectedDate && (
+                <select
+                  className="pl-2 pr-3 py-3.5 bg-transparent text-[#3A4D39] text-sm font-bold outline-none cursor-pointer min-w-[140px] hover:bg-[#FAF9F6]/70 focus:bg-[#FAF9F6] transition-colors appearance-none"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="">All Status</option>
+                  {uniqueStatuses.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+                {selectedStatus && (
                   <button
-                    onClick={() => setSelectedDate("")}
+                    onClick={() => setSelectedStatus("")}
                     className="pr-3 text-[#739072] hover:text-red-500 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -218,16 +268,18 @@ export default function Logs() {
               </div>
 
               {/* Refresh Button */}
-              <button
+              <Motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#3A4D39] text-white rounded-xl font-bold hover:bg-[#2d3b2c] active:scale-95 transition-all duration-200 shadow-lg shadow-[#3A4D39]/20 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-[#3A4D39] to-[#2d3b2c] text-white rounded-xl font-bold hover:shadow-xl hover:from-[#2d3b2c] hover:to-[#1f2822] transition-all duration-300 shadow-lg shadow-[#3A4D39]/25 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap group"
               >
                 <RefreshCcw
-                  className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+                  className={`w-5 h-5 transition-transform ${isRefreshing ? "animate-spin" : "group-hover:rotate-180"}`}
                 />
                 <span>Refresh</span>
-              </button>
+              </Motion.button>
             </div>
           </div>
 
@@ -253,11 +305,11 @@ export default function Logs() {
                     </button>
                   </div>
                 )}
-                {selectedDate && (
+                {selectedStatus && (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-[#4F6F52]/10 rounded-lg text-xs font-bold text-[#3A4D39]">
-                    <span>Date: {selectedDate}</span>
+                    <span>Status: {selectedStatus}</span>
                     <button
-                      onClick={() => setSelectedDate("")}
+                      onClick={() => setSelectedStatus("")}
                       className="hover:text-red-500 transition-colors"
                     >
                       <X className="w-3 h-3" />
@@ -267,7 +319,7 @@ export default function Logs() {
                 <button
                   onClick={() => {
                     setSearchTerm("");
-                    setSelectedDate("");
+                    setSelectedStatus("");
                   }}
                   className="ml-2 text-xs font-bold text-red-500 hover:text-red-600 transition-colors"
                 >
@@ -283,53 +335,43 @@ export default function Logs() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-[#3A4D39]/10 overflow-hidden"
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#3A4D39]/10 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
         >
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/60 border-b-2 border-[#ECE3CE]">
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider">
+                <tr className="bg-gradient-to-r from-[#FAF9F6] to-[#ECE3CE]/50 border-b-2 border-[#ECE3CE]">
+                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-widest">
                     <div className="flex items-center gap-2">
-                      <span>Log ID</span>
+                      <span>Repair ID</span>
                     </div>
                   </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider">
+                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <span>Machine ID</span>
+                    </div>
+                  </th>
+                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-3.5 h-3.5" />
+                      <span>Description</span>
+                    </div>
+                  </th>
+                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-widest text-center">
+                    Status
+                  </th>
+                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-widest">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>Date Created</span>
                     </div>
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Nitrogen
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Phosphorus
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Potassium
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Moisture
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Humidity
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Temp
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    pH
-                  </th>
-                  <th className="p-4 text-xs font-black text-[#739072] uppercase tracking-wider text-center">
-                    Lid Status
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="10" className="p-0">
+                    <td colSpan="5" className="p-0">
                       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                         <Motion.div
                           animate={{ rotate: 360 }}
@@ -342,15 +384,15 @@ export default function Logs() {
                           <RefreshCw className="w-12 h-12 text-[#4F6F52]" />
                         </Motion.div>
                         <p className="text-sm font-medium text-[#739072]">
-                          Loading logs...
+                          Loading repairs...
                         </p>
                       </div>
                     </td>
                   </tr>
-                ) : filteredLogs.length ? (
-                  filteredLogs.map((log, _index) => (
+                ) : filteredRepairs.length ? (
+                  filteredRepairs.map((repair, _index) => (
                     <Motion.tr
-                      key={log.id}
+                      key={repair.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: _index * 0.02 }}
@@ -360,80 +402,47 @@ export default function Logs() {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-[#4F6F52] opacity-0 group-hover:opacity-100 transition-opacity" />
                           <span className="text-sm text-[#4F6F52] font-mono font-medium">
-                            {log.id}
+                            {repair.id}
                           </span>
                         </div>
                       </td>
+                      <td className="p-4">
+                        <span className="text-sm text-[#4F6F52] font-mono font-medium">
+                          {repair.machine_id}
+                        </span>
+                      </td>
+                      <td className="p-4 text-sm text-[#739072] font-medium">
+                        {repair.description || "—"}
+                      </td>
+                      <td className="p-4 text-center">
+                        <span
+                          className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all duration-300 ${getStatusColor(
+                            repair.repair_status,
+                          )}`}
+                        >
+                          {repair.repair_status || "Unknown"}
+                        </span>
+                      </td>
                       <td className="p-4 text-sm text-[#4F6F52] font-mono">
-                        {log.date_created}
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#4F6F52]/10 text-[#4F6F52] text-sm font-mono font-bold">
-                          {log.nitrogen != null ? Number(log.nitrogen).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#5C8D89]/10 text-[#5C8D89] text-sm font-mono font-bold">
-                          {log.phosphorus != null ? Number(log.phosphorus).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#D4A373]/10 text-[#D4A373] text-sm font-mono font-bold">
-                          {log.potassium != null ? Number(log.potassium).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-sm font-mono font-bold">
-                          {log.moisture != null ? Number(log.moisture).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 text-sm font-mono font-bold">
-                          {log.humidity != null ? Number(log.humidity).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 text-sm font-mono font-bold">
-                          {log.temperature != null ? Number(log.temperature).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#3A4D39]/10 text-[#3A4D39] text-sm font-bold">
-                          {log.ph != null ? Number(log.ph).toFixed(2) : "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        {log.reed_switch == null ? (
-                          <span className="text-gray-400 text-sm font-medium">
-                            N/A
-                          </span>
-                        ) : log.reed_switch === true ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-lg bg-green-100 text-green-700 text-sm font-bold">
-                            Closed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-lg bg-red-100 text-red-700 text-sm font-bold">
-                            Open
-                          </span>
-                        )}
+                        {repair.date_created}
                       </td>
                     </Motion.tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="p-0">
+                    <td colSpan="5" className="p-0">
                       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                         <div className="p-6 bg-[#ECE3CE]/40 rounded-2xl">
                           <ClipboardList className="w-12 h-12 text-[#739072]/40" />
                         </div>
                         <div className="text-center">
                           <h3 className="text-lg font-bold text-[#3A4D39] mb-1">
-                            No Logs Found
+                            No Repairs Found
                           </h3>
                           <p className="text-sm text-[#739072]">
                             {hasActiveFilters
                               ? "Try adjusting your filters to see more results"
-                              : "No analysis logs have been recorded yet"}
+                              : "No repair requests have been made yet"}
                           </p>
                         </div>
                       </div>
@@ -478,60 +487,84 @@ export default function Logs() {
                   {/* Sequential Navigation */}
                   <div className="flex items-center gap-2">
                     {/* First Page */}
-                    <button
+                    <Motion.button
+                      whileHover={currentPage !== 1 ? { scale: 1.08 } : {}}
+                      whileTap={currentPage !== 1 ? { scale: 0.95 } : {}}
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage(1)}
                       className={`p-2.5 rounded-lg transition-all duration-200 tooltip ${
                         currentPage === 1
-                          ? "text-gray-300 cursor-not-allowed bg-gray-50"
-                          : "text-[#3A4D39] hover:bg-[#ECE3CE]/60 active:scale-95 hover:shadow-md"
+                          ? "text-gray-300 cursor-not-allowed bg-gray-50/50"
+                          : "text-[#3A4D39] hover:bg-[#ECE3CE]/70 active:scale-95 hover:shadow-md hover:text-[#2d3b2c]"
                       }`}
                       title="First page"
                     >
                       <ChevronsLeft className="w-5 h-5" />
-                    </button>
+                    </Motion.button>
 
                     {/* Previous Page */}
-                    <button
+                    <Motion.button
+                      whileHover={currentPage !== 1 ? { scale: 1.05 } : {}}
+                      whileTap={currentPage !== 1 ? { scale: 0.95 } : {}}
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((prev) => prev - 1)}
-                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
                         currentPage === 1
-                          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          ? "bg-gray-100/50 text-gray-300 cursor-not-allowed"
                           : "bg-white border-2 border-[#3A4D39]/20 text-[#3A4D39] hover:bg-[#3A4D39] hover:text-white hover:border-[#3A4D39] hover:shadow-lg active:scale-95"
                       }`}
                     >
                       <ChevronLeft className="w-4 h-4" />
                       <span className="hidden sm:inline">Prev</span>
-                    </button>
+                    </Motion.button>
 
                     {/* Next Page */}
-                    <button
+                    <Motion.button
+                      whileHover={
+                        currentPage !== pagination.totalPages
+                          ? { scale: 1.05 }
+                          : {}
+                      }
+                      whileTap={
+                        currentPage !== pagination.totalPages
+                          ? { scale: 0.95 }
+                          : {}
+                      }
                       disabled={currentPage === pagination.totalPages}
                       onClick={() => setCurrentPage((prev) => prev + 1)}
-                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
                         currentPage === pagination.totalPages
-                          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          ? "bg-gray-100/50 text-gray-300 cursor-not-allowed"
                           : "bg-white border-2 border-[#3A4D39]/20 text-[#3A4D39] hover:bg-[#3A4D39] hover:text-white hover:border-[#3A4D39] hover:shadow-lg active:scale-95"
                       }`}
                     >
                       <span className="hidden sm:inline">Next</span>
                       <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </Motion.button>
 
                     {/* Last Page */}
-                    <button
+                    <Motion.button
+                      whileHover={
+                        currentPage !== pagination.totalPages
+                          ? { scale: 1.08 }
+                          : {}
+                      }
+                      whileTap={
+                        currentPage !== pagination.totalPages
+                          ? { scale: 0.95 }
+                          : {}
+                      }
                       disabled={currentPage === pagination.totalPages}
                       onClick={() => setCurrentPage(pagination.totalPages)}
                       className={`p-2.5 rounded-lg transition-all duration-200 ${
                         currentPage === pagination.totalPages
-                          ? "text-gray-300 cursor-not-allowed bg-gray-50"
-                          : "text-[#3A4D39] hover:bg-[#ECE3CE]/60 active:scale-95 hover:shadow-md"
+                          ? "text-gray-300 cursor-not-allowed bg-gray-50/50"
+                          : "text-[#3A4D39] hover:bg-[#ECE3CE]/70 active:scale-95 hover:shadow-md hover:text-[#2d3b2c]"
                       }`}
                       title="Last page"
                     >
                       <ChevronsRight className="w-5 h-5" />
-                    </button>
+                    </Motion.button>
                   </div>
 
                   {/* Page Input - Center/Right */}
@@ -546,7 +579,7 @@ export default function Logs() {
                         max={pagination.totalPages}
                         value={currentPage}
                         onChange={(e) => handlePageInput(e.target.value)}
-                        className="w-16 px-2 py-1.5 border-0 text-center text-base font-bold text-[#3A4D39] bg-[#FAF9F6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4F6F52]/40 focus:bg-white transition-all"
+                        className="w-16 px-2 py-1.5 border-0 text-center text-base font-bold text-[#3A4D39] bg-[#FAF9F6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4F6F52]/50 focus:bg-white hover:bg-white transition-all duration-200"
                       />
                       <span className="text-sm font-bold text-[#3A4D39] ml-1">
                         of {pagination.totalPages}

@@ -28,6 +28,7 @@ import Support from "@/pages/Support";
 import DownloadApp from "@/pages/Download";
 import Firmware from "@/pages/Firmware";
 import Bluetooth from "@/pages/Bluetooth";
+import Repairs from "@/pages/Repairs";
 
 function FallbackRoute() {
   const { user } = useUser();
@@ -93,6 +94,14 @@ export default function PageRouter() {
         element={
           <ProtectedRoute>
             <DataScience />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/repairs"
+        element={
+          <ProtectedRoute>
+            <Repairs />
           </ProtectedRoute>
         }
       />

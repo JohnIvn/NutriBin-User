@@ -7,6 +7,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { DatabaseService } from '../../service/database/database.service';
@@ -43,6 +44,26 @@ type MachineAnalyticsRow = {
   last_update_attempt: string | null;
   last_seen: string | null;
 };
+
+type RepairLogsRow = {
+  repair_id: string;
+  machine_id: string;
+  user_id: string;
+  description: string | null;
+  repair_status: string | null;
+  date_created: string;
+};
+
+function mapRepairLog(row: RepairLogsRow) {
+  return {
+    id: row.repair_id,
+    machine_id: row.machine_id,
+    user_id: row.user_id,
+    description: row.description,
+    repair_status: row.repair_status,
+    date_created: row.date_created,
+  };
+}
 
 function mapMachineAnalytics(row: MachineAnalyticsRow) {
   return {
@@ -137,6 +158,72 @@ export class ModuleAnalyticsController {
       }
 
       throw new InternalServerErrorException('Failed to load module analytics');
+    }
+  }
+
+  @Get(':customerId/all-repairs')
+  async allRepairs(
+    @Param('customerId') customerId: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    const client = this.databaseService.getClient();
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (pageNum < 1 || limitNum < 1 || limitNum > 100) {
+      throw new BadRequestException('Invalid pagination parameters');
+    }
+
+    if (!customerId) {
+      throw new BadRequestException('customerId is missing');
+    }
+
+    const offset = (pageNum - 1) * limitNum;
+
+    try {
+      const countResult = await client.query<{ count: number }>(
+        `
+        SELECT COUNT(*)::int AS count
+        FROM repair
+        WHERE user_id = $1
+        `,
+        [customerId],
+      );
+
+      const total = countResult.rows[0]?.count || 0;
+
+      const dataResult = await client.query<RepairLogsRow>(
+        `
+        SELECT
+          re.repair_id,
+          re.machine_id,
+          re.user_id,
+          re.description,
+          re.repair_status,
+          re.date_created
+        FROM repair re
+        WHERE user_id = $1
+        ORDER BY date_created DESC
+        LIMIT $2
+        OFFSET $3
+        `,
+        [customerId, limitNum, offset],
+      );
+      return {
+        ok: true,
+        customer_id: customerId,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
+        logs: dataResult.rows.map(mapRepairLog),
+      };
+    } catch (err) {
+      console.error('[AllRepairs] Failed to load repairs:', err);
+      throw new InternalServerErrorException('Failed to load repairs');
     }
   }
 
