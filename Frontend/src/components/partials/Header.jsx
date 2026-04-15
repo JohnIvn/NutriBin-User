@@ -1533,9 +1533,9 @@ const MachineSelector = ({ selectedMachine, onClick }) => {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-xl
+      className="flex items-center gap-2 px-3 py-1.5 rounded-xl 
                bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
-               transition-all duration-200 group w-48 min-w-0"
+               transition-all duration-200 group w-30 min-w-0 truncate"
       aria-label="Select machine"
     >
       <Server className="w-4 h-4 text-[#3A4D39] flex-shrink-0" />
