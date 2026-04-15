@@ -39,13 +39,13 @@ export default function DownloadApp() {
             </div>
 
             <a
-              href="https://drive.google.com/file/d/1BKTmxroTxqaljZK1LPGKUPdObjWF8zvL/view?usp=drive_link"
+              href="https://drive.google.com/file/d/1EKC3Ozr_BbrukGt1iFeIFEfiamI0mH57/view?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
             >
               <Button className="bg-white text-[#3A4D39] hover:bg-[#ECE3CE] px-10 py-6 rounded-xl text-lg font-bold flex items-center gap-3 shadow-xl">
                 <ArrowDownCircle className="w-6 h-6" />
-                Download APK (v2.5.0)
+                Download APK (v2.6.5)
               </Button>
             </a>
           </div>

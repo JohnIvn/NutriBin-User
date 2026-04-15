@@ -425,7 +425,7 @@ export default function Fertilizer() {
                               {item.visitors}
                             </span>
                             <span className="text-xs font-bold text-[#739072] uppercase">
-                              ppm
+                              mg/kg
                             </span>
                           </div>
                         </Motion.div>
