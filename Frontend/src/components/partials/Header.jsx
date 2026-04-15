@@ -428,7 +428,7 @@ const NAVIGATION = {
   authenticated: {
     left: [
       { name: "Dashboard", href: "/dashboard" },
-      { name: "Cameras", href: "/cameras" },
+      //{ name: "Cameras", href: "/cameras" },
       { name: "Fertilizer", href: "/fertilizer" },
       { name: "Analytics", href: "/data" },
     ],
