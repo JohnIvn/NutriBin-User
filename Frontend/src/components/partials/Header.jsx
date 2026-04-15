@@ -1343,21 +1343,21 @@ const MachineSelectionModal = ({
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelect(machine)}
                       className={`flex-1 text-left px-4 py-3 rounded-lg font-medium
-                      transition-all flex justify-between items-center ${
+                      transition-all flex justify-between items-center min-w-0 ${
                         selectedMachine?.machine_id === machine.machine_id
                           ? "bg-[#3A4D39] text-[#ECE3CE] shadow-md shadow-[#3A4D39]/20"
                           : "bg-[#ECE3CE]/30 text-[#3A4D39] hover:bg-[#ECE3CE]/50"
                       }`}
                     >
-                      <div>
-                        <div className="font-bold">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold truncate">
                           {machine.nickname ||
                             machine.serial_number ||
                             machine.machine_id}
                         </div>
                         {(machine.nickname || machine.serial_number) &&
                           machine.nickname !== machine.machine_id && (
-                            <div className="text-xs opacity-70 mt-0.5">
+                            <div className="text-xs opacity-70 mt-0.5 truncate">
                               {machine.serial_number || machine.machine_id}
                             </div>
                           )}

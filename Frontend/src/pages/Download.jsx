@@ -39,7 +39,7 @@ export default function DownloadApp() {
             </div>
 
             <a
-              href="https://drive.google.com/file/d/1EKC3Ozr_BbrukGt1iFeIFEfiamI0mH57/view?usp=drive_link"
+              href="https://drive.google.com/drive/folders/1hVsERPBswpNpz4XShbr9h6YP3soSiKVG?usp=sharing"
               target="_blank"
               rel="noopener noreferrer"
             >
