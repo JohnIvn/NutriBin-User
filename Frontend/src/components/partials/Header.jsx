@@ -1535,7 +1535,7 @@ const MachineSelector = ({ selectedMachine, onClick }) => {
       onClick={onClick}
       className="flex items-center gap-2 px-3 py-1.5 rounded-xl
                bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
-               transition-all duration-200 group min-w-0"
+               transition-all duration-200 group w-48 min-w-0"
       aria-label="Select machine"
     >
       <Server className="w-4 h-4 text-[#3A4D39] flex-shrink-0" />
@@ -2576,9 +2576,9 @@ export default function Header() {
                                    bg-white border border-[#3A4D39]/20 rounded-xl
                                    hover:bg-[#ECE3CE]/30 transition-colors"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 truncate">
                             <Server className="w-4 h-4 text-[#3A4D39]" />
-                            <span className="text-sm font-medium text-[#3A4D39] truncate">
+                            <span className="text-sm font-medium text-[#3A4D39]">
                               {selectedMachine?.nickname ||
                                 selectedMachine?.machine_id ||
                                 "Select Machine"}
