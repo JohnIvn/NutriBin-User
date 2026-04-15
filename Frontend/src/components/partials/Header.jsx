@@ -547,13 +547,10 @@ const NotificationButton = ({ notificationMenuRef }) => {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("[Socket] Connected to WebSocket server");
       socket.emit("subscribeToMachine", machineId);
-      console.log("[Socket] Subscribed to machine:", machineId);
     });
 
     socket.on("notification_created", (n) => {
-      console.log("[Socket] Notification created:", n);
       setNotifications((prev) => [
         {
           id: n.notification_id,
@@ -568,7 +565,6 @@ const NotificationButton = ({ notificationMenuRef }) => {
     });
 
     socket.on("notification_resolved", (data) => {
-      console.log("[Socket] Notification resolved:", data);
       setNotifications((prev) =>
         prev.filter((notif) => notif.id !== data.notification_id),
       );
@@ -1539,16 +1535,16 @@ const MachineSelector = ({ selectedMachine, onClick }) => {
       onClick={onClick}
       className="flex items-center gap-2 px-3 py-1.5 rounded-xl
                bg-[#3A4D39]/5 hover:bg-[#3A4D39]/10
-               transition-all duration-200 group"
+               transition-all duration-200 group min-w-0"
       aria-label="Select machine"
     >
-      <Server className="w-4 h-4 text-[#3A4D39]" />
-      <span className="text-sm font-bold text-[#3A4D39] max-w-[120px] truncate">
+      <Server className="w-4 h-4 text-[#3A4D39] flex-shrink-0" />
+      <span className="text-sm font-bold text-[#3A4D39] truncate">
         {selectedMachine?.nickname ||
           selectedMachine?.machine_id ||
           "No Machine"}
       </span>
-      <ChevronDownIcon className="w-4 h-4 text-[#3A4D39]" />
+      <ChevronDownIcon className="w-4 h-4 text-[#3A4D39] flex-shrink-0" />
     </Motion.button>
   );
 };
@@ -1876,16 +1872,12 @@ export default function Header() {
     emergencySocketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("✅ Connected to emergency realtime");
-
       socket.emit("joinEmergencyRoom", {
         machineId: selectedMachine.machine_id,
       });
     });
 
     socket.on("emergency_notification", (data) => {
-      console.log("🚨 Emergency notification received:", data);
-
       if (isMounted) {
         if (data.isActive === true) {
           setIsEmergencyActive(true);
